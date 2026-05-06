@@ -11,6 +11,9 @@ interface PageMetadataOptions {
   ogImageUrl?: string
 }
 
+const OG_IMAGE_WIDTH = 1200
+const OG_IMAGE_HEIGHT = 630
+
 function trimSlashes(value: string): string {
   return value.replace(/^\/+|\/+$/g, '')
 }
@@ -66,6 +69,15 @@ function buildTwitterHandle(value: string): string | undefined {
   }
 }
 
+function buildSocialImageDescriptor(url: string, title: string) {
+  return {
+    url,
+    width: OG_IMAGE_WIDTH,
+    height: OG_IMAGE_HEIGHT,
+    alt: title || config.title
+  }
+}
+
 function toIsoDate(value: string | number | Date | null | undefined): string | undefined {
   if (value === null || value === undefined) return undefined
 
@@ -97,6 +109,7 @@ export function buildPageMetadata({
       images: 'https://nobelium.vercel.app/logo-for-dark-bg.svg'
     }
   })
+  const socialImage = buildSocialImageDescriptor(resolvedOgImageUrl, pageTitle)
   const publishedTime = toIsoDate(date)
   const twitterHandle = buildTwitterHandle(config.socialLink || '')
   const ogPayload = ogAdapter.payload.adapt({
@@ -107,7 +120,7 @@ export function buildPageMetadata({
     type,
     locale: config.lang,
     siteName: config.title,
-    images: [{ url: resolvedOgImageUrl }],
+    images: [socialImage],
     authors: [config.author],
     publishedTime,
     twitterSite: twitterHandle

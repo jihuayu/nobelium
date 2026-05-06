@@ -23,14 +23,24 @@ test('buildOpenGraphPayload returns canonical, og and twitter payloads', () => {
     slug: '/posts/post',
     type: 'article',
     locale: 'zh-CN',
-    images: ['https://cdn.example.com/og.png'],
+    images: [{
+      url: 'https://cdn.example.com/og.png',
+      alt: 'Post',
+      width: 1200,
+      height: 630
+    }],
     authors: ['jihuayu'],
     publishedTime: '2026-03-13T00:00:00.000Z'
   })
 
   assert.equal(payload.canonicalUrl, 'https://blog.jihuayu.com/posts/post')
   assert.equal(payload.openGraph.type, 'article')
-  assert.deepEqual(payload.twitter.images, ['https://cdn.example.com/og.png'])
+  assert.deepEqual(payload.twitter.images, [{
+    url: 'https://cdn.example.com/og.png',
+    alt: 'Post',
+    width: 1200,
+    height: 630
+  }])
   assert.equal(payload.openGraph.publishedTime, '2026-03-13T00:00:00.000Z')
 })
 

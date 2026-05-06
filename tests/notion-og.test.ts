@@ -73,8 +73,14 @@ test('buildPageMetadata uses custom ogImageUrl when provided', () => {
   })
 
   assert.equal(metadata.openGraph?.images?.[0]?.url, 'https://example.com/api/og/notion?pageId=abc')
+  assert.equal(metadata.openGraph?.images?.[0]?.alt, 'Hello')
+  assert.equal(metadata.openGraph?.images?.[0]?.width, 1200)
+  assert.equal(metadata.openGraph?.images?.[0]?.height, 630)
   assert.equal(metadata.openGraph?.siteName, '浮生纪梦')
-  assert.equal(metadata.twitter?.images?.[0], 'https://example.com/api/og/notion?pageId=abc')
+  assert.equal(metadata.twitter?.images?.[0]?.url, 'https://example.com/api/og/notion?pageId=abc')
+  assert.equal(metadata.twitter?.images?.[0]?.alt, 'Hello')
+  assert.equal(metadata.twitter?.images?.[0]?.width, 1200)
+  assert.equal(metadata.twitter?.images?.[0]?.height, 630)
 })
 
 test('buildNotionOgImageUrl encodes page ids into the local og route', () => {
@@ -96,9 +102,14 @@ test('buildPageMetadata includes twitter handles and site-level metadata for soc
   assert.equal(metadata.publisher, '浮生纪梦')
   assert.equal(metadata.twitter?.site, '@jihuayu123')
   assert.equal(metadata.twitter?.creator, '@jihuayu123')
+  assert.equal(metadata.twitter?.card, 'summary_large_image')
+  assert.equal(metadata.twitter?.title, 'Twitter OG')
+  assert.equal(metadata.twitter?.description, 'Check handles')
   assert.equal(metadata.openGraph?.siteName, '浮生纪梦')
-  assert.equal(
-    metadata.twitter?.images?.[0],
-    'https://og-image-craigary.vercel.app/Twitter%20OG.png?theme=dark&md=1&fontSize=125px&images=https%3A%2F%2Fnobelium.vercel.app%2Flogo-for-dark-bg.svg'
-  )
+  assert.deepEqual(metadata.twitter?.images?.[0], {
+    url: 'https://og-image-craigary.vercel.app/Twitter%20OG.png?theme=dark&md=1&fontSize=125px&images=https%3A%2F%2Fnobelium.vercel.app%2Flogo-for-dark-bg.svg',
+    alt: 'Twitter OG',
+    width: 1200,
+    height: 630
+  })
 })
