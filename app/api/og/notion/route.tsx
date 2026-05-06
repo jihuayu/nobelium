@@ -1,6 +1,7 @@
 import { ImageResponse } from '@vercel/og'
+import type { ReactElement } from 'react'
 import { config } from '@/lib/server/config'
-import { fetchCoverDataUrl, getPublishedPageOgData, loadOgFonts } from '@/lib/server/notionOg'
+import { fetchCoverDataUrl, loadOgFonts, resolvePublishedPageOgData } from '@/lib/server/notionOg'
 
 export const runtime = 'nodejs'
 
@@ -206,6 +207,52 @@ function renderTitleOgImage({
   )
 }
 
+interface OgImageResponseOptions {
+  title: string
+  summary: string
+  coverDataUrl: string
+  fontFamily: string
+  fonts: Awaited<ReturnType<typeof loadOgFonts>>
+  createResponse?: (element: ReactElement, init: ConstructorParameters<typeof ImageResponse>[1]) => ImageResponse
+  onCoverRenderError?: (error: unknown) => void
+}
+
+function buildImageResponseInit(fontFamily: string, fonts: Awaited<ReturnType<typeof loadOgFonts>>) {
+  return {
+    width: IMAGE_WIDTH,
+    height: IMAGE_HEIGHT,
+    fonts: fonts.length
+      ? fonts.map(font => ({ ...font, name: fontFamily }))
+      : undefined,
+    emoji: 'twemoji' as const,
+    headers: {
+      'cache-control': CACHE_CONTROL
+    }
+  }
+}
+
+export function createNotionOgImageResponse({
+  title,
+  summary,
+  coverDataUrl,
+  fontFamily,
+  fonts,
+  createResponse = (element, init) => new ImageResponse(element, init),
+  onCoverRenderError
+}: OgImageResponseOptions) {
+  const init = buildImageResponseInit(fontFamily, fonts)
+
+  if (coverDataUrl) {
+    try {
+      return createResponse(renderCoverOgImage({ coverDataUrl, title, summary, fontFamily }), init)
+    } catch (error) {
+      onCoverRenderError?.(error)
+    }
+  }
+
+  return createResponse(renderTitleOgImage({ title, fontFamily }), init)
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const pageId = `${searchParams.get('pageId') || ''}`.trim()
@@ -216,15 +263,14 @@ export async function GET(request: Request) {
 
   let page = null
 
-  try {
-    page = await getPublishedPageOgData(pageId)
-  } catch (error) {
-    console.error(`[og] Failed to load Notion OG data for page ${pageId}:`, error)
-    return new Response('Failed to load page', {
-      status: 500,
-      headers: { 'cache-control': 'no-store' }
-    })
-  }
+  page = await resolvePublishedPageOgData(pageId, {
+    onPublishedLookupError: (error) => {
+      console.error('[og] Published page lookup failed, falling back to direct page lookup', {
+        pageId,
+        error
+      })
+    }
+  })
 
   if (!page) {
     return new Response('Not found', {
@@ -254,20 +300,17 @@ export async function GET(request: Request) {
 
   const fontFamily = fonts.length ? 'NotionOgSans' : 'sans-serif'
 
-  return new ImageResponse(
-    coverDataUrl
-      ? renderCoverOgImage({ coverDataUrl, title, summary, fontFamily })
-      : renderTitleOgImage({ title, fontFamily }),
-    {
-      width: IMAGE_WIDTH,
-      height: IMAGE_HEIGHT,
-      fonts: fonts.length
-        ? fonts.map(font => ({ ...font, name: fontFamily }))
-        : undefined,
-      emoji: 'twemoji',
-      headers: {
-        'cache-control': CACHE_CONTROL
-      }
+  return createNotionOgImageResponse({
+    title,
+    summary,
+    coverDataUrl,
+    fontFamily,
+    fonts,
+    onCoverRenderError: (error) => {
+      console.error('[og] Failed to render cover image, falling back to title image', {
+        pageId,
+        error
+      })
     }
-  )
+  })
 }

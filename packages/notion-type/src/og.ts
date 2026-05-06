@@ -52,7 +52,7 @@ export interface OpenGraphPayload {
     card: 'summary' | 'summary_large_image' | 'app' | 'player'
     title: string
     description: string
-    images: string[]
+    images: OgImageDescriptor[]
     site?: string
   }
 }
@@ -159,7 +159,7 @@ function buildOpenGraphPayloadWithDefaultAdapter({
       card: twitterCard,
       title,
       description,
-      images: normalizedImages.map(image => image.url),
+      images: normalizedImages,
       site: twitterSite
     }
   }
