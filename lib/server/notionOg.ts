@@ -127,6 +127,25 @@ export async function getPublishedPageOgData(pageId: string): Promise<PageOgData
   return getCachedOgPage(normalizedPageId)
 }
 
+export async function resolvePublishedPageOgData(
+  pageId: string,
+  dependencies: {
+    getPublishedPageOgData?: (pageId: string) => Promise<PageOgData | null>
+    getPageOgData?: (pageId: string) => Promise<PageOgData | null>
+    onPublishedLookupError?: (error: unknown) => void
+  } = {}
+): Promise<PageOgData | null> {
+  const loadPublishedPageOgData = dependencies.getPublishedPageOgData || getPublishedPageOgData
+  const loadPageOgData = dependencies.getPageOgData || getPageOgData
+
+  try {
+    return await loadPublishedPageOgData(pageId)
+  } catch (error) {
+    dependencies.onPublishedLookupError?.(error)
+    return loadPageOgData(pageId)
+  }
+}
+
 export async function loadOgFonts(parts: string[]): Promise<OgFontDescriptor[]> {
   const family = resolveOgFontFamily()
   const text = buildFontSubsetText(parts)
