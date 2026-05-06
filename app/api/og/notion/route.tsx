@@ -265,7 +265,10 @@ export async function GET(request: Request) {
 
   page = await resolvePublishedPageOgData(pageId, {
     onPublishedLookupError: (error) => {
-      console.error(`[og] Published page lookup failed for page ${pageId}, falling back to direct page lookup:`, error)
+      console.error('[og] Published page lookup failed, falling back to direct page lookup', {
+        pageId,
+        error
+      })
     }
   })
 
@@ -304,7 +307,10 @@ export async function GET(request: Request) {
     fontFamily,
     fonts,
     onCoverRenderError: (error) => {
-      console.error(`[og] Failed to render cover image for page ${pageId}, falling back to title image:`, error)
+      console.error('[og] Failed to render cover image, falling back to title image', {
+        pageId,
+        error
+      })
     }
   })
 }
