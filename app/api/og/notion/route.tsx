@@ -8,12 +8,111 @@ export const runtime = 'nodejs'
 const IMAGE_WIDTH = 1200
 const IMAGE_HEIGHT = 630
 const CACHE_CONTROL = 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400'
+const SVG_SYSTEM_FONT_STACK = [
+  'Noto Sans SC',
+  'Noto Sans TC',
+  'Noto Sans JP',
+  'PingFang SC',
+  'PingFang TC',
+  'Hiragino Sans GB',
+  'Microsoft YaHei',
+  'system-ui',
+  '-apple-system',
+  'BlinkMacSystemFont',
+  'Segoe UI',
+  'sans-serif'
+].join(', ')
 
 function normalizeText(value: string, limit: number): string {
   const trimmed = `${value || ''}`.trim()
   if (!trimmed) return ''
   if (trimmed.length <= limit) return trimmed
   return `${trimmed.slice(0, Math.max(limit - 1, 1)).trimEnd()}...`
+}
+
+function estimateTextUnits(char: string): number {
+  if (!char) return 0
+  if (/\s/u.test(char)) return 0.35
+
+  const codePoint = char.codePointAt(0) ?? 0
+  if (codePoint <= 0x7f) {
+    return /[A-Za-z0-9]/.test(char) ? 0.62 : 0.45
+  }
+
+  return 1
+}
+
+function appendEllipsis(value: string): string {
+  const trimmed = value.trimEnd()
+  if (!trimmed) return '...'
+  return /(?:\.\.\.|…+)$/.test(trimmed) ? trimmed : `${trimmed}...`
+}
+
+function isPunctuationOnlyLine(value: string): boolean {
+  return /^[\s.…,，。!?！？:：;；'"“”‘’、-]+$/u.test(value)
+}
+
+function wrapTextLines(value: string, maxUnitsPerLine: number, maxLines: number): string[] {
+  const source = `${value || ''}`.trim()
+  if (!source) return []
+
+  const chars = Array.from(source)
+  const lines: string[] = []
+  let current = ''
+  let units = 0
+  let index = 0
+  let truncated = false
+
+  while (index < chars.length) {
+    const char = chars[index]
+    const charUnits = estimateTextUnits(char)
+
+    if (units + charUnits > maxUnitsPerLine && current.trim()) {
+      lines.push(current.trimEnd())
+      if (lines.length === maxLines) {
+        truncated = true
+        break
+      }
+
+      current = /\s/u.test(char) ? '' : char
+      units = /\s/u.test(char) ? 0 : charUnits
+      index += 1
+      continue
+    }
+
+    current += char
+    units += charUnits
+    index += 1
+  }
+
+  if (!truncated && current.trim() && lines.length < maxLines) {
+    lines.push(current.trimEnd())
+  }
+
+  if (!truncated && lines.length > 1) {
+    const lastLine = lines[lines.length - 1] || ''
+    const priorLine = lines[lines.length - 2] || ''
+    const lastLineUnits = Array.from(lastLine).reduce((total, char) => total + estimateTextUnits(char), 0)
+    const priorLineUnits = Array.from(priorLine).reduce((total, char) => total + estimateTextUnits(char), 0)
+
+    if (isPunctuationOnlyLine(lastLine) || (lastLineUnits <= 2 && (priorLineUnits + lastLineUnits) <= maxUnitsPerLine)) {
+      lines.splice(lines.length - 2, 2, `${priorLine}${lastLine}`.trim())
+    }
+  }
+
+  if (truncated && lines.length) {
+    lines[lines.length - 1] = appendEllipsis(lines[lines.length - 1])
+  }
+
+  return lines
+}
+
+function renderWrappedTextLines(lines: string[]) {
+  return lines.map((line, index) => (
+    <div key={`${index}-${line}`} style={{ display: 'flex' }}>
+      {line}
+    </div>
+  ))
 }
 
 function buildBaseContainer(background: string, color: string, fontFamily: string) {
@@ -29,15 +128,11 @@ function buildBaseContainer(background: string, color: string, fontFamily: strin
   }
 }
 
-function renderCoverOgImage({
+function renderCoverOnlyOgImage({
   coverDataUrl,
-  title,
-  summary,
   fontFamily
 }: {
   coverDataUrl: string
-  title: string
-  summary: string
   fontFamily: string
 }) {
   return (
@@ -46,84 +141,11 @@ function renderCoverOgImage({
         src={coverDataUrl}
         alt=""
         style={{
-          position: 'absolute',
-          inset: 0,
           width: '100%',
           height: '100%',
           objectFit: 'cover'
         }}
       />
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.22)'
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(180deg, rgba(9, 9, 11, 0.08) 0%, rgba(9, 9, 11, 0.82) 100%)'
-        }}
-      />
-      <div
-        style={{
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-end',
-          width: '100%',
-          height: '100%',
-          padding: '72px 72px 60px'
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            maxWidth: '980px'
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              fontSize: 72,
-              lineHeight: 1.12,
-              fontWeight: 700,
-              letterSpacing: '-0.04em'
-            }}
-          >
-            {title}
-          </div>
-          {summary ? (
-            <div
-              style={{
-                display: 'flex',
-                marginTop: 18,
-                fontSize: 30,
-                lineHeight: 1.35,
-                fontWeight: 400,
-                color: 'rgba(255, 255, 255, 0.92)'
-              }}
-            >
-              {summary}
-            </div>
-          ) : null}
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            marginTop: 28,
-            fontSize: 24,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'rgba(255, 255, 255, 0.82)'
-          }}
-        >
-          {config.title}
-        </div>
-      </div>
     </div>
   )
 }
@@ -135,6 +157,8 @@ function renderTitleOgImage({
   title: string
   fontFamily: string
 }) {
+  const titleLines = wrapTextLines(title, 14, 3)
+
   return (
     <div style={buildBaseContainer(config.lightBackground || '#ffffff', '#18181b', fontFamily)}>
       <div
@@ -186,10 +210,12 @@ function renderTitleOgImage({
             fontSize: 78,
             lineHeight: 1.08,
             fontWeight: 700,
-            letterSpacing: '-0.045em'
+            letterSpacing: '-0.045em',
+            flexDirection: 'column',
+            width: '100%'
           }}
         >
-          {title}
+          {renderWrappedTextLines(titleLines)}
         </div>
         <div
           style={{
@@ -209,7 +235,6 @@ function renderTitleOgImage({
 
 interface OgImageResponseOptions {
   title: string
-  summary: string
   coverDataUrl: string
   fontFamily: string
   fonts: Awaited<ReturnType<typeof loadOgFonts>>
@@ -234,7 +259,6 @@ function buildImageResponseInit(fontFamily: string, fonts: Awaited<ReturnType<ty
 
 export function createNotionOgImageResponse({
   title,
-  summary,
   coverDataUrl,
   fontFamily,
   fonts,
@@ -245,7 +269,7 @@ export function createNotionOgImageResponse({
 
   if (coverDataUrl) {
     try {
-      return createResponse(renderCoverOgImage({ coverDataUrl, title, summary, fontFamily }), init)
+      return createResponse(renderCoverOnlyOgImage({ coverDataUrl, fontFamily }), init)
     } catch (error) {
       onCoverRenderError?.(error)
     }
@@ -281,17 +305,67 @@ function escapeSvgText(value: string): string {
   })
 }
 
-function createSvgFallbackImageResponse(title: string): Response {
-  const safeTitle = escapeSvgText(normalizeText(title || config.title, 80) || config.title)
+function buildSvgTextElements({
+  lines,
+  x,
+  startY,
+  lineHeight,
+  fontSize,
+  fontWeight,
+  fill
+}: {
+  lines: string[]
+  x: number
+  startY: number
+  lineHeight: number
+  fontSize: number
+  fontWeight: number
+  fill: string
+}): string {
+  return lines.map((line, index) => {
+    const y = startY + (index * lineHeight)
+    return `<text x="${x}" y="${y}" fill="${escapeSvgText(fill)}" font-family="${escapeSvgText(SVG_SYSTEM_FONT_STACK)}" font-size="${fontSize}" font-weight="${fontWeight}">${escapeSvgText(line)}</text>`
+  }).join('\n')
+}
+
+function createSvgFallbackImageResponse({
+  title,
+  coverDataUrl
+}: {
+  title: string
+  coverDataUrl: string
+}): Response {
+  const safeTitle = normalizeText(title || config.title, 120) || config.title
   const safeSiteTitle = escapeSvgText(config.title)
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" viewBox="0 0 ${IMAGE_WIDTH} ${IMAGE_HEIGHT}">
+  const titleLines = wrapTextLines(safeTitle, 14, 3)
+
+  const svg = coverDataUrl
+    ? (() => {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" viewBox="0 0 ${IMAGE_WIDTH} ${IMAGE_HEIGHT}">
+<rect width="1200" height="630" fill="#09090b"/>
+<image href="${escapeSvgText(coverDataUrl)}" x="0" y="0" width="1200" height="630" preserveAspectRatio="xMidYMid slice"/>
+</svg>`
+      })()
+    : (() => {
+        const titleLineHeight = 82
+        const titleStartY = 320 - (((titleLines.length - 1) * titleLineHeight) / 2)
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" viewBox="0 0 ${IMAGE_WIDTH} ${IMAGE_HEIGHT}">
 <rect width="1200" height="630" fill="${escapeSvgText(config.lightBackground || '#ffffff')}"/>
 <circle cx="1060" cy="40" r="210" fill="rgba(24,24,27,0.05)"/>
 <circle cx="30" cy="640" r="240" fill="rgba(24,24,27,0.08)"/>
 <rect x="72" y="72" width="148" height="12" rx="6" fill="#18181b"/>
-<text x="72" y="320" fill="#18181b" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="68" font-weight="700">${safeTitle}</text>
-<text x="72" y="558" fill="rgba(24,24,27,0.72)" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" letter-spacing="4">${safeSiteTitle}</text>
+${buildSvgTextElements({
+  lines: titleLines,
+  x: 72,
+  startY: titleStartY,
+  lineHeight: titleLineHeight,
+  fontSize: 68,
+  fontWeight: 700,
+  fill: '#18181b'
+})}
+<text x="72" y="558" fill="rgba(24,24,27,0.72)" font-family="${escapeSvgText(SVG_SYSTEM_FONT_STACK)}" font-size="24" letter-spacing="4">${safeSiteTitle}</text>
 </svg>`
+      })()
 
   return new Response(svg, {
     headers: {
@@ -303,7 +377,6 @@ function createSvgFallbackImageResponse(title: string): Response {
 
 export async function createBufferedNotionOgImageResponse({
   title,
-  summary,
   coverDataUrl,
   fontFamily,
   fonts,
@@ -315,7 +388,7 @@ export async function createBufferedNotionOgImageResponse({
 
   if (coverDataUrl) {
     try {
-      const response = createResponse(renderCoverOgImage({ coverDataUrl, title, summary, fontFamily }), init)
+      const response = createResponse(renderCoverOnlyOgImage({ coverDataUrl, fontFamily }), init)
       return await bufferImageResponse(response)
     } catch (error) {
       onCoverRenderError?.(error)
@@ -326,7 +399,7 @@ export async function createBufferedNotionOgImageResponse({
     return await bufferImageResponse(createResponse(renderTitleOgImage({ title, fontFamily }), init))
   } catch (error) {
     onTitleRenderError?.(error)
-    return createSvgFallbackImageResponse(title)
+    return createSvgFallbackImageResponse({ title, coverDataUrl })
   }
 }
 
@@ -379,7 +452,6 @@ export async function GET(request: Request) {
 
   return createBufferedNotionOgImageResponse({
     title,
-    summary,
     coverDataUrl,
     fontFamily,
     fonts,

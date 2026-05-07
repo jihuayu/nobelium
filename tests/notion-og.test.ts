@@ -200,12 +200,34 @@ test('createNotionOgImageResponse falls back to title image when cover rendering
   ])
 })
 
+test('createBufferedNotionOgImageResponse returns cover-only image when cover rendering succeeds', async () => {
+  const attempts: Array<{ hasImage: boolean }> = []
+
+  const response = await createBufferedNotionOgImageResponse({
+    title: 'Fallback Title',
+    coverDataUrl: 'data:image/png;base64,abc',
+    fontFamily: 'sans-serif',
+    fonts: [],
+    createResponse: (element) => {
+      const hasImage = treeHasImage(element)
+      attempts.push({ hasImage })
+
+      return new Response('cover image', {
+        headers: { 'x-og-kind': hasImage ? 'cover' : 'title' }
+      }) as never
+    }
+  })
+
+  assert.equal(response.headers.get('x-og-kind'), 'cover')
+  assert.equal(await response.text(), 'cover image')
+  assert.deepEqual(attempts, [{ hasImage: true }])
+})
+
 test('createBufferedNotionOgImageResponse falls back when cover stream fails', async () => {
   const attempts: Array<{ hasImage: boolean }> = []
 
   const response = await createBufferedNotionOgImageResponse({
     title: 'Fallback Title',
-    summary: 'Summary',
     coverDataUrl: 'data:image/png;base64,abc',
     fontFamily: 'sans-serif',
     fonts: [],
@@ -241,7 +263,6 @@ test('createBufferedNotionOgImageResponse falls back when cover stream fails', a
 test('createBufferedNotionOgImageResponse returns svg when all image rendering fails', async () => {
   const response = await createBufferedNotionOgImageResponse({
     title: 'Final Fallback',
-    summary: '',
     coverDataUrl: '',
     fontFamily: 'sans-serif',
     fonts: [],
@@ -257,4 +278,48 @@ test('createBufferedNotionOgImageResponse returns svg when all image rendering f
 
   assert.equal(response.headers.get('content-type'), 'image/svg+xml; charset=utf-8')
   assert.match(await response.text(), /Final Fallback/)
+})
+
+test('createBufferedNotionOgImageResponse svg fallback wraps long titles into multiple lines', async () => {
+  const response = await createBufferedNotionOgImageResponse({
+    title: '关于我因为太想参加读书活动被“骗入”玄学工坊的那些事儿……',
+    coverDataUrl: '',
+    fontFamily: 'sans-serif',
+    fonts: [],
+    createResponse: () => ({
+      arrayBuffer: async () => {
+        throw new Error('title stream failed')
+      },
+      headers: new Headers(),
+      status: 200,
+      statusText: ''
+    }) as never
+  })
+
+  const svg = await response.text()
+  assert.equal(response.headers.get('content-type'), 'image/svg+xml; charset=utf-8')
+  assert.match(svg, /关于我因为太想参加读书活动被/)
+  assert.match(svg, /骗入”玄学工坊的那些事儿……/)
+})
+
+test('createBufferedNotionOgImageResponse svg fallback keeps cover imagery when available', async () => {
+  const response = await createBufferedNotionOgImageResponse({
+    title: 'Fallback With Cover',
+    coverDataUrl: 'data:image/png;base64,abc123',
+    fontFamily: 'sans-serif',
+    fonts: [],
+    createResponse: () => ({
+      arrayBuffer: async () => {
+        throw new Error('title stream failed')
+      },
+      headers: new Headers(),
+      status: 200,
+      statusText: ''
+    }) as never
+  })
+
+  const svg = await response.text()
+  assert.equal(response.headers.get('content-type'), 'image/svg+xml; charset=utf-8')
+  assert.match(svg, /<image href="data:image\/png;base64,abc123"/)
+  assert.doesNotMatch(svg, /Fallback With Cover/)
 })
