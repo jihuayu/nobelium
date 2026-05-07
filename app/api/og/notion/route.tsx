@@ -215,6 +215,7 @@ interface OgImageResponseOptions {
   fonts: Awaited<ReturnType<typeof loadOgFonts>>
   createResponse?: (element: ReactElement, init: ConstructorParameters<typeof ImageResponse>[1]) => ImageResponse
   onCoverRenderError?: (error: unknown) => void
+  onTitleRenderError?: (error: unknown) => void
 }
 
 function buildImageResponseInit(fontFamily: string, fonts: Awaited<ReturnType<typeof loadOgFonts>>) {
@@ -251,6 +252,82 @@ export function createNotionOgImageResponse({
   }
 
   return createResponse(renderTitleOgImage({ title, fontFamily }), init)
+}
+
+async function bufferImageResponse(response: Response): Promise<Response> {
+  const body = await response.arrayBuffer()
+
+  return new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers
+  })
+}
+
+function escapeSvgText(value: string): string {
+  return value.replace(/[&<>"']/g, char => {
+    switch (char) {
+      case '&':
+        return '&amp;'
+      case '<':
+        return '&lt;'
+      case '>':
+        return '&gt;'
+      case '"':
+        return '&quot;'
+      default:
+        return '&apos;'
+    }
+  })
+}
+
+function createSvgFallbackImageResponse(title: string): Response {
+  const safeTitle = escapeSvgText(normalizeText(title || config.title, 80) || config.title)
+  const safeSiteTitle = escapeSvgText(config.title)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" viewBox="0 0 ${IMAGE_WIDTH} ${IMAGE_HEIGHT}">
+<rect width="1200" height="630" fill="${escapeSvgText(config.lightBackground || '#ffffff')}"/>
+<circle cx="1060" cy="40" r="210" fill="rgba(24,24,27,0.05)"/>
+<circle cx="30" cy="640" r="240" fill="rgba(24,24,27,0.08)"/>
+<rect x="72" y="72" width="148" height="12" rx="6" fill="#18181b"/>
+<text x="72" y="320" fill="#18181b" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="68" font-weight="700">${safeTitle}</text>
+<text x="72" y="558" fill="rgba(24,24,27,0.72)" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" letter-spacing="4">${safeSiteTitle}</text>
+</svg>`
+
+  return new Response(svg, {
+    headers: {
+      'content-type': 'image/svg+xml; charset=utf-8',
+      'cache-control': CACHE_CONTROL
+    }
+  })
+}
+
+export async function createBufferedNotionOgImageResponse({
+  title,
+  summary,
+  coverDataUrl,
+  fontFamily,
+  fonts,
+  createResponse = (element, init) => new ImageResponse(element, init),
+  onCoverRenderError,
+  onTitleRenderError
+}: OgImageResponseOptions): Promise<Response> {
+  const init = buildImageResponseInit(fontFamily, fonts)
+
+  if (coverDataUrl) {
+    try {
+      const response = createResponse(renderCoverOgImage({ coverDataUrl, title, summary, fontFamily }), init)
+      return await bufferImageResponse(response)
+    } catch (error) {
+      onCoverRenderError?.(error)
+    }
+  }
+
+  try {
+    return await bufferImageResponse(createResponse(renderTitleOgImage({ title, fontFamily }), init))
+  } catch (error) {
+    onTitleRenderError?.(error)
+    return createSvgFallbackImageResponse(title)
+  }
 }
 
 export async function GET(request: Request) {
@@ -300,7 +377,7 @@ export async function GET(request: Request) {
 
   const fontFamily = fonts.length ? 'NotionOgSans' : 'sans-serif'
 
-  return createNotionOgImageResponse({
+  return createBufferedNotionOgImageResponse({
     title,
     summary,
     coverDataUrl,
@@ -308,6 +385,12 @@ export async function GET(request: Request) {
     fonts,
     onCoverRenderError: (error) => {
       console.error('[og] Failed to render cover image, falling back to title image', {
+        pageId,
+        error
+      })
+    },
+    onTitleRenderError: (error) => {
+      console.error('[og] Failed to render title image, falling back to svg image', {
         pageId,
         error
       })

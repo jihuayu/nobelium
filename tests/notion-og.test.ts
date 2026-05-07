@@ -3,8 +3,8 @@ import test from 'node:test'
 import type { ReactElement, ReactNode } from 'react'
 import { mapPageToOgData } from '@jihuayu/notion-data'
 import { buildNotionOgImageUrl, buildPageMetadata } from '../lib/server/metadata'
-import { resolvePublishedPageOgData } from '../lib/server/notionOg'
-import { createNotionOgImageResponse } from '../app/api/og/notion/route'
+import { resolvePublishedPageOgData, resolveRenderableGoogleFontUrl } from '../lib/server/notionOg'
+import { createBufferedNotionOgImageResponse, createNotionOgImageResponse } from '../app/api/og/notion/route'
 
 function treeHasImage(node: ReactNode): boolean {
   if (!node) return false
@@ -150,6 +150,28 @@ test('resolvePublishedPageOgData falls back to direct page lookup when published
   })
 })
 
+test('resolveRenderableGoogleFontUrl ignores woff2 fonts for OG rendering', () => {
+  assert.equal(
+    resolveRenderableGoogleFontUrl(`
+      @font-face {
+        src: url(https://fonts.gstatic.com/font.woff2) format('woff2');
+      }
+      @font-face {
+        src: url("https://fonts.gstatic.com/font.ttf") format("truetype");
+      }
+    `),
+    'https://fonts.gstatic.com/font.ttf'
+  )
+  assert.equal(
+    resolveRenderableGoogleFontUrl(`
+      @font-face {
+        src: url(https://fonts.gstatic.com/font.woff2) format('woff2');
+      }
+    `),
+    null
+  )
+})
+
 test('createNotionOgImageResponse falls back to title image when cover rendering fails', () => {
   const attempts: Array<{ hasImage: boolean }> = []
 
@@ -176,4 +198,63 @@ test('createNotionOgImageResponse falls back to title image when cover rendering
     { hasImage: true },
     { hasImage: false }
   ])
+})
+
+test('createBufferedNotionOgImageResponse falls back when cover stream fails', async () => {
+  const attempts: Array<{ hasImage: boolean }> = []
+
+  const response = await createBufferedNotionOgImageResponse({
+    title: 'Fallback Title',
+    summary: 'Summary',
+    coverDataUrl: 'data:image/png;base64,abc',
+    fontFamily: 'sans-serif',
+    fonts: [],
+    createResponse: (element) => {
+      const hasImage = treeHasImage(element)
+      attempts.push({ hasImage })
+
+      if (hasImage) {
+        return {
+          arrayBuffer: async () => {
+            throw new Error('cover stream failed')
+          },
+          headers: new Headers({ 'x-og-kind': 'cover' }),
+          status: 200,
+          statusText: ''
+        } as never
+      }
+
+      return new Response('title image', {
+        headers: { 'x-og-kind': 'title' }
+      }) as never
+    }
+  })
+
+  assert.equal(response.headers.get('x-og-kind'), 'title')
+  assert.equal(await response.text(), 'title image')
+  assert.deepEqual(attempts, [
+    { hasImage: true },
+    { hasImage: false }
+  ])
+})
+
+test('createBufferedNotionOgImageResponse returns svg when all image rendering fails', async () => {
+  const response = await createBufferedNotionOgImageResponse({
+    title: 'Final Fallback',
+    summary: '',
+    coverDataUrl: '',
+    fontFamily: 'sans-serif',
+    fonts: [],
+    createResponse: () => ({
+      arrayBuffer: async () => {
+        throw new Error('title stream failed')
+      },
+      headers: new Headers(),
+      status: 200,
+      statusText: ''
+    }) as never
+  })
+
+  assert.equal(response.headers.get('content-type'), 'image/svg+xml; charset=utf-8')
+  assert.match(await response.text(), /Final Fallback/)
 })

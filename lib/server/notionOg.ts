@@ -12,7 +12,8 @@ const FONT_CACHE_REVALIDATE_SECONDS = 60 * 60 * 24 * 30
 const MAX_OG_COVER_BYTES = 8 * 1024 * 1024
 const OG_COVER_FETCH_TIMEOUT_MS = 5000
 const GOOGLE_FONTS_USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+  'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1'
+const SUPPORTED_OG_FONT_FORMATS = new Set(['opentype', 'truetype', 'woff'])
 
 interface OgFontDescriptor {
   name: string
@@ -73,6 +74,40 @@ function buildFontSubsetText(parts: string[]): string {
   return output
 }
 
+function normalizeCssUrl(value: string): string {
+  return value.trim().replace(/^['"]|['"]$/g, '')
+}
+
+export function resolveRenderableGoogleFontUrl(css: string): string | null {
+  const matches = css.matchAll(/src:\s*url\(([^)]+)\)\s*format\((['"])([^'"]+)\2\)/gi)
+
+  for (const match of matches) {
+    const format = `${match[3] || ''}`.toLowerCase()
+    if (SUPPORTED_OG_FONT_FORMATS.has(format)) {
+      return normalizeCssUrl(match[1] || '')
+    }
+  }
+
+  return null
+}
+
+function isRenderableOgFontData(data: ArrayBuffer): boolean {
+  const bytes = Buffer.from(data)
+  if (bytes.byteLength < 4) return false
+
+  const signature = bytes.subarray(0, 4).toString('latin1')
+  if (signature === '\u0000\u0001\u0000\u0000' || signature === 'true' || signature === 'typ1' || signature === 'OTTO') {
+    return true
+  }
+
+  if (signature !== 'wOFF' || bytes.byteLength < 8) {
+    return false
+  }
+
+  const flavor = bytes.subarray(4, 8).toString('latin1')
+  return flavor === '\u0000\u0001\u0000\u0000' || flavor === 'OTTO'
+}
+
 const getCachedFontBase64 = unstable_cache(
   async (family: string, text: string, weight: 400 | 700) => {
     const cssUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@${weight}&text=${encodeURIComponent(text)}`
@@ -87,10 +122,9 @@ const getCachedFontBase64 = unstable_cache(
     }
 
     const css = await cssResponse.text()
-    const match = css.match(/src:\s*url\(([^)]+)\)\s*format\('(opentype|truetype|woff2|woff)'\)/i)
-    const fontUrl = match?.[1]
+    const fontUrl = resolveRenderableGoogleFontUrl(css)
     if (!fontUrl) {
-      throw new Error(`Failed to resolve font URL for ${family} (${weight})`)
+      throw new Error(`Failed to resolve renderable font URL for ${family} (${weight})`)
     }
 
     const fontResponse = await fetch(fontUrl)
@@ -98,9 +132,14 @@ const getCachedFontBase64 = unstable_cache(
       throw new Error(`Failed to fetch font data for ${family} (${weight})`)
     }
 
-    return Buffer.from(await fontResponse.arrayBuffer()).toString('base64')
+    const fontData = await fontResponse.arrayBuffer()
+    if (!isRenderableOgFontData(fontData)) {
+      throw new Error(`Fetched unsupported font data for ${family} (${weight})`)
+    }
+
+    return Buffer.from(fontData).toString('base64')
   },
-  ['notion-og-font'],
+  ['notion-og-font-renderable-v1'],
   { revalidate: FONT_CACHE_REVALIDATE_SECONDS }
 )
 
@@ -156,16 +195,23 @@ export async function loadOgFonts(parts: string[]): Promise<OgFontDescriptor[]> 
     getCachedFontBase64(family, text, 700)
   ])
 
+  const regularData = decodeBase64ToArrayBuffer(regularBase64)
+  const boldData = decodeBase64ToArrayBuffer(boldBase64)
+
+  if (!isRenderableOgFontData(regularData) || !isRenderableOgFontData(boldData)) {
+    throw new Error(`Cached unsupported font data for ${family}`)
+  }
+
   return [
     {
       name: family,
-      data: decodeBase64ToArrayBuffer(regularBase64),
+      data: regularData,
       weight: 400,
       style: 'normal'
     },
     {
       name: family,
-      data: decodeBase64ToArrayBuffer(boldBase64),
+      data: boldData,
       weight: 700,
       style: 'normal'
     }
