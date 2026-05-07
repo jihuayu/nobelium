@@ -138,7 +138,6 @@ function isValidKnownBlockPayload(type: NotionBlockType, block: RawNotionBlock):
     case 'to_do':
       return hasRichTextArrayPayload(block.to_do)
     case 'column_list':
-    case 'tab':
     case 'table_of_contents':
     case 'breadcrumb':
     case 'divider':

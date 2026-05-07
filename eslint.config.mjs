@@ -9,5 +9,11 @@ export default defineConfig([
     rules: {
       '@next/next/no-img-element': 'off'
     }
+  },
+  {
+    files: ['packages/notion-vue/**/*.{js,jsx,ts,tsx}'],
+    rules: {
+      'react-hooks/rules-of-hooks': 'off'
+    }
   }
 ])

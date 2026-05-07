@@ -31,6 +31,10 @@ function getErrorMessage(error: unknown): string {
   return `${error || 'Unknown error'}`
 }
 
+function isMissingStaticGenerationStoreError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('static generation store missing')
+}
+
 function isTruthyEnvValue(value?: string): boolean {
   const normalized = `${value || ''}`.trim().toLowerCase()
   return ['1', 'true', 'yes', 'on'].includes(normalized)
@@ -184,16 +188,26 @@ function applyRevalidation(tags: string[], paths: string[]) {
   infoServerEvent('notion-webhook', 'Applying cache invalidation', { tags, paths })
 
   for (const tag of tags) {
-    revalidateTag(tag, 'max')
+    try {
+      revalidateTag(tag, 'max')
+    } catch (error) {
+      if (!isMissingStaticGenerationStoreError(error)) throw error
+      warnServerError('notion-webhook:revalidate-tag', error, { tag })
+    }
   }
 
   for (const path of paths) {
-    if (path.includes('[') || path.includes(']')) {
-      revalidatePath(path, 'page')
-      continue
-    }
+    try {
+      if (path.includes('[') || path.includes(']')) {
+        revalidatePath(path, 'page')
+        continue
+      }
 
-    revalidatePath(path)
+      revalidatePath(path)
+    } catch (error) {
+      if (!isMissingStaticGenerationStoreError(error)) throw error
+      warnServerError('notion-webhook:revalidate-path', error, { path })
+    }
   }
 }
 
