@@ -68,6 +68,7 @@ export default async function RootLayout({
 
   const dayBg = sanitizeThemeColor(config.lightBackground, '#ffffff')
   const nightBg = sanitizeThemeColor(config.darkBackground, '#111827')
+  const nightText = 'rgb(222, 222, 228)'
   const themeBootstrapScript = `(() => {
     const appearance = ${JSON.stringify(config.appearance)};
     const root = document.documentElement;
@@ -108,11 +109,11 @@ export default async function RootLayout({
             @media (prefers-color-scheme: dark) {
               .color-scheme-unset, .color-scheme-unset body {
                 background-color: ${nightBg} !important;
-                color: rgba(255, 255, 255, 0.81);
+                color: ${nightText};
                 color-scheme: dark;
               }
               .color-scheme-unset .notion {
-                color: rgba(255, 255, 255, 0.81) !important;
+                color: ${nightText} !important;
               }
               .color-scheme-unset .text-black,
               .color-scheme-unset .text-gray-700,
@@ -122,7 +123,7 @@ export default async function RootLayout({
               .color-scheme-unset .text-zinc-800,
               .color-scheme-unset .text-zinc-700,
               .color-scheme-unset .text-zinc-600 {
-                color: rgba(255, 255, 255, 0.81) !important;
+                color: ${nightText} !important;
               }
               .color-scheme-unset .fill-black {
                 fill: rgb(255, 255, 255) !important;

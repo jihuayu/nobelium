@@ -11,7 +11,7 @@ const BLOG = {
   appearance: 'auto',
   font: 'sans-serif',
   lightBackground: '#ffffff',
-  darkBackground: '#18181B',
+  darkBackground: '#1E1E24',
   path: '',
   since: 2024,
   postsPerPage: 7,
