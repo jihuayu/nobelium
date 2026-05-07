@@ -13,6 +13,7 @@ interface PageMetadataOptions {
 
 const OG_IMAGE_WIDTH = 1200
 const OG_IMAGE_HEIGHT = 630
+const FALLBACK_OG_IMAGE_VERSION = '20260507'
 
 function trimSlashes(value: string): string {
   return value.replace(/^\/+|\/+$/g, '')
@@ -43,7 +44,18 @@ function buildPageUrl(siteUrl: string, slug?: string): string {
 export function buildNotionOgImageUrl(pageId: string): string {
   const routeUrl = new URL('/api/og/notion', buildSiteOrigin())
   routeUrl.searchParams.set('pageId', pageId)
+  routeUrl.searchParams.set('v', buildOgImageVersion())
   return routeUrl.toString()
+}
+
+function buildOgImageVersion(): string {
+  const configuredVersion = `${process.env.NEXT_PUBLIC_OG_IMAGE_VERSION || ''}`.trim()
+  if (configuredVersion) return configuredVersion
+
+  const gitCommitSha = `${process.env.VERCEL_GIT_COMMIT_SHA || ''}`.trim()
+  if (gitCommitSha) return gitCommitSha.slice(0, 12)
+
+  return FALLBACK_OG_IMAGE_VERSION
 }
 
 function buildTwitterHandle(value: string): string | undefined {
@@ -106,7 +118,8 @@ export function buildPageMetadata({
       theme: 'dark',
       md: 1,
       fontSize: '125px',
-      images: 'https://nobelium.vercel.app/logo-for-dark-bg.svg'
+      images: 'https://nobelium.vercel.app/logo-for-dark-bg.svg',
+      v: buildOgImageVersion()
     }
   })
   const socialImage = buildSocialImageDescriptor(resolvedOgImageUrl, pageTitle)

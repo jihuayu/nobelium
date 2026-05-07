@@ -8,6 +8,7 @@ export const runtime = 'nodejs'
 const IMAGE_WIDTH = 1200
 const IMAGE_HEIGHT = 630
 const CACHE_CONTROL = 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400'
+const MINIMAL_PNG_FALLBACK = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
 const SVG_SYSTEM_FONT_STACK = [
   'Noto Sans SC',
   'Noto Sans TC',
@@ -328,18 +329,18 @@ function buildSvgTextElements({
   }).join('\n')
 }
 
-function createSvgFallbackImageResponse({
+function createSvgFallbackMarkup({
   title,
   coverDataUrl
 }: {
   title: string
   coverDataUrl: string
-}): Response {
+}): string {
   const safeTitle = normalizeText(title || config.title, 120) || config.title
   const safeSiteTitle = escapeSvgText(config.title)
   const titleLines = wrapTextLines(safeTitle, 14, 3)
 
-  const svg = coverDataUrl
+  return coverDataUrl
     ? (() => {
         return `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" viewBox="0 0 ${IMAGE_WIDTH} ${IMAGE_HEIGHT}">
 <rect width="1200" height="630" fill="#09090b"/>
@@ -366,13 +367,49 @@ ${buildSvgTextElements({
 <text x="72" y="558" fill="rgba(24,24,27,0.72)" font-family="${escapeSvgText(SVG_SYSTEM_FONT_STACK)}" font-size="24" letter-spacing="4">${safeSiteTitle}</text>
 </svg>`
       })()
+}
 
-  return new Response(svg, {
+function createPngResponse(body: Buffer | Uint8Array): Response {
+  const bytes = body instanceof Buffer ? body : Buffer.from(body)
+  const arrayBuffer = new ArrayBuffer(bytes.byteLength)
+  new Uint8Array(arrayBuffer).set(bytes)
+
+  return new Response(arrayBuffer, {
     headers: {
-      'content-type': 'image/svg+xml; charset=utf-8',
+      'content-type': 'image/png',
       'cache-control': CACHE_CONTROL
     }
   })
+}
+
+function createRawCoverFallbackImageResponse(coverDataUrl: string): Response | null {
+  const match = /^data:(image\/(?:png|jpe?g|webp|gif));base64,([A-Za-z0-9+/=\s]+)$/i.exec(coverDataUrl || '')
+  if (!match) return null
+
+  const [, contentType, base64] = match
+  return new Response(Buffer.from(base64.replace(/\s/g, ''), 'base64'), {
+    headers: {
+      'content-type': contentType.toLowerCase().replace('image/jpg', 'image/jpeg'),
+      'cache-control': CACHE_CONTROL
+    }
+  })
+}
+
+async function createPngFallbackImageResponse({
+  title,
+  coverDataUrl
+}: {
+  title: string
+  coverDataUrl: string
+}): Promise<Response> {
+  try {
+    const svg = createSvgFallbackMarkup({ title, coverDataUrl })
+    const { default: sharp } = await import('sharp')
+    const png = await sharp(Buffer.from(svg)).png().toBuffer()
+    return createPngResponse(png)
+  } catch {
+    return createRawCoverFallbackImageResponse(coverDataUrl) || createPngResponse(Buffer.from(MINIMAL_PNG_FALLBACK, 'base64'))
+  }
 }
 
 export async function createBufferedNotionOgImageResponse({
@@ -399,7 +436,7 @@ export async function createBufferedNotionOgImageResponse({
     return await bufferImageResponse(createResponse(renderTitleOgImage({ title, fontFamily }), init))
   } catch (error) {
     onTitleRenderError?.(error)
-    return createSvgFallbackImageResponse({ title, coverDataUrl })
+    return createPngFallbackImageResponse({ title, coverDataUrl })
   }
 }
 

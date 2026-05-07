@@ -38,14 +38,15 @@
     "next": "^16.1.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "sharp": "^0.34.5",
     "shiki": "^4.0.2"
   },
   "devDependencies": {
+    "@microsoft/tsdoc": "^0.16.0",
     "@storybook/addon-essentials": "^8.6.18",
     "@storybook/react": "^8.6.18",
     "@storybook/react-vite": "^8.6.18",
     "@storybook/test": "^8.6.18",
-    "@microsoft/tsdoc": "^0.16.0",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",

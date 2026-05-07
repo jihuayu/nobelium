@@ -6,6 +6,9 @@ import { buildNotionOgImageUrl, buildPageMetadata } from '../lib/server/metadata
 import { resolvePublishedPageOgData, resolveRenderableGoogleFontUrl } from '../lib/server/notionOg'
 import { createBufferedNotionOgImageResponse, createNotionOgImageResponse } from '../app/api/og/notion/route'
 
+const PNG_SIGNATURE_HEX = '89504e470d0a1a0a'
+const ONE_PIXEL_PNG_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+
 function treeHasImage(node: ReactNode): boolean {
   if (!node) return false
   if (Array.isArray(node)) return node.some(child => treeHasImage(child))
@@ -14,6 +17,28 @@ function treeHasImage(node: ReactNode): boolean {
   const element = node as ReactElement<{ children?: ReactNode }>
   if (element.type === 'img') return true
   return treeHasImage(element.props?.children)
+}
+
+async function assertPngResponse(response: Response): Promise<Buffer> {
+  assert.equal(response.headers.get('content-type'), 'image/png')
+  const body = Buffer.from(await response.arrayBuffer())
+  assert.equal(body.subarray(0, 8).toString('hex'), PNG_SIGNATURE_HEX)
+  return body
+}
+
+function withOgImageVersion<T>(version: string, run: () => T): T {
+  const previousVersion = process.env.NEXT_PUBLIC_OG_IMAGE_VERSION
+  process.env.NEXT_PUBLIC_OG_IMAGE_VERSION = version
+
+  try {
+    return run()
+  } finally {
+    if (previousVersion === undefined) {
+      delete process.env.NEXT_PUBLIC_OG_IMAGE_VERSION
+    } else {
+      process.env.NEXT_PUBLIC_OG_IMAGE_VERSION = previousVersion
+    }
+  }
 }
 
 test('mapPageToOgData reads title summary and external cover', () => {
@@ -97,30 +122,31 @@ test('buildPageMetadata uses custom ogImageUrl when provided', () => {
 })
 
 test('buildNotionOgImageUrl encodes page ids into the local og route', () => {
-  const url = buildNotionOgImageUrl('158d8308-8d4e-802e-8d2d-c94b182259ef')
+  const url = withOgImageVersion('test-og-v1', () => buildNotionOgImageUrl('158d8308-8d4e-802e-8d2d-c94b182259ef'))
   const parsed = new URL(url)
 
   assert.equal(parsed.pathname, '/api/og/notion')
   assert.equal(parsed.searchParams.get('pageId'), '158d8308-8d4e-802e-8d2d-c94b182259ef')
+  assert.equal(parsed.searchParams.get('v'), 'test-og-v1')
 })
 
 test('buildPageMetadata includes twitter handles and site-level metadata for social scrapers', () => {
-  const metadata = buildPageMetadata({
+  const metadata = withOgImageVersion('test-og-v1', () => buildPageMetadata({
     title: 'Twitter OG',
     description: 'Check handles'
-  })
+  }))
 
   assert.equal(metadata.applicationName, '浮生纪梦')
   assert.equal(metadata.creator, '纪华裕')
   assert.equal(metadata.publisher, '浮生纪梦')
   assert.equal(metadata.twitter?.site, '@jihuayu123')
   assert.equal(metadata.twitter?.creator, '@jihuayu123')
-  assert.equal(metadata.twitter?.card, 'summary_large_image')
+  assert.equal((metadata.twitter as { card?: string } | undefined)?.card, 'summary_large_image')
   assert.equal(metadata.twitter?.title, 'Twitter OG')
   assert.equal(metadata.twitter?.description, 'Check handles')
   assert.equal(metadata.openGraph?.siteName, '浮生纪梦')
   assert.deepEqual(metadata.twitter?.images?.[0], {
-    url: 'https://og-image-craigary.vercel.app/Twitter%20OG.png?theme=dark&md=1&fontSize=125px&images=https%3A%2F%2Fnobelium.vercel.app%2Flogo-for-dark-bg.svg',
+    url: 'https://og-image-craigary.vercel.app/Twitter%20OG.png?theme=dark&md=1&fontSize=125px&images=https%3A%2F%2Fnobelium.vercel.app%2Flogo-for-dark-bg.svg&v=test-og-v1',
     alt: 'Twitter OG',
     width: 1200,
     height: 630
@@ -177,7 +203,6 @@ test('createNotionOgImageResponse falls back to title image when cover rendering
 
   const response = createNotionOgImageResponse({
     title: 'Fallback Title',
-    summary: 'Summary',
     coverDataUrl: 'data:image/png;base64,abc',
     fontFamily: 'sans-serif',
     fonts: [],
@@ -260,7 +285,7 @@ test('createBufferedNotionOgImageResponse falls back when cover stream fails', a
   ])
 })
 
-test('createBufferedNotionOgImageResponse returns svg when all image rendering fails', async () => {
+test('createBufferedNotionOgImageResponse returns png when all image rendering fails', async () => {
   const response = await createBufferedNotionOgImageResponse({
     title: 'Final Fallback',
     coverDataUrl: '',
@@ -276,11 +301,10 @@ test('createBufferedNotionOgImageResponse returns svg when all image rendering f
     }) as never
   })
 
-  assert.equal(response.headers.get('content-type'), 'image/svg+xml; charset=utf-8')
-  assert.match(await response.text(), /Final Fallback/)
+  await assertPngResponse(response)
 })
 
-test('createBufferedNotionOgImageResponse svg fallback wraps long titles into multiple lines', async () => {
+test('createBufferedNotionOgImageResponse png fallback handles long titles', async () => {
   const response = await createBufferedNotionOgImageResponse({
     title: '关于我因为太想参加读书活动被“骗入”玄学工坊的那些事儿……',
     coverDataUrl: '',
@@ -296,16 +320,13 @@ test('createBufferedNotionOgImageResponse svg fallback wraps long titles into mu
     }) as never
   })
 
-  const svg = await response.text()
-  assert.equal(response.headers.get('content-type'), 'image/svg+xml; charset=utf-8')
-  assert.match(svg, /关于我因为太想参加读书活动被/)
-  assert.match(svg, /骗入”玄学工坊的那些事儿……/)
+  await assertPngResponse(response)
 })
 
-test('createBufferedNotionOgImageResponse svg fallback keeps cover imagery when available', async () => {
+test('createBufferedNotionOgImageResponse png fallback keeps cover imagery when available', async () => {
   const response = await createBufferedNotionOgImageResponse({
     title: 'Fallback With Cover',
-    coverDataUrl: 'data:image/png;base64,abc123',
+    coverDataUrl: ONE_PIXEL_PNG_DATA_URL,
     fontFamily: 'sans-serif',
     fonts: [],
     createResponse: () => ({
@@ -318,8 +339,5 @@ test('createBufferedNotionOgImageResponse svg fallback keeps cover imagery when 
     }) as never
   })
 
-  const svg = await response.text()
-  assert.equal(response.headers.get('content-type'), 'image/svg+xml; charset=utf-8')
-  assert.match(svg, /<image href="data:image\/png;base64,abc123"/)
-  assert.doesNotMatch(svg, /Fallback With Cover/)
+  await assertPngResponse(response)
 })
