@@ -4,7 +4,7 @@ const BLOG = {
   title: '浮生纪梦',
   author: '纪华裕',
   email: 'jihuayu123@gmail.com',
-  link: 'https://jihuayu.com',
+  link: 'https://blog.jihuayu.com',
   description: '大梦一场，浮生今歇',
   lang: 'zh-CN',
   timezone: 'Asia/Shanghai',
