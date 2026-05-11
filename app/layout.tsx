@@ -20,6 +20,90 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 const defaultMetadata = buildPageMetadata()
 
+const webMcpScript = `(() => {
+  const modelContext = navigator.modelContext;
+  if (!modelContext) return;
+
+  const tools = [
+    {
+      name: 'search_blog_posts',
+      description: 'Search published posts on this blog.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          q: { type: 'string', description: 'Search query.' },
+          tag: { type: 'string', description: 'Optional tag filter.' },
+          limit: { type: 'integer', minimum: 1, maximum: 50, default: 10 }
+        },
+        required: ['q'],
+        additionalProperties: false
+      },
+      execute: async ({ q, tag = '', limit = 10 } = {}) => {
+        const params = new URLSearchParams({
+          q: String(q || ''),
+          limit: String(Math.max(1, Math.min(Number(limit) || 10, 50)))
+        });
+        if (tag) params.set('tag', String(tag));
+        const response = await fetch('/api/search?' + params.toString(), {
+          headers: { accept: 'application/json' }
+        });
+        return response.json();
+      }
+    },
+    {
+      name: 'list_blog_tags',
+      description: 'List public blog tags and their post counts.',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+        additionalProperties: false
+      },
+      execute: async () => {
+        const response = await fetch('/api/tags', {
+          headers: { accept: 'application/json' }
+        });
+        return response.json();
+      }
+    },
+    {
+      name: 'get_homepage_markdown',
+      description: 'Return a Markdown representation of the homepage.',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+        additionalProperties: false
+      },
+      execute: async () => {
+        const response = await fetch('/', {
+          headers: { accept: 'text/markdown' }
+        });
+        return {
+          contentType: response.headers.get('content-type'),
+          markdown: await response.text()
+        };
+      }
+    }
+  ];
+
+  if (typeof modelContext.provideContext === 'function') {
+    modelContext.provideContext({
+      tools,
+      resources: [
+        { uri: '/.well-known/api-catalog', mimeType: 'application/linkset+json' },
+        { uri: '/.well-known/openapi.json', mimeType: 'application/openapi+json' }
+      ]
+    });
+  }
+
+  if (typeof modelContext.registerTool === 'function') {
+    const controller = new AbortController();
+    for (const tool of tools) {
+      modelContext.registerTool(tool, { signal: controller.signal });
+    }
+    window.addEventListener('pagehide', () => controller.abort(), { once: true });
+  }
+})();`
+
 function sanitizeThemeColor(value: string, fallback: string): string {
   const normalized = `${value || ''}`.trim()
   return /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(normalized)
@@ -133,6 +217,9 @@ export default async function RootLayout({
         }} />
         <Script id="theme-bootstrap" strategy="beforeInteractive">
           {themeBootstrapScript}
+        </Script>
+        <Script id="webmcp-tools" strategy="afterInteractive">
+          {webMcpScript}
         </Script>
       </head>
       <body className="bg-day dark:bg-night">
