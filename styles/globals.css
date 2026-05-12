@@ -25,6 +25,64 @@ html {
   --thumbBG: #b8b8b8;
   scroll-behavior: smooth;
 }
+
+.blog-post-card {
+  contain: layout paint;
+  transition:
+    opacity 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.blog-post-card:hover {
+  opacity: 0.82;
+  transform: translateY(-1px);
+}
+
+.blog-post-hero {
+  animation: blog-hero-enter 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.blog-post-body {
+  animation: blog-body-enter 320ms 80ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes blog-hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blog-body-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .blog-post-hero,
+  .blog-post-body {
+    animation: none;
+  }
+}
 body::-webkit-scrollbar {
   width: 5px;
 }
