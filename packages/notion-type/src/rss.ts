@@ -4,6 +4,10 @@ import type {
   NotionBlock,
   NotionBulletedListItemBlock,
   NotionDocument,
+  NotionHeading1Block,
+  NotionHeading2Block,
+  NotionHeading3Block,
+  NotionHeading4Block,
   NotionLinkToPageBlock,
   NotionNumberedListItemBlock,
   NotionParagraphBlock,
@@ -302,6 +306,27 @@ function renderPageReferenceHtml(block: NotionLinkToPageBlock | Extract<NotionBl
     : `<p>${escapeHtml(label)}</p>`
 }
 
+function renderHeadingHtml(
+  block: NotionHeading1Block | NotionHeading2Block | NotionHeading3Block | NotionHeading4Block,
+  childHtml: string,
+  options: RenderNotionHtmlOptions
+): string {
+  const payload = block.type === 'heading_1'
+    ? block.heading_1
+    : block.type === 'heading_2'
+      ? block.heading_2
+      : block.type === 'heading_3'
+        ? block.heading_3
+        : block.heading_4
+  const tag = block.type === 'heading_1' ? 'h1' : block.type === 'heading_2' ? 'h2' : block.type === 'heading_3' ? 'h3' : 'h4'
+  const text = renderRichTextHtml(payload.rich_text, options)
+  const headingHtml = text ? `<${tag}>${text}</${tag}>` : ''
+
+  return payload.is_toggleable
+    ? `<details><summary>${text || 'Toggle'}</summary>${childHtml}</details>`
+    : `${headingHtml}${childHtml}`
+}
+
 function renderBlockHtml(
   blockId: string,
   blocksById: Record<string, NotionBlock>,
@@ -320,16 +345,16 @@ function renderBlockHtml(
       return `${text ? `<p>${text}</p>` : ''}${childHtml}`
     }
     case 'heading_1': {
-      const text = renderRichTextHtml(block.heading_1.rich_text, options)
-      return `${text ? `<h1>${text}</h1>` : ''}${childHtml}`
+      return renderHeadingHtml(block, childHtml, options)
     }
     case 'heading_2': {
-      const text = renderRichTextHtml(block.heading_2.rich_text, options)
-      return `${text ? `<h2>${text}</h2>` : ''}${childHtml}`
+      return renderHeadingHtml(block, childHtml, options)
     }
     case 'heading_3': {
-      const text = renderRichTextHtml(block.heading_3.rich_text, options)
-      return `${text ? `<h3>${text}</h3>` : ''}${childHtml}`
+      return renderHeadingHtml(block, childHtml, options)
+    }
+    case 'heading_4': {
+      return renderHeadingHtml(block, childHtml, options)
     }
     case 'quote': {
       const text = renderRichTextHtml(block.quote.rich_text, options)

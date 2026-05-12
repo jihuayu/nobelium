@@ -7,12 +7,44 @@ import { NotionRenderer, type NotionRenderModel } from '../src/index'
 const model: NotionRenderModel = {
   document: {
     pageId: 'page-1',
-    rootIds: ['heading', 'paragraph', 'code', 'tabs'],
+    rootIds: ['heading', 'toggleable-heading', 'toggleable-heading-4', 'paragraph', 'code', 'tabs'],
     blocksById: {
       heading: {
         id: 'heading',
         type: 'heading_1',
         heading_1: { rich_text: [{ type: 'text', plain_text: 'Title' }] }
+      },
+      'toggleable-heading': {
+        id: 'toggleable-heading',
+        type: 'heading_2',
+        has_children: true,
+        heading_2: {
+          rich_text: [{ type: 'text', plain_text: 'Foldable section' }],
+          is_toggleable: true
+        }
+      },
+      'toggleable-heading-body': {
+        id: 'toggleable-heading-body',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', plain_text: 'Hidden until opened' }]
+        }
+      },
+      'toggleable-heading-4': {
+        id: 'toggleable-heading-4',
+        type: 'heading_4',
+        has_children: true,
+        heading_4: {
+          rich_text: [{ type: 'text', plain_text: 'Foldable H4' }],
+          is_toggleable: true
+        }
+      },
+      'toggleable-heading-4-body': {
+        id: 'toggleable-heading-4-body',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', plain_text: 'H4 hidden body' }]
+        }
       },
       paragraph: {
         id: 'paragraph',
@@ -81,7 +113,9 @@ const model: NotionRenderModel = {
       }
     },
     childrenById: {
-      'page-1': ['heading', 'paragraph', 'code', 'tabs'],
+      'page-1': ['heading', 'toggleable-heading', 'toggleable-heading-4', 'paragraph', 'code', 'tabs'],
+      'toggleable-heading': ['toggleable-heading-body'],
+      'toggleable-heading-4': ['toggleable-heading-4-body'],
       tabs: ['tab-panel-1', 'tab-panel-2', 'tab-panel-empty'],
       'tab-panel-1': ['tab-panel-1-body'],
       'tab-panel-2': ['tab-panel-2-body']
@@ -115,6 +149,11 @@ const model: NotionRenderModel = {
 test('NotionRenderer renders normalized model', () => {
   const html = renderToStaticMarkup(React.createElement(NotionRenderer, { model }))
   assert.match(html, /Title/)
+  assert.match(html, /<details[^>]*id="notion-heading-toggleableheading"/)
+  assert.match(html, /Foldable section/)
+  assert.match(html, /Hidden until opened/)
+  assert.match(html, /<h4[^>]*>.*Foldable H4.*<\/h4>/)
+  assert.match(html, /H4 hidden body/)
   assert.match(html, /Body/)
   assert.match(html, /TypeScript/)
   assert.match(html, /href="\/posts\/internal"/)

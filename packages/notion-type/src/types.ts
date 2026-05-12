@@ -3,6 +3,7 @@ export type NotionBlockType =
   | 'heading_1'
   | 'heading_2'
   | 'heading_3'
+  | 'heading_4'
   | 'quote'
   | 'callout'
   | 'equation'
@@ -154,19 +155,29 @@ export interface NotionParagraphBlock extends NotionBlockBase<'paragraph'> {
   }
 }
 
+export interface NotionHeadingPayload {
+  rich_text: NotionRichText[]
+  is_toggleable?: boolean
+}
+
 export interface NotionHeading1Block extends NotionBlockBase<'heading_1'> {
   type: 'heading_1'
-  heading_1: { rich_text: NotionRichText[] }
+  heading_1: NotionHeadingPayload
 }
 
 export interface NotionHeading2Block extends NotionBlockBase<'heading_2'> {
   type: 'heading_2'
-  heading_2: { rich_text: NotionRichText[] }
+  heading_2: NotionHeadingPayload
 }
 
 export interface NotionHeading3Block extends NotionBlockBase<'heading_3'> {
   type: 'heading_3'
-  heading_3: { rich_text: NotionRichText[] }
+  heading_3: NotionHeadingPayload
+}
+
+export interface NotionHeading4Block extends NotionBlockBase<'heading_4'> {
+  type: 'heading_4'
+  heading_4: NotionHeadingPayload
 }
 
 export interface NotionQuoteBlock extends NotionBlockBase<'quote'> {
@@ -346,6 +357,7 @@ export type NotionBlock =
   | NotionHeading1Block
   | NotionHeading2Block
   | NotionHeading3Block
+  | NotionHeading4Block
   | NotionQuoteBlock
   | NotionCalloutBlock
   | NotionEquationBlock

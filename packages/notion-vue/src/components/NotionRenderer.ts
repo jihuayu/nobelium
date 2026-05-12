@@ -38,6 +38,7 @@ import type {
   NotionHeading1Block,
   NotionHeading2Block,
   NotionHeading3Block,
+  NotionHeading4Block,
   UnsupportedBlockProps
 } from '../types'
 import {
@@ -114,6 +115,25 @@ function isNumberedListItemBlock(block: NotionBlock | undefined): block is Notio
 
 function isParagraphBlock(block: NotionBlock | undefined): block is NotionParagraphBlock {
   return block?.type === 'paragraph'
+}
+
+type NotionHeadingBlock = NotionHeading1Block | NotionHeading2Block | NotionHeading3Block | NotionHeading4Block
+
+function getHeadingPayload(block: NotionHeadingBlock) {
+  switch (block.type) {
+    case 'heading_1':
+      return block.heading_1
+    case 'heading_2':
+      return block.heading_2
+    case 'heading_3':
+      return block.heading_3
+    case 'heading_4':
+      return block.heading_4
+  }
+}
+
+function getHeadingTag(block: NotionHeadingBlock) {
+  return block.type === 'heading_1' ? 'h1' : block.type === 'heading_2' ? 'h2' : block.type === 'heading_3' ? 'h3' : 'h4'
 }
 
 export default defineComponent({
@@ -258,21 +278,53 @@ export default defineComponent({
           }
           case 'heading_1':
           case 'heading_2':
-          case 'heading_3': {
+          case 'heading_3':
+          case 'heading_4': {
             return renderBlockWithOverride(block, () => {
-              const richText = block.type === 'heading_1'
-                ? block.heading_1.rich_text
-                : block.type === 'heading_2'
-                  ? block.heading_2.rich_text
-                  : block.heading_3.rich_text
+              const headingPayload = getHeadingPayload(block)
               const headingClass = cn(
                 'font-semibold text-inherit scroll-mt-20',
                 block.type === 'heading_1' && 'text-[2rem] leading-[1.24] mt-12 mb-3',
                 block.type === 'heading_2' && 'text-[1.62rem] leading-[1.28] mt-10 mb-2',
-                block.type === 'heading_3' && 'text-[1.34rem] leading-[1.34] mt-8 mb-1.5'
+                block.type === 'heading_3' && 'text-[1.34rem] leading-[1.34] mt-8 mb-1.5',
+                block.type === 'heading_4' && 'text-[1.16rem] leading-[1.4] mt-6 mb-1'
               )
-              const content = renderRichText(richText)
-              const headingTag = block.type === 'heading_1' ? 'h1' : block.type === 'heading_2' ? 'h2' : 'h3'
+              const content = renderRichText(headingPayload.rich_text)
+              const headingTag = getHeadingTag(block)
+              const hasChildren = (childrenById[block.id] || []).length > 0
+              if (headingPayload.is_toggleable) {
+                return h('details', {
+                  key: block.id,
+                  id: getHeadingAnchorId(block.id),
+                  class: cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading callout-wrap my-3', !hasChildren && 'nobelium-toggle-empty')
+                }, [
+                  h('summary', { class: 'nobelium-toggle-summary' }, [
+                    h(headingTag, { class: cn(headingClass, 'collapsed-label nobelium-toggle-title whitespace-pre-wrap') }, [content]),
+                    h('span', { class: 'button-wrap expand-icon', 'aria-hidden': 'true' }, [
+                      h('svg', { width: '24', height: '24', viewBox: '0 0 24 24', role: 'presentation' }, [
+                        h('path', { d: 'M8.67383 5.36887L12.0427 2L15.4116 5.36887' }),
+                        h('path', { d: 'M15.4116 18.8443L12.0427 22.2132L8.67383 18.8443' }),
+                        h('path', { d: 'M12.0426 2.00003V10.0853' }),
+                        h('path', { d: 'M12.0426 22.2132V14.1279' })
+                      ])
+                    ]),
+                    h('span', { class: 'button-wrap collapse-icon', 'aria-hidden': 'true' }, [
+                      h('svg', { width: '24', height: '24', viewBox: '0 0 24 24', role: 'presentation' }, [
+                        h('path', { d: 'M8.67383 17.3689L12.0427 14L15.4116 17.3689' }),
+                        h('path', { d: 'M15.4116 6.7164L12.0427 10.0853L8.67383 6.7164' }),
+                        h('path', { d: 'M12.0426 14V22.0853' }),
+                        h('path', { d: 'M12.0426 10.0853V1.99999' })
+                      ])
+                    ])
+                  ]),
+                  hasChildren
+                    ? h('div', { class: 'nobelium-toggle-content callout-content' }, [
+                        h('div', { class: 'content' }, [renderChildren(block.id)])
+                      ])
+                    : null
+                ])
+              }
+
               return h('div', { key: block.id, id: getHeadingAnchorId(block.id), class: baseClassName }, [
                 h(headingTag, { class: headingClass }, [content]),
                 renderChildren(block.id)

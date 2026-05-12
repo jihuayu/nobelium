@@ -2,7 +2,7 @@ import type { NotionBlock, NotionBlockType, NotionDocument } from './types'
 import { buildTableOfContents } from './utils/notion'
 
 const KNOWN_BLOCK_TYPES = new Set<NotionBlockType>([
-  'paragraph', 'heading_1', 'heading_2', 'heading_3', 'quote', 'callout', 'equation', 'code', 'image',
+  'paragraph', 'heading_1', 'heading_2', 'heading_3', 'heading_4', 'quote', 'callout', 'equation', 'code', 'image',
   'column', 'column_list', 'toggle', 'template', 'tab', 'table_of_contents', 'link_to_page', 'child_page',
   'child_database', 'synced_block', 'breadcrumb', 'embed', 'bookmark', 'video', 'audio', 'pdf', 'file',
   'table', 'table_row', 'link_preview', 'divider', 'bulleted_list_item', 'numbered_list_item', 'to_do',
@@ -84,6 +84,8 @@ function isValidKnownBlockPayload(type: NotionBlockType, block: RawNotionBlock):
       return hasRichTextArrayPayload(block.heading_2)
     case 'heading_3':
       return hasRichTextArrayPayload(block.heading_3)
+    case 'heading_4':
+      return hasRichTextArrayPayload(block.heading_4)
     case 'quote':
       return hasRichTextArrayPayload(block.quote)
     case 'callout':

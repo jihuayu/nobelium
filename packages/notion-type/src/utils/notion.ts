@@ -203,6 +203,8 @@ function getBlockRichText(block: NotionBlock): NotionRichText[] {
       return block.heading_2.rich_text
     case 'heading_3':
       return block.heading_3.rich_text
+    case 'heading_4':
+      return block.heading_4.rich_text
     default:
       return []
   }
@@ -212,7 +214,8 @@ export function buildTableOfContents(document: NotionDocument): TocItem[] {
   const headingLevel: Record<string, number> = {
     heading_1: 0,
     heading_2: 1,
-    heading_3: 2
+    heading_3: 2,
+    heading_4: 3
   }
 
   const toc: TocItem[] = []

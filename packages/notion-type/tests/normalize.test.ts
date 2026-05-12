@@ -69,6 +69,58 @@ test('normalizeNotionDocument also supports nested children arrays', () => {
   assert.equal(document.blocksById['paragraph-2']?.type, 'paragraph')
 })
 
+test('normalizeNotionDocument preserves toggleable heading blocks', () => {
+  const document = normalizeNotionDocument({
+    pageId: 'page-toggleable-heading',
+    rootBlocks: [
+      {
+        id: 'heading-toggle',
+        type: 'heading_2',
+        has_children: true,
+        heading_2: {
+          rich_text: [{ type: 'text', plain_text: 'Foldable section' }],
+          is_toggleable: true
+        },
+        children: [
+          {
+            id: 'heading-body',
+            type: 'paragraph',
+            paragraph: {
+              rich_text: [{ type: 'text', plain_text: 'Hidden until opened' }]
+            }
+          }
+        ]
+      }
+    ]
+  })
+
+  const heading = document.blocksById['heading-toggle']
+  assert.equal(heading?.type, 'heading_2')
+  assert.equal(heading?.type === 'heading_2' ? heading.heading_2.is_toggleable : false, true)
+  assert.deepEqual(document.childrenById['heading-toggle'], ['heading-body'])
+  assert.equal(document.toc?.[0]?.text, 'Foldable section')
+})
+
+test('normalizeNotionDocument supports heading_4 blocks in toc', () => {
+  const document = normalizeNotionDocument({
+    pageId: 'page-heading-4',
+    rootBlocks: [
+      {
+        id: 'heading-4',
+        type: 'heading_4',
+        heading_4: {
+          rich_text: [{ type: 'text', plain_text: 'Fourth level' }]
+        }
+      }
+    ]
+  })
+
+  const heading = document.blocksById['heading-4']
+  assert.equal(heading?.type, 'heading_4')
+  assert.equal(heading?.type === 'heading_4' ? heading.heading_4.rich_text[0]?.plain_text : '', 'Fourth level')
+  assert.deepEqual(document.toc?.[0], { id: 'heading-4', text: 'Fourth level', indentLevel: 3 })
+})
+
 test('normalizeNotionDocument preserves tab blocks and nested tab panel content', () => {
   const document = normalizeNotionDocument({
     pageId: 'page-tabs',

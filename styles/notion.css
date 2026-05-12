@@ -844,6 +844,11 @@ div[data-link-preview-card='true'].link-preview-card {
   font-size: inherit;
 }
 
+.nobelium-toggle-heading > .nobelium-toggle-summary .collapsed-label {
+  margin: 0;
+  line-height: inherit;
+}
+
 .nobelium-toggle[open] > .nobelium-toggle-summary .collapsed-label {
   display: none;
 }

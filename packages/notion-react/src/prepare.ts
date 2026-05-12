@@ -12,6 +12,7 @@ import type {
   NotionHeading1Block,
   NotionHeading2Block,
   NotionHeading3Block,
+  NotionHeading4Block,
   NotionImageBlock,
   NotionLinkPreviewBlock,
   NotionLinkToPageBlock,
@@ -64,6 +65,8 @@ function getBlockRichTextCollections(block: NotionBlock): NotionRichText[][] {
       return [block.heading_2.rich_text]
     case 'heading_3':
       return [block.heading_3.rich_text]
+    case 'heading_4':
+      return [block.heading_4.rich_text]
     case 'quote':
       return [block.quote.rich_text]
     case 'callout':

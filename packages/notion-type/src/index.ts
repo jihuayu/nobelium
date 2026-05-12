@@ -67,6 +67,8 @@ export type {
   NotionHeading1Block,
   NotionHeading2Block,
   NotionHeading3Block,
+  NotionHeading4Block,
+  NotionHeadingPayload,
   NotionImageBlock,
   NotionLinkPreviewBlock,
   NotionLinkToPageBlock,
