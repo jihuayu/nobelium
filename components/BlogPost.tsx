@@ -11,8 +11,8 @@ interface BlogPostProps {
 
 const BlogPost = ({ post, blogPath, lang, timezone }: BlogPostProps) => {
   return (
-    <Link href={`${blogPath}/${post.slug}`} prefetch={false} className="block">
-      <article key={post.id} className="blog-post-card mb-6 md:mb-8">
+    <Link href={`${blogPath}/${post.slug}`} prefetch={false}>
+      <article key={post.id} className="mb-6 md:mb-8">
         <header className="flex flex-col justify-between md:flex-row md:items-baseline">
           <h2 className="text-lg md:text-xl font-medium mb-2 cursor-pointer text-black dark:text-gray-100">
             {post.title}
