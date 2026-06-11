@@ -7,12 +7,17 @@ import { NotionRenderer, type NotionRenderModel } from '../src/index'
 const model: NotionRenderModel = {
   document: {
     pageId: 'page-1',
-    rootIds: ['heading', 'toggleable-heading', 'toggleable-heading-4', 'paragraph', 'code', 'tabs'],
+    rootIds: ['heading', 'heading-4', 'toggleable-heading', 'toggleable-heading-4', 'paragraph', 'code', 'tabs'],
     blocksById: {
       heading: {
         id: 'heading',
         type: 'heading_1',
         heading_1: { rich_text: [{ type: 'text', plain_text: 'Title' }] }
+      },
+      'heading-4': {
+        id: 'heading-4',
+        type: 'heading_4',
+        heading_4: { rich_text: [{ type: 'text', plain_text: 'Detail' }] }
       },
       'toggleable-heading': {
         id: 'toggleable-heading',
@@ -113,7 +118,7 @@ const model: NotionRenderModel = {
       }
     },
     childrenById: {
-      'page-1': ['heading', 'toggleable-heading', 'toggleable-heading-4', 'paragraph', 'code', 'tabs'],
+      'page-1': ['heading', 'heading-4', 'toggleable-heading', 'toggleable-heading-4', 'paragraph', 'code', 'tabs'],
       'toggleable-heading': ['toggleable-heading-body'],
       'toggleable-heading-4': ['toggleable-heading-4-body'],
       tabs: ['tab-panel-1', 'tab-panel-2', 'tab-panel-empty'],
@@ -149,6 +154,7 @@ const model: NotionRenderModel = {
 test('NotionRenderer renders normalized model', () => {
   const html = renderToStaticMarkup(React.createElement(NotionRenderer, { model }))
   assert.match(html, /Title/)
+  assert.match(html, /<h4[^>]*>.*Detail.*<\/h4>/)
   assert.match(html, /<details[^>]*id="notion-heading-toggleableheading"/)
   assert.match(html, /Foldable section/)
   assert.match(html, /Hidden until opened/)

@@ -268,4 +268,3 @@ export function normalizeCodeLanguage(rawLanguage: string): string {
 export function renderFallbackHighlightedCodeHtml(source: string): string {
   return `<pre><code>${escapeHtml(source)}</code></pre>`
 }
-

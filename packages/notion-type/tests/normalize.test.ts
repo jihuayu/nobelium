@@ -160,6 +160,28 @@ test('normalizeNotionDocument preserves tab blocks and nested tab panel content'
   assert.equal(document.blocksById['tab-panel-1']?.type, 'paragraph')
 })
 
+test('normalizeNotionDocument supports heading_4 blocks in document and toc', () => {
+  const document = normalizeNotionDocument({
+    pageId: 'page-heading-4',
+    rootBlocks: [
+      {
+        id: 'heading-4',
+        type: 'heading_4',
+        heading_4: {
+          rich_text: [{ type: 'text', plain_text: 'Small section' }]
+        }
+      }
+    ]
+  })
+
+  const block = document.blocksById['heading-4']
+  assert.equal(block?.type, 'heading_4')
+  if (block?.type === 'heading_4') {
+    assert.equal(block.heading_4.rich_text[0]?.plain_text, 'Small section')
+  }
+  assert.deepEqual(document.toc, [{ id: 'heading-4', text: 'Small section', indentLevel: 3 }])
+})
+
 test('normalizeNotionDocument coerces unknown block types into unsupported blocks', () => {
   const document = normalizeNotionDocument({
     pageId: 'page-3',
