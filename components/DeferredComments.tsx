@@ -16,14 +16,37 @@ const Utterances = dynamic(() => import('@/components/Utterances'), {
 export default function DeferredComments({ issueTerm, repo, appearance }: DeferredCommentsProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [enabled, setEnabled] = useState(false)
+  const [suppressed, setSuppressed] = useState(false)
 
   useEffect(() => {
     if (enabled) return undefined
+    if (suppressed) return undefined
     if (!containerRef.current) return undefined
 
     let idleTimer: ReturnType<typeof setTimeout> | null = null
     let idleId: number | null = null
-    const activate = () => setEnabled(true)
+    let controller: AbortController | null = null
+    let cancelled = false
+    const activate = async () => {
+      controller = new AbortController()
+      try {
+        const response = await fetch('/api/request-geo', {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-store'
+        })
+        const payload = await response.json().catch(() => null)
+        if (cancelled || controller.signal.aborted) return
+        if (response.ok && payload?.hideComments === true) {
+          setSuppressed(true)
+          return
+        }
+      } catch {
+        if (cancelled || controller?.signal.aborted) return
+      }
+
+      if (!cancelled) setEnabled(true)
+    }
 
     const scheduleActivate = () => {
       if (typeof window !== 'undefined' && window.requestIdleCallback) {
@@ -46,6 +69,8 @@ export default function DeferredComments({ issueTerm, repo, appearance }: Deferr
     observer.observe(containerRef.current)
 
     return () => {
+      cancelled = true
+      controller?.abort()
       observer.disconnect()
       if (idleId !== null && typeof window !== 'undefined' && window.cancelIdleCallback) {
         window.cancelIdleCallback(idleId)
@@ -54,7 +79,9 @@ export default function DeferredComments({ issueTerm, repo, appearance }: Deferr
         globalThis.clearTimeout(idleTimer)
       }
     }
-  }, [enabled])
+  }, [enabled, suppressed])
+
+  if (suppressed) return null
 
   return (
     <div ref={containerRef}>

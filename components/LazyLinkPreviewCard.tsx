@@ -1,0 +1,167 @@
+'use client'
+
+/* eslint-disable @next/next/no-img-element */
+
+import { useEffect, useRef, useState } from 'react'
+import cn from 'classnames'
+import type { LinkPreviewCardProps, LinkPreviewData } from '@jihuayu/notion-react'
+import { normalizePreviewUrl } from '@/lib/link-preview/normalize'
+
+const previewRequestCache = new Map<string, Promise<LinkPreviewData | null>>()
+
+function getHostname(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./i, '')
+  } catch {
+    return url
+  }
+}
+
+function buildFallbackPreview(url: string): LinkPreviewData {
+  const hostname = getHostname(url)
+  return {
+    url,
+    hostname,
+    title: hostname || url,
+    description: '',
+    image: '',
+    icon: hostname
+      ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
+      : ''
+  }
+}
+
+function loadPreview(url: string): Promise<LinkPreviewData | null> {
+  const cached = previewRequestCache.get(url)
+  if (cached) return cached
+
+  const request = fetch(`/api/link-preview?${new URLSearchParams({ url }).toString()}`, {
+    method: 'GET'
+  })
+    .then(async response => {
+      const payload = await response.json().catch(() => null)
+      if (!response.ok || !payload || typeof payload !== 'object') return null
+      return payload as LinkPreviewData
+    })
+    .catch(() => null)
+
+  previewRequestCache.set(url, request)
+  return request
+}
+
+export default function LazyLinkPreviewCard({ url, className, preview }: LinkPreviewCardProps) {
+  const hostRef = useRef<HTMLAnchorElement | null>(null)
+  const normalizedUrl = normalizePreviewUrl(url) || ''
+  const [remotePreviewState, setRemotePreviewState] = useState<{
+    url: string
+    preview: LinkPreviewData | null
+  }>({ url: '', preview: null })
+  const remotePreview = remotePreviewState.url === normalizedUrl ? remotePreviewState.preview : null
+  const fallback = buildFallbackPreview(normalizedUrl || url)
+  const resolvedPreview = {
+    ...fallback,
+    ...(remotePreview || {}),
+    ...(preview || {}),
+    url: preview?.url || remotePreview?.url || normalizedUrl || fallback.url
+  }
+
+  const displayUrl = resolvedPreview.url || normalizedUrl
+  const generatedImageUrl = displayUrl ? `${resolvedPreview.image || ''}`.trim() : ''
+
+  useEffect(() => {
+    if (preview || !normalizedUrl || !hostRef.current) return undefined
+
+    let cancelled = false
+    let idleTimer: ReturnType<typeof setTimeout> | null = null
+    let idleId: number | null = null
+
+    const activate = () => {
+      void loadPreview(normalizedUrl).then(nextPreview => {
+        if (!cancelled && nextPreview) {
+          setRemotePreviewState({ url: normalizedUrl, preview: nextPreview })
+        }
+      })
+    }
+
+    const scheduleActivate = () => {
+      if (typeof window !== 'undefined' && window.requestIdleCallback) {
+        idleId = window.requestIdleCallback(activate, { timeout: 1200 })
+      } else {
+        idleTimer = globalThis.setTimeout(activate, 160)
+      }
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some(entry => entry.isIntersecting)) return
+      observer.disconnect()
+      scheduleActivate()
+    }, { root: null, rootMargin: '480px 0px', threshold: 0.01 })
+    observer.observe(hostRef.current)
+
+    return () => {
+      cancelled = true
+      observer.disconnect()
+      if (idleId !== null && typeof window !== 'undefined' && window.cancelIdleCallback) {
+        window.cancelIdleCallback(idleId)
+      }
+      if (idleTimer !== null) globalThis.clearTimeout(idleTimer)
+    }
+  }, [normalizedUrl, preview])
+
+  if (!displayUrl) return null
+
+  return (
+    <a
+      ref={hostRef}
+      href={displayUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-link-preview-card="true"
+      data-has-image={generatedImageUrl ? 'true' : 'false'}
+      className={cn(
+        'link-preview-card block my-4 h-[110px] rounded-md border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors overflow-hidden bg-transparent opacity-100 hover:opacity-100',
+        className
+      )}
+      style={{ opacity: 1 }}
+    >
+      <div className="link-preview-card-inner flex h-full items-stretch">
+        <div className={cn('link-preview-card-main min-w-0 flex flex-col px-3 py-2', generatedImageUrl ? 'basis-[65%] shrink-0' : 'flex-1')}>
+          <p className="text-base text-zinc-900 dark:text-zinc-100 font-medium truncate">
+            {resolvedPreview.title || resolvedPreview.hostname || displayUrl}
+          </p>
+          {resolvedPreview.description && (
+            <p
+              className="mt-0.5 text-zinc-600 dark:text-zinc-300 text-sm leading-5 overflow-hidden"
+              style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+            >
+              {resolvedPreview.description}
+            </p>
+          )}
+          <div className="mt-auto pt-1.5 flex items-center gap-2 text-zinc-800 dark:text-zinc-200 text-xs">
+            {resolvedPreview.icon
+              ? (
+                <span className="relative h-4 w-4 rounded-sm flex-none overflow-hidden bg-transparent">
+                  <img src={resolvedPreview.icon} alt="" className="h-4 w-4 rounded-sm bg-transparent object-contain" loading="lazy" />
+                </span>
+                )
+              : <span className="h-4 w-4 rounded-sm bg-zinc-300 dark:bg-zinc-700 flex-none" />}
+            <span className="truncate">{displayUrl}</span>
+          </div>
+        </div>
+        {generatedImageUrl && (
+          <div className="link-preview-card-media basis-[35%] shrink-0 h-full">
+            <div className="relative h-full w-full overflow-hidden bg-zinc-200/80 dark:bg-zinc-700/70">
+              <img
+                src={generatedImageUrl}
+                alt={resolvedPreview.title || resolvedPreview.hostname || 'Link preview'}
+                className="link-preview-cover pointer-events-none h-full w-full object-cover transition-opacity duration-200"
+                style={{ filter: 'none' }}
+                loading="lazy"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </a>
+  )
+}

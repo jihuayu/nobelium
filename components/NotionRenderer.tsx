@@ -2,13 +2,14 @@ import {
   type LinkPreviewMap,
   type NotionRenderOptions,
 } from '@jihuayu/notion-react'
+import BaseNotionRenderer from '@/packages/notion-react/src/components/NotionRenderer'
 import type { NotionDocument, PageHrefMap, PagePreviewMap } from '@jihuayu/notion-type'
 import { prepareNotionRenderModel } from '@jihuayu/notion-react/prepare'
-import NotionRendererClient from '@/components/NotionRendererClient'
 import { config } from '@/lib/server/config'
 import { resolvePageHref } from '@/lib/notion/pageLinkMap'
-import { getLinkPreviewByNormalizedUrl } from '@/lib/server/linkPreview'
 import { highlightCodeToHtml } from '@/lib/server/shiki'
+import { FONTS_MISANS } from '@/consts'
+import LazyLinkPreviewCard from '@/components/LazyLinkPreviewCard'
 
 interface NotionRendererProps {
   document: NotionDocument | null
@@ -48,7 +49,6 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
         displayLanguage: highlighted.displayLanguage
       }
     },
-    resolveLinkPreview: getLinkPreviewByNormalizedUrl,
     resolvePageHref: id => resolvePageHref(id, pageLinkMap),
     initialLinkPreviewMap: linkPreviewMap,
     initialPageHrefMap: pageLinkMap,
@@ -58,9 +58,15 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
   if (!model) return null
 
   return (
-    <NotionRendererClient
+    <BaseNotionRenderer
       model={model}
+      components={{
+        leaves: {
+          LinkPreviewCard: LazyLinkPreviewCard
+        }
+      }}
       renderOptions={buildRenderOptions()}
+      style={{ ['--notion-font-family' as string]: FONTS_MISANS.join(', ') }}
     />
   )
 }
