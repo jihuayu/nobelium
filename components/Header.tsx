@@ -92,7 +92,7 @@ export default function Header({
   navLocale
 }: HeaderProps) {
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
-  const headerAnimClass = fullWidth ? 'notion-header-anim-wide' : 'notion-header-anim-normal'
+  const headerAnimClass = fullWidth ? 'notion-header-anim-wide' : ''
 
   return (
     <>

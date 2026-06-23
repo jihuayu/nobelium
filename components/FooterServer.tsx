@@ -9,7 +9,7 @@ export default function FooterServer({ fullWidth }: FooterServerProps) {
   const currentYear = new Date().getFullYear()
   const since = +config.since
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
-  const footerAnimClass = fullWidth ? 'notion-footer-anim-wide' : 'notion-footer-anim-normal'
+  const footerAnimClass = fullWidth ? 'notion-footer-anim-wide' : ''
 
   return (
     <div
