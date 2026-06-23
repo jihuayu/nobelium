@@ -22,7 +22,7 @@ import {
   parseUrl,
   rewriteNotionPageHref
 } from '../utils/notion'
-import DefaultDateMention from './DateMention'
+import DefaultDateMention from './DateMentionStatic'
 import DefaultUrlMention from './UrlMention'
 
 function isGithubUrl(url: string | null): boolean {

@@ -8,6 +8,7 @@ import { prepareNotionRenderModel } from '@jihuayu/notion-react/prepare'
 import { config } from '@/lib/server/config'
 import { resolvePageHref } from '@/lib/notion/pageLinkMap'
 import { highlightCodeToHtml } from '@/lib/server/shiki'
+import { getLinkPreview } from '@/lib/server/linkPreview'
 import { FONTS_MISANS } from '@/consts'
 import LazyLinkPreviewCard from '@/components/LazyLinkPreviewCard'
 
@@ -49,6 +50,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
         displayLanguage: highlighted.displayLanguage
       }
     },
+    resolveLinkPreview: url => getLinkPreview(url),
     resolvePageHref: id => resolvePageHref(id, pageLinkMap),
     initialLinkPreviewMap: linkPreviewMap,
     initialPageHrefMap: pageLinkMap,

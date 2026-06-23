@@ -1,6 +1,6 @@
 'use client'
 
-import { useDeferredValue, useEffect, useId, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import BlogPost from '@/components/BlogPost'
 import Tags from '@/components/Tags'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
@@ -15,6 +15,9 @@ interface SearchClientProps {
   blogPath: string
   lang: string
   timezone?: string
+  tagsSlot?: ReactNode
+  initialResultsCount?: number
+  children?: ReactNode
 }
 
 function hasMinQueryLength(value: string): boolean {
@@ -29,7 +32,10 @@ export default function SearchClient({
   loadTagsRemotely = false,
   blogPath,
   lang,
-  timezone
+  timezone,
+  tagsSlot,
+  initialResultsCount = 0,
+  children
 }: SearchClientProps) {
   const searchInputId = useId()
   const searchHintId = useId()
@@ -135,6 +141,8 @@ export default function SearchClient({
   const trimmedQuery = deferredSearchValue.trim()
   const isQueryEmpty = !trimmedQuery
   const isQueryTooShort = !isQueryEmpty && !hasMinQueryLength(trimmedQuery)
+  const shouldShowRemoteResults = shouldUseNotionSearch && !isQueryEmpty && !isQueryTooShort
+  const hasInitialResults = initialResultsCount > 0
   const localFilteredPosts = useMemo(() => {
     if (!trimmedQuery) return posts
     const query = trimmedQuery.toLowerCase()
@@ -144,11 +152,12 @@ export default function SearchClient({
   }, [trimmedQuery, posts, searchablePosts])
 
   const filteredBlogPosts = shouldUseNotionSearch
-    ? (isQueryEmpty || isQueryTooShort ? posts : remotePosts)
+    ? (shouldShowRemoteResults ? remotePosts : [])
     : localFilteredPosts
 
-  const showNotionSearchHint = shouldUseNotionSearch && !posts.length && (isQueryEmpty || isQueryTooShort) && !isSearching && !searchError
-  const showEmptyState = !showNotionSearchHint && !isSearching && !searchError && !filteredBlogPosts.length
+  const showInitialResults = shouldUseNotionSearch && !shouldShowRemoteResults && hasInitialResults
+  const showNotionSearchHint = shouldUseNotionSearch && !showInitialResults && (isQueryEmpty || isQueryTooShort) && !isSearching && !searchError
+  const showEmptyState = !showNotionSearchHint && !showInitialResults && !isSearching && !searchError && !filteredBlogPosts.length
   const notionSearchHint = isQueryTooShort
     ? `Type at least ${MIN_SEARCH_QUERY_LENGTH} characters to search posts in Notion.`
     : 'Type keywords to search posts in Notion.'
@@ -203,10 +212,12 @@ export default function SearchClient({
           ></path>
         </svg>
       </div>
-      <Tags
-        tags={displayTags}
-        currentTag={currentTag}
-      />
+      {tagsSlot || (
+        <Tags
+          tags={displayTags}
+          currentTag={currentTag}
+        />
+      )}
       <div className="article-container my-8">
         {statusMessage && (
           <p id={searchStatusId} className="sr-only" aria-live="polite" aria-atomic="true">
@@ -225,6 +236,7 @@ export default function SearchClient({
         {showEmptyState && (
           <p className="text-stone-500 dark:text-stone-400" role="status">No posts found.</p>
         )}
+        {showInitialResults && children}
         {filteredBlogPosts.slice(0, 20).map(post => (
           <BlogPost key={post.id} post={post} blogPath={blogPath} lang={lang} timezone={timezone} />
         ))}
