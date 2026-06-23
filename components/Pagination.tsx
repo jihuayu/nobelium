@@ -15,7 +15,7 @@ export default async function Pagination({ page, showNext }: PaginationProps) {
   if (currentPage !== 1 && !showNext) additionalClassName = 'justify-start'
 
   return (
-    <div className={`flex font-medium text-black dark:text-gray-100 ${additionalClassName}`}>
+    <div className={`flex font-medium text-zinc-500 dark:text-zinc-400 ${additionalClassName}`}>
       {currentPage !== 1 && (
         <Link
           href={
@@ -25,14 +25,21 @@ export default async function Pagination({ page, showNext }: PaginationProps) {
           }
           prefetch={false}
           rel="prev"
-          className="block cursor-pointer"
+          className="group flex items-center gap-1.5 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-150 ease-out"
         >
-          ← {locale.PAGINATION.PREV}
+          <span className="transition-transform duration-150 ease-out group-hover:-translate-x-0.5">←</span>
+          {locale.PAGINATION.PREV}
         </Link>
       )}
       {showNext && (
-        <Link href={`/page/${currentPage + 1}`} prefetch={false} rel="next" className="block cursor-pointer">
-          {locale.PAGINATION.NEXT} →
+        <Link
+          href={`/page/${currentPage + 1}`}
+          prefetch={false}
+          rel="next"
+          className="group flex items-center gap-1.5 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-150 ease-out"
+        >
+          {locale.PAGINATION.NEXT}
+          <span className="transition-transform duration-150 ease-out group-hover:translate-x-0.5">→</span>
         </Link>
       )}
     </div>

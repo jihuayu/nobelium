@@ -15,10 +15,10 @@ const Tags = ({ tags, currentTag }: TagsProps) => {
           return (
             <li
               key={key}
-              className={`mr-3 font-medium border whitespace-nowrap dark:text-gray-300 ${
+              className={`mr-3 font-medium border whitespace-nowrap rounded-md transition-colors duration-150 ease-out ${
                 selected
-                  ? 'text-white bg-black border-black dark:bg-gray-600 dark:border-gray-600'
-                  : 'bg-gray-100 border-gray-100 text-gray-400 dark:bg-night dark:border-gray-800'
+                  ? 'text-white bg-zinc-900 border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100'
+                  : 'bg-transparent border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:text-zinc-100'
               }`}
             >
               <Link

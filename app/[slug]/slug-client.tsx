@@ -43,15 +43,17 @@ export default function SlugPostClient({
 
       <div
         className={cn(
-          'px-4 flex justify-between font-medium text-gray-500 dark:text-gray-400 my-5',
+          'px-4 flex justify-between font-medium text-zinc-500 dark:text-zinc-400 my-5',
           fullWidth ? 'md:px-24' : `mx-auto ${ARTICLE_CONTENT_MAX_WIDTH_CLASS}`
         )}
       >
-        <Link href={homePath || '/'} className="mt-2 cursor-pointer hover:text-black dark:hover:text-gray-100">
-          ← {backLabel}
+        <Link href={homePath || '/'} className="group mt-2 flex items-center gap-1.5 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-150 ease-out">
+          <span className="transition-transform duration-150 ease-out group-hover:-translate-x-0.5">←</span>
+          {backLabel}
         </Link>
-        <a href="#top" className="mt-2 cursor-pointer hover:text-black dark:hover:text-gray-100">
-          ↑ {topLabel}
+        <a href="#top" className="group mt-2 flex items-center gap-1.5 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-150 ease-out">
+          <span className="transition-transform duration-150 ease-out group-hover:-translate-y-0.5">↑</span>
+          {topLabel}
         </a>
       </div>
     </>
