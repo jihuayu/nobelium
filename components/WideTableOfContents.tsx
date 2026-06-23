@@ -14,6 +14,7 @@ function buildTargetId(id: string) {
 
 export default function WideTableOfContents({ toc }: WideTableOfContentsProps) {
   const [open, setOpen] = useState(false)
+  const [hovered, setHovered] = useState(false)
   const [activeId, setActiveId] = useState<string>('')
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -57,7 +58,12 @@ export default function WideTableOfContents({ toc }: WideTableOfContentsProps) {
   const activeItem = toc.find(item => buildTargetId(item.id) === activeId)
 
   return (
-    <div ref={panelRef} className="fixed bottom-6 right-6 z-30">
+    <div
+      ref={panelRef}
+      className="fixed bottom-6 right-6 z-30 hidden md:block"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       {open && (
         <nav
           aria-label="Table of contents"
@@ -86,6 +92,7 @@ export default function WideTableOfContents({ toc }: WideTableOfContentsProps) {
         type="button"
         onClick={() => setOpen(v => !v)}
         aria-label="Toggle table of contents"
+        aria-expanded={open}
         className={cn(
           'flex h-11 w-11 items-center justify-center rounded-full border shadow-md transition-all duration-150 cursor-pointer',
           open
@@ -105,7 +112,7 @@ export default function WideTableOfContents({ toc }: WideTableOfContentsProps) {
           )}
         </svg>
       </button>
-      {!open && activeItem && (
+      {!open && hovered && activeItem && (
         <span className="absolute bottom-full right-0 mb-2 max-w-[200px] truncate rounded bg-stone-800 dark:bg-stone-700 px-2 py-1 text-xs text-stone-100 dark:text-stone-200 pointer-events-none">
           {activeItem.text}
         </span>
