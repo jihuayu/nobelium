@@ -1,3 +1,5 @@
+export type PostFormat = 'wide' | 'codeHeavy'
+
 export interface PostData {
   id: string
   title: string
@@ -6,6 +8,7 @@ export interface PostData {
   tags: string[]
   type: string[]
   status: string[]
+  formats: PostFormat[]
   fullWidth: boolean
   date: number
 }

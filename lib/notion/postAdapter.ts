@@ -12,7 +12,7 @@ import {
 } from '@jihuayu/notion-data'
 import type { PageHrefMap, PagePreviewMap } from '@jihuayu/notion-type'
 import { buildPagePreviewMap } from '@jihuayu/notion-data'
-import type { PostData } from './filterPublishedPosts'
+import type { PostData, PostFormat } from './filterPublishedPosts'
 
 export { normalizeNotionUuid } from '@jihuayu/notion-data'
 
@@ -24,6 +24,7 @@ export interface PostFieldNames {
   status: string | string[]
   tags: string | string[]
   date: string | string[]
+  formats: string | string[]
 }
 
 export const BLOG_POST_FIELD_NAMES: PostFieldNames = {
@@ -33,7 +34,8 @@ export const BLOG_POST_FIELD_NAMES: PostFieldNames = {
   type: 'type',
   status: 'status',
   tags: ['tags', 'tag'],
-  date: 'date'
+  date: 'date',
+  formats: ['格式', 'format', 'formats']
 }
 
 interface MapPageToPostOptions {
@@ -43,6 +45,32 @@ interface MapPageToPostOptions {
 
 function normalizeSingleSelect(value: string | null): string[] {
   return value ? [value] : []
+}
+
+function normalizePostFormats(values: string[]): PostFormat[] {
+  const selected = new Set(values.map(value => `${value || ''}`.trim().toLowerCase()).filter(Boolean))
+  const formats: PostFormat[] = []
+
+  if (
+    selected.has('全宽') ||
+    selected.has('wide') ||
+    selected.has('full width') ||
+    selected.has('fullwidth')
+  ) {
+    formats.push('wide')
+  }
+
+  if (
+    selected.has('多代码') ||
+    selected.has('codeheavy') ||
+    selected.has('code heavy') ||
+    selected.has('multi code') ||
+    selected.has('multicode')
+  ) {
+    formats.push('codeHeavy')
+  }
+
+  return formats
 }
 
 function resolveFieldNames(overrides: Partial<PostFieldNames> = {}): PostFieldNames {
@@ -88,6 +116,7 @@ export function mapNotionPageToPost(
   const type = readNotionSelectProperty(properties, fieldNames.type)
   const status = readNotionSelectProperty(properties, fieldNames.status)
   const tags = readNotionMultiSelectProperty(properties, fieldNames.tags)
+  const formats = normalizePostFormats(readNotionMultiSelectProperty(properties, fieldNames.formats))
 
   const dateStart = readNotionDateStartProperty(properties, fieldNames.date)
   const date = dateStart
@@ -102,7 +131,8 @@ export function mapNotionPageToPost(
     tags,
     type: normalizeSingleSelect(type),
     status: normalizeSingleSelect(status),
-    fullWidth: false,
+    formats,
+    fullWidth: formats.includes('wide'),
     date
   }
 }

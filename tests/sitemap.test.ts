@@ -16,6 +16,7 @@ test('buildSitemapEntries includes site routes and excludes api routes', () => {
         tags: ['技术'],
         type: ['Post'],
         status: ['Published'],
+        formats: [],
         fullWidth: false,
         date: new Date('2026-03-10T00:00:00.000Z').valueOf()
       },
@@ -27,6 +28,7 @@ test('buildSitemapEntries includes site routes and excludes api routes', () => {
         tags: [],
         type: ['Page'],
         status: ['Published'],
+        formats: [],
         fullWidth: false,
         date: new Date('2026-03-09T00:00:00.000Z').valueOf()
       }
@@ -40,6 +42,7 @@ test('buildSitemapEntries includes site routes and excludes api routes', () => {
         tags: ['技术'],
         type: ['Post'],
         status: ['Published'],
+        formats: [],
         fullWidth: false,
         date: new Date('2026-03-10T00:00:00.000Z').valueOf()
       },
@@ -51,6 +54,7 @@ test('buildSitemapEntries includes site routes and excludes api routes', () => {
         tags: ['技术'],
         type: ['Post'],
         status: ['Published'],
+        formats: [],
         fullWidth: false,
         date: new Date('2026-03-08T00:00:00.000Z').valueOf()
       }
@@ -83,6 +87,7 @@ test('buildSitemapEntries prefixes configured basePath', () => {
         tags: [],
         type: ['Post'],
         status: ['Published'],
+        formats: [],
         fullWidth: false,
         date: new Date('2026-03-10T00:00:00.000Z').valueOf()
       }
@@ -96,6 +101,7 @@ test('buildSitemapEntries prefixes configured basePath', () => {
         tags: [],
         type: ['Post'],
         status: ['Published'],
+        formats: [],
         fullWidth: false,
         date: new Date('2026-03-10T00:00:00.000Z').valueOf()
       }

@@ -60,6 +60,101 @@ test('mapPageToPost maps required page metadata into PostData', () => {
   assert.equal(post.title, 'Post Title')
   assert.equal(post.slug, 'post-title')
   assert.equal(post.summary, 'Summary text')
+  assert.deepEqual(post.formats, [])
+  assert.equal(post.fullWidth, false)
+})
+
+test('mapPageToPost maps Notion 格式 multi-select into article formats', () => {
+  const basePage = {
+    id: 'page-format',
+    created_time: '2024-01-01T00:00:00.000Z',
+    last_edited_time: '2024-01-02T00:00:00.000Z',
+    parent: {
+      type: 'data_source_id',
+      data_source_id: 'source-1'
+    },
+    properties: {
+      title: {
+        type: 'title',
+        title: [{ plain_text: 'Format Title' }]
+      },
+      slug: {
+        type: 'rich_text',
+        rich_text: [{ plain_text: 'format-title' }]
+      },
+      summary: {
+        type: 'rich_text',
+        rich_text: [{ plain_text: 'Format summary' }]
+      },
+      type: {
+        type: 'select',
+        select: { name: 'Post' }
+      },
+      status: {
+        type: 'status',
+        status: { name: 'Published' }
+      }
+    }
+  }
+
+  const widePost = mapNotionPageToPost({
+    ...basePage,
+    properties: {
+      ...basePage.properties,
+      格式: {
+        type: 'multi_select',
+        multi_select: [{ name: '全宽' }]
+      }
+    }
+  })
+
+  assert.deepEqual(widePost.formats, ['wide'])
+  assert.equal(widePost.fullWidth, true)
+
+  const codeHeavyPost = mapNotionPageToPost({
+    ...basePage,
+    id: 'page-format-code',
+    properties: {
+      ...basePage.properties,
+      格式: {
+        type: 'multi_select',
+        multi_select: [{ name: '多代码' }]
+      }
+    }
+  })
+
+  assert.deepEqual(codeHeavyPost.formats, ['codeHeavy'])
+  assert.equal(codeHeavyPost.fullWidth, false)
+
+  const combinedPost = mapNotionPageToPost({
+    ...basePage,
+    id: 'page-format-combined',
+    properties: {
+      ...basePage.properties,
+      格式: {
+        type: 'multi_select',
+        multi_select: [{ name: '全宽' }, { name: '多代码' }, { name: '未知' }]
+      }
+    }
+  })
+
+  assert.deepEqual(combinedPost.formats, ['wide', 'codeHeavy'])
+  assert.equal(combinedPost.fullWidth, true)
+
+  const fallbackPost = mapNotionPageToPost({
+    ...basePage,
+    id: 'page-format-fallback',
+    properties: {
+      ...basePage.properties,
+      格式: {
+        type: 'multi_select',
+        multi_select: [{ name: '未知' }]
+      }
+    }
+  })
+
+  assert.deepEqual(fallbackPost.formats, [])
+  assert.equal(fallbackPost.fullWidth, false)
 })
 
 test('postAdapter builds preview map from post records', () => {
