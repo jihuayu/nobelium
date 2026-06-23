@@ -4,7 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Metadata } from 'next'
 import Script from 'next/script'
-import { IBM_Plex_Sans } from 'next/font/google'
+import { IBM_Plex_Sans, Noto_Serif_SC, Source_Serif_4 } from 'next/font/google'
 import { config } from '@/lib/server/config'
 import { buildPageMetadata } from '@/lib/server/metadata'
 import { prepareDayjs } from '@/lib/dayjs'
@@ -16,6 +16,23 @@ const ibmPlexSans = IBM_Plex_Sans({
   style: ['normal'],
   display: 'swap',
   variable: '--font-ibm-plex-sans'
+})
+
+const notoSerifSC = Noto_Serif_SC({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  style: ['normal'],
+  display: 'swap',
+  variable: '--font-noto-serif-sc',
+  preload: false
+})
+
+const sourceSerif4 = Source_Serif_4({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  style: ['normal'],
+  display: 'swap',
+  variable: '--font-source-serif-4'
 })
 
 const defaultMetadata = buildPageMetadata()
@@ -173,7 +190,7 @@ export default async function RootLayout({
   })();`
 
   return (
-    <html lang={config.lang} className={cn(colorSchemeClass, ibmPlexSans.variable)} suppressHydrationWarning>
+    <html lang={config.lang} className={cn(colorSchemeClass, ibmPlexSans.variable, notoSerifSC.variable, sourceSerif4.variable)} suppressHydrationWarning>
       <head>
         {config.appearance === 'auto' ? (
           <>
