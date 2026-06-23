@@ -56,6 +56,7 @@ export default function LazyLinkPreviewCard({ url, className, preview }: LinkPre
     url: string
     preview: LinkPreviewData | null
   }>({ url: '', preview: null })
+  const [imageFailed, setImageFailed] = useState(false)
   const remotePreview = remotePreviewState.url === normalizedUrl ? remotePreviewState.preview : null
   const fallback = buildFallbackPreview(normalizedUrl || url)
   const resolvedPreview = {
@@ -67,6 +68,7 @@ export default function LazyLinkPreviewCard({ url, className, preview }: LinkPre
 
   const displayUrl = resolvedPreview.url || normalizedUrl
   const generatedImageUrl = displayUrl ? `${resolvedPreview.image || ''}`.trim() : ''
+  const showImage = generatedImageUrl && !imageFailed
 
   useEffect(() => {
     if (preview || !normalizedUrl || !hostRef.current) return undefined
@@ -117,7 +119,7 @@ export default function LazyLinkPreviewCard({ url, className, preview }: LinkPre
       target="_blank"
       rel="noopener noreferrer"
       data-link-preview-card="true"
-      data-has-image={generatedImageUrl ? 'true' : 'false'}
+      data-has-image={showImage ? 'true' : 'false'}
       className={cn(
         'link-preview-card block my-4 h-[110px] rounded-md border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors overflow-hidden bg-transparent opacity-100 hover:opacity-100',
         className
@@ -125,7 +127,7 @@ export default function LazyLinkPreviewCard({ url, className, preview }: LinkPre
       style={{ opacity: 1 }}
     >
       <div className="link-preview-card-inner flex h-full items-stretch">
-        <div className={cn('link-preview-card-main min-w-0 flex flex-col px-3 py-2', generatedImageUrl ? 'basis-[65%] shrink-0' : 'flex-1')}>
+        <div className={cn('link-preview-card-main min-w-0 flex flex-col px-3 py-2', showImage ? 'basis-[65%] shrink-0' : 'flex-1')}>
           <p className="text-base text-zinc-900 dark:text-zinc-100 font-medium truncate">
             {resolvedPreview.title || resolvedPreview.hostname || displayUrl}
           </p>
@@ -148,15 +150,16 @@ export default function LazyLinkPreviewCard({ url, className, preview }: LinkPre
             <span className="truncate">{displayUrl}</span>
           </div>
         </div>
-        {generatedImageUrl && (
+        {showImage && (
           <div className="link-preview-card-media basis-[35%] shrink-0 h-full">
-            <div className="relative h-full w-full overflow-hidden bg-zinc-200/80 dark:bg-zinc-700/70">
+            <div className="relative h-full w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
               <img
                 src={generatedImageUrl}
-                alt={resolvedPreview.title || resolvedPreview.hostname || 'Link preview'}
+                alt=""
                 className="link-preview-cover pointer-events-none h-full w-full object-cover transition-opacity duration-200"
                 style={{ filter: 'none' }}
                 loading="lazy"
+                onError={() => setImageFailed(true)}
               />
             </div>
           </div>

@@ -391,7 +391,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           }
           return (
             <figure key={block.id} className={cn(baseClassName, 'my-6')}>
-              <img src={source} alt={captionText || 'Notion image'} loading="lazy" className="w-full rounded-md" />
+              <img src={source} alt={captionText || 'Notion image'} loading="lazy" className="w-full rounded-md border border-zinc-200 dark:border-zinc-800" />
               {caption.length > 0 && <figcaption className="mt-2 notion-asset-caption whitespace-pre-wrap">{renderRichText(caption)}</figcaption>}
               {renderChildren(block.id)}
             </figure>
@@ -575,19 +575,29 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const iframeUrl = resolveEmbedIframeUrl(embedUrl)
           const normalizedEmbedUrl = normalizeRichTextUrl(embedUrl)
           const caption = block.embed.caption || []
+          let embedHostname = ''
+          try { if (embedUrl) embedHostname = new URL(embedUrl).hostname.replace(/^www\./i, '') } catch { embedHostname = '' }
           return (
             <div key={block.id} className={baseClassName}>
               <div className="my-4">
                 {iframeUrl || normalizedEmbedUrl
                   ? (
-                    <div className="relative w-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700" style={{ paddingTop: '56.25%' }}>
-                      <iframe
-                        src={iframeUrl || normalizedEmbedUrl}
-                        title={embedUrl || block.id}
-                        className="absolute top-0 left-0 h-full w-full"
-                        allowFullScreen
-                        loading="lazy"
-                      />
+                    <div className="notion-embed-frame overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800">
+                      {embedHostname && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-400 dark:text-zinc-500 border-b border-zinc-200 dark:border-zinc-800">
+                          <span className="inline-block h-2.5 w-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+                          <span className="truncate">{embedHostname}</span>
+                        </div>
+                      )}
+                      <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                        <iframe
+                          src={iframeUrl || normalizedEmbedUrl}
+                          title={embedUrl || block.id}
+                          className="absolute top-0 left-0 h-full w-full"
+                          allowFullScreen
+                          loading="lazy"
+                        />
+                      </div>
                     </div>
                   )
                   : embedUrl
@@ -644,7 +654,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           return (
             <div key={block.id} className={baseClassName}>
               <div className="my-4">
-                {!source ? <Unsupported block={block} className="" message="Unsupported audio block" /> : <audio src={source} controls preload="metadata" className="w-full" />}
+                {!source ? <Unsupported block={block} className="" message="Unsupported audio block" /> : <audio src={source} controls preload="metadata" className="notion-audio-block" />}
                 {caption.length > 0 && <div className="notion-asset-caption mt-2 whitespace-pre-wrap">{renderRichText(caption)}</div>}
               </div>
               {renderChildren(block.id)}

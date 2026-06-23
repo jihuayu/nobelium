@@ -54,10 +54,10 @@ export default function LinkPreviewCard({ url, className, preview }: LinkPreview
         </div>
         {generatedImageUrl && (
           <div className="link-preview-card-media basis-[35%] shrink-0 h-full">
-            <div className="relative h-full w-full overflow-hidden bg-zinc-200/80 dark:bg-zinc-700/70">
+            <div className="relative h-full w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
               <img
                 src={generatedImageUrl}
-                alt={resolvedPreview.title || resolvedPreview.hostname || 'Link preview'}
+                alt=""
                 className="link-preview-cover pointer-events-none h-full w-full object-cover transition-opacity duration-200"
                 style={{ filter: 'none' }}
                 loading="lazy"

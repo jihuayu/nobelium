@@ -15,6 +15,40 @@ function isDarkMode() {
   return typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
 }
 
+const MERMAID_LIGHT_THEME_VARIABLES = {
+  primaryColor: '#F4F4F5',
+  primaryBorderColor: '#D4D4D8',
+  primaryTextColor: '#27272A',
+  lineColor: '#52525B',
+  secondaryColor: '#E4E4E7',
+  tertiaryColor: '#FAFAFB',
+  background: '#FAFAFB',
+  mainBkg: '#F4F4F5',
+  nodeBorder: '#D4D4D8',
+  clusterBkg: '#FAFAFB',
+  clusterBorder: '#E4E4E7',
+  titleColor: '#27272A',
+  edgeLabelBackground: '#FAFAFB',
+  fontFamily: 'inherit'
+}
+
+const MERMAID_DARK_THEME_VARIABLES = {
+  primaryColor: '#27272A',
+  primaryBorderColor: '#3F3F46',
+  primaryTextColor: '#E4E4E5',
+  lineColor: '#A1A1AA',
+  secondaryColor: '#3F3F46',
+  tertiaryColor: '#18181B',
+  background: '#18181B',
+  mainBkg: '#27272A',
+  nodeBorder: '#3F3F46',
+  clusterBkg: '#18181B',
+  clusterBorder: '#27272A',
+  titleColor: '#E4E4E5',
+  edgeLabelBackground: '#18181B',
+  fontFamily: 'inherit'
+}
+
 function sanitizeRenderedSvg(svg: string): string {
   if (typeof DOMParser === 'undefined') return svg
 
@@ -133,7 +167,13 @@ export default defineComponent({
       try {
         container.innerHTML = ''
         const mermaid = await getMermaid()
-        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: isDarkMode() ? 'dark' : 'default' })
+        const dark = isDarkMode()
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: 'strict',
+          theme: 'base',
+          themeVariables: dark ? MERMAID_DARK_THEME_VARIABLES : MERMAID_LIGHT_THEME_VARIABLES
+        })
         const { svg, bindFunctions } = await mermaid.render(`${localId}_${themeVersion.value}_${renderToken}`, source, container)
         if (cancelled || renderTokenRef.current !== renderToken || !container.isConnected || containerRef.value !== container) return
         container.innerHTML = sanitizeRenderedSvg(svg)
