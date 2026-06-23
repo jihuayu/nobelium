@@ -18,14 +18,14 @@ export default function TableOfContents({ toc, className, style }: TableOfConten
   return (
     <nav
       aria-label="Table of contents"
-      className={cn(className, 'pl-2 text-sm text-zinc-700/70 dark:text-neutral-400')}
+      className={cn(className, 'pl-2 text-sm text-zinc-400 dark:text-zinc-500')}
       style={style}
     >
       {toc.map(node => (
         <div key={node.id}>
           <a
             href={`#${buildTargetId(node.id)}`}
-            className="block w-full py-1 text-left whitespace-nowrap overflow-hidden text-ellipsis hover:text-black dark:hover:text-white cursor-pointer transition duration-100"
+            className="block w-full py-1 text-left whitespace-nowrap overflow-hidden text-ellipsis hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer transition-colors duration-150 ease-out"
             style={{ paddingLeft: (node.indentLevel * 16) + 'px' }}
             title={node.text}
           >
