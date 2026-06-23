@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
+import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import HeaderBehavior from '@/components/HeaderBehavior'
 
 interface NavLocale {
@@ -91,14 +91,14 @@ export default function Header({
   autoCollapsedNavBar,
   navLocale
 }: HeaderProps) {
+  const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
+
   return (
     <>
       <HeaderBehavior useSticky={!autoCollapsedNavBar} />
       <div className="observer-element h-4 md:h-12" id="header-sentinel" />
       <div
-        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 ${
-          !fullWidth ? `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4` : 'px-4 md:px-24'
-        }`}
+        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 px-4 ${contentWidthClass}`}
         id="sticky-nav"
       >
         <svg

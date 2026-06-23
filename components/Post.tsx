@@ -4,13 +4,15 @@ import {
   ARTICLE_TOC_LEFT,
   ARTICLE_TOC_MAX_HEIGHT,
   ARTICLE_TOC_TOP_PX,
-  ARTICLE_TOC_WIDTH_PX
+  ARTICLE_TOC_WIDTH_PX,
+  ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS
 } from '@/consts'
 import { config } from '@/lib/server/config'
 import { formatDate } from '@/lib/formatDate'
 import TagItem from '@/components/TagItem'
 import NotionRenderer from '@/components/NotionRenderer'
 import TableOfContents from '@/components/TableOfContents'
+import WideTableOfContents from '@/components/WideTableOfContents'
 import type { NotionDocument, PagePreviewMap } from '@jihuayu/notion-type'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
@@ -25,21 +27,32 @@ interface PostProps {
   pagePreviewMap?: PagePreviewMap
 }
 
+export function getPostFormatClassNames(post: Pick<PostData, 'formats'>): string[] {
+  const formats = new Set(post.formats || [])
+  return [
+    formats.has('wide') ? 'notion-post-format-wide' : '',
+    formats.has('codeHeavy') ? 'notion-post-format-code-heavy' : ''
+  ].filter(Boolean)
+}
+
 export default function Post(props: PostProps) {
   const { post, document, fullWidth = false, linkPreviewMap = {}, pageLinkMap = {}, pagePreviewMap = {} } = props
+  const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
 
   return (
-    <article className={cn('flex flex-col', fullWidth ? 'md:px-24' : 'items-center')}>
+    <article className={cn('flex flex-col items-center', getPostFormatClassNames(post))}>
       <h1 className={cn(
         'w-full font-serif font-semibold text-[2rem] leading-tight tracking-[-0.025em] text-stone-900 dark:text-stone-100',
-        !fullWidth && `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`
+        contentWidthClass,
+        'px-4'
       )}>
         {post.title}
       </h1>
       {post.type[0] !== 'Page' && (
         <nav className={cn(
           'w-full flex mt-6 items-start text-sm text-stone-400 dark:text-stone-500',
-          !fullWidth && `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`
+          contentWidthClass,
+          'px-4'
         )}>
           <div className="flex mb-4">
             <a href={config.socialLink || '#'} className="flex hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-150 ease-out">
@@ -60,7 +73,7 @@ export default function Post(props: PostProps) {
         </nav>
       )}
       <div className="self-stretch -mt-4 relative">
-        <div className={fullWidth ? 'w-full px-4 md:px-24' : `mx-auto w-full ${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`}>
+        <div className={`mx-auto w-full ${contentWidthClass} px-4`}>
           <NotionRenderer document={document} linkPreviewMap={linkPreviewMap} pageLinkMap={pageLinkMap} pagePreviewMap={pagePreviewMap} />
         </div>
         {!fullWidth && (
@@ -78,6 +91,7 @@ export default function Post(props: PostProps) {
             />
           </div>
         )}
+        {fullWidth && <WideTableOfContents toc={document?.toc || []} />}
       </div>
     </article>
   )

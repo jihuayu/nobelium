@@ -214,7 +214,7 @@ export const RichText = defineComponent({
             annotations.underline && 'underline',
             textColorClassName,
             backgroundColorClassName,
-            annotations.code && 'font-mono text-[0.9em] px-1 py-0.5 rounded bg-stone-100 dark:bg-stone-800'
+            annotations.code && 'notion-inline-code'
           )
         }, textContent)
 

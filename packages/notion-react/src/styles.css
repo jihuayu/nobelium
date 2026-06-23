@@ -616,6 +616,66 @@
   background-color: transparent !important;
 }
 
+.notion-inline-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+  background-color: rgb(231 229 228 / 0.6);
+  color: rgb(41 37 36);
+}
+
+.dark .notion-inline-code {
+  background-color: rgb(68 64 60 / 0.55);
+  color: rgb(231 229 228);
+}
+
+.notion-post-format-code-heavy .notion-code-block {
+  margin-top: 0.6rem;
+  margin-bottom: 0.6rem;
+  border-color: rgb(214 211 209 / 0.9);
+  background-color: rgb(250 250 249 / 0.9);
+}
+
+.dark .notion-post-format-code-heavy .notion-code-block {
+  border-color: rgb(87 83 78 / 0.9);
+  background-color: rgb(28 25 23 / 0.75);
+}
+
+.notion-post-format-code-heavy .notion-code-language-floating {
+  top: 0.4rem;
+  right: 0.5rem;
+  opacity: 0.5;
+  font-size: 9px;
+  letter-spacing: 0;
+}
+
+.notion-post-format-code-heavy .notion-code-content .shiki {
+  padding: 0.85rem 0.85rem 0.75rem;
+  line-height: 1.5;
+}
+
+.notion-post-format-code-heavy .notion-code-content .shiki,
+.notion-post-format-code-heavy .notion-code-content .shiki code {
+  font-size: 12px;
+}
+
+.notion-post-format-code-heavy .notion-inline-code {
+  padding: 0.08em 0.3em;
+  border: 1px solid rgb(214 211 209 / 0.7);
+  border-radius: 0.2rem;
+  background-color: rgb(245 245 244 / 0.95);
+  color: rgb(28 25 23);
+  font-size: 0.85em;
+  line-height: 1.3;
+}
+
+.dark .notion-post-format-code-heavy .notion-inline-code {
+  border-color: rgb(87 83 78 / 0.7);
+  background-color: rgb(41 37 36 / 0.9);
+  color: rgb(245 245 244);
+}
+
 .notion-table-wrapper {
   width: 100%;
   overflow-x: auto;

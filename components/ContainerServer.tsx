@@ -2,7 +2,7 @@ import cn from 'classnames'
 import type { ReactNode } from 'react'
 import Header from '@/components/Header'
 import FooterServer from '@/components/FooterServer'
-import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
+import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import { config } from '@/lib/server/config'
 import loadLocale from '@/assets/i18n'
 
@@ -15,6 +15,7 @@ interface ContainerServerProps {
 
 export default async function ContainerServer({ children, layout, fullWidth, title }: ContainerServerProps) {
   const locale = await loadLocale('basic', config.lang)
+  const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
 
   return (
     <div id="top">
@@ -32,7 +33,7 @@ export default async function ContainerServer({ children, layout, fullWidth, tit
         <main
           className={cn(
             'flex-grow transition-all',
-            layout !== 'blog' && ['self-center px-4', fullWidth ? 'md:px-24' : `w-full ${ARTICLE_CONTENT_MAX_WIDTH_CLASS}`]
+            layout !== 'blog' && ['self-center w-full px-4', contentWidthClass]
           )}
         >
           {children}
