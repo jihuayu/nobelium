@@ -674,7 +674,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
                   : (
                     <>
                       <iframe src={source} title={source || block.id} className="w-full" style={{ height: '620px' }} loading="lazy" />
-                      <a href={source} target="_blank" rel="noopener noreferrer" className="block border-t border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                      <a href={source} target="_blank" rel="noopener noreferrer" className="block border-t border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:underline">
                         Open PDF
                       </a>
                     </>

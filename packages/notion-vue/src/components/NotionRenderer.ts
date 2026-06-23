@@ -688,7 +688,7 @@ export default defineComponent({
                           href: source,
                           target: '_blank',
                           rel: 'noopener noreferrer',
-                          class: 'block border-t border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:underline'
+                          class: 'block border-t border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:underline'
                         }, 'Open PDF')
                       ]
                 ]),

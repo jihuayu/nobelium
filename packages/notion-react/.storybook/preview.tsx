@@ -27,8 +27,8 @@ const preview: Preview = {
       }
 
       return (
-        <div className={dark ? 'dark min-h-screen bg-zinc-950 p-8 text-zinc-100' : 'min-h-screen bg-stone-50 p-8 text-zinc-900'}>
-          <div className="mx-auto max-w-5xl rounded-2xl border border-zinc-200/80 bg-white px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-900">
+        <div className={dark ? 'dark min-h-screen bg-zinc-950 p-8 text-zinc-100' : 'min-h-screen bg-zinc-50 p-8 text-zinc-900'}>
+          <div className="mx-auto max-w-5xl rounded-lg border border-zinc-200/80 bg-white px-6 py-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <Story />
           </div>
         </div>

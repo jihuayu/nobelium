@@ -270,7 +270,7 @@ export const RichText = defineComponent({
           href,
           target: isInternalHref(href) ? undefined : '_blank',
           rel: isInternalHref(href) ? undefined : 'noopener noreferrer',
-          class: 'text-blue-600 dark:text-blue-400 underline underline-offset-4'
+          class: 'text-zinc-900 dark:text-zinc-100 underline underline-offset-4 decoration-zinc-400 dark:decoration-zinc-600'
         }, [content])
       })
 
