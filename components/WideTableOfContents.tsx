@@ -19,12 +19,12 @@ export default function WideTableOfContents({ toc }: WideTableOfContentsProps) {
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!toc.length) return
+    if (!toc.length) return undefined
     const headings = toc
       .map(item => document.getElementById(buildTargetId(item.id)))
       .filter((el): el is HTMLElement => !!el)
 
-    if (!headings.length) return
+    if (!headings.length) return undefined
 
     const observer = new IntersectionObserver(
       entries => {
@@ -43,7 +43,7 @@ export default function WideTableOfContents({ toc }: WideTableOfContentsProps) {
   }, [toc])
 
   useEffect(() => {
-    if (!open) return
+    if (!open) return undefined
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setOpen(false)
