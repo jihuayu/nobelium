@@ -283,7 +283,7 @@ export default defineComponent({
             return renderBlockWithOverride(block, () => {
               const headingPayload = getHeadingPayload(block)
               const headingClass = cn(
-                'font-semibold text-inherit scroll-mt-20',
+                'font-serif font-semibold text-inherit scroll-mt-20',
                 block.type === 'heading_1' && 'text-[2rem] leading-[1.24] mt-12 mb-3',
                 block.type === 'heading_2' && 'text-[1.62rem] leading-[1.28] mt-10 mb-2',
                 block.type === 'heading_3' && 'text-[1.34rem] leading-[1.34] mt-8 mb-1.5',

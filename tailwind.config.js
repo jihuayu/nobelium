@@ -32,6 +32,7 @@ const FONTS_SANS = [
   '"WenQuanYi Zen Hei"', '"ST Heiti"', 'SimHei', '"WenQuanYi Zen Hei Sharp"', 'sans-serif'
 ]
 const FONTS_SERIF = [
+  'var(--font-source-serif-4)', 'var(--font-noto-serif-sc)',
   '"Source Serif"', 'ui-serif', 'Georgia', '"Nimbus Roman No9 L"', '"Songti SC"',
   '"Noto Serif CJK SC"', '"Source Han Serif SC"', '"Source Han Serif CN"', 'STSong',
   '"AR PL New Sung"', '"AR PL SungtiL GB"', 'NSimSun', 'SimSun', '"TW-Sung"',
