@@ -126,7 +126,7 @@ export default function UrlMention({
           className={cn(
             'notion-url-mention',
             isInline
-              ? 'notion-url-mention-inline text-zinc-900 dark:text-zinc-100 underline underline-offset-4 decoration-zinc-400 dark:decoration-zinc-600'
+              ? 'notion-url-mention-inline text-stone-900 dark:text-stone-100 underline underline-offset-4 decoration-stone-400 dark:decoration-stone-600'
               : 'notion-url-mention-link-preview'
           )}
           onMouseEnter={openCard}

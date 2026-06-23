@@ -95,7 +95,7 @@ const DefaultUnsupportedBlock = defineComponent({
   setup(props) {
     return () => h('div', { class: props.class }, [
       h('div', {
-        class: 'my-4 rounded border border-dashed border-zinc-300 dark:border-zinc-700 p-3 text-sm text-zinc-500 dark:text-zinc-400'
+        class: 'my-4 rounded border border-dashed border-stone-300 dark:border-stone-700 p-3 text-sm text-stone-500 dark:text-stone-400'
       }, props.message || `Unsupported block type: ${props.block.type}`)
     ])
   }
@@ -244,14 +244,14 @@ export default defineComponent({
 
       function renderPageReferenceCard(label: string, href: string, blockClass: string, prefix: string): VNodeChild {
         const isInternal = href.startsWith('/')
-        const cardClassName = 'inline-flex items-center gap-2 rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300'
+        const cardClassName = 'inline-flex items-center gap-2 rounded-md border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/40 px-3 py-1.5 text-sm text-stone-700 dark:text-stone-300'
         return h('div', { class: cn(blockClass, 'my-3') }, [
           href
             ? h('a', {
                 href,
                 target: isInternal ? undefined : '_blank',
                 rel: isInternal ? undefined : 'noopener noreferrer',
-                class: cn(cardClassName, 'hover:border-zinc-400 dark:hover:border-zinc-500')
+                class: cn(cardClassName, 'hover:border-stone-400 dark:hover:border-stone-500')
               }, [
                 h('span', { 'aria-hidden': 'true' }, prefix),
                 h('span', { class: 'whitespace-pre-wrap' }, label)
@@ -334,7 +334,7 @@ export default defineComponent({
           case 'quote': {
             return renderBlockWithOverride(block, () => h('div', { key: block.id, class: baseClassName }, [
               h('blockquote', {
-                class: 'notion-quote border-l-4 border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-r-md whitespace-pre-wrap'
+                class: 'notion-quote border-l-4 border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 rounded-r-md whitespace-pre-wrap'
               }, [renderRichText(block.quote.rich_text)]),
               renderChildren(block.id)
             ]))
@@ -344,7 +344,7 @@ export default defineComponent({
               const emoji = block.callout.icon?.type === 'emoji' ? block.callout.icon.emoji : ''
               const iconUrl = getCalloutIconUrl(block.callout.icon || null)
               return h('div', { key: block.id, class: baseClassName }, [
-                h('div', { class: 'notion-callout my-4 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-start' }, [
+                h('div', { class: 'notion-callout my-4 rounded-md border border-stone-200 dark:border-stone-700 px-3 py-2 flex items-start' }, [
                   h('span', { class: 'notion-page-icon-inline flex-none' }, [
                     emoji
                       ? h('span', { 'aria-hidden': 'true' }, emoji)
@@ -406,7 +406,7 @@ export default defineComponent({
                 return h(Unsupported, { key: block.id, block, class: baseClassName, message: 'Unsupported image source' })
               }
               return h('figure', { key: block.id, class: cn(baseClassName, 'my-6') }, [
-                h('img', { src: source, alt: captionText || 'Notion image', loading: 'lazy', class: 'w-full rounded-md border border-zinc-200 dark:border-zinc-800' }),
+                h('img', { src: source, alt: captionText || 'Notion image', loading: 'lazy', class: 'w-full rounded-md border border-stone-200 dark:border-stone-800' }),
                 caption.length > 0
                   ? h('figcaption', { class: 'mt-2 notion-asset-caption whitespace-pre-wrap' }, [renderRichText(caption)])
                   : null,
@@ -516,13 +516,13 @@ export default defineComponent({
           case 'table_of_contents': {
             return renderBlockWithOverride(block, () =>
               model.toc.length
-                ? h('nav', { key: block.id, class: cn(baseClassName, 'my-4 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2') }, [
-                    h('p', { class: 'text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-2' }, 'Table of contents'),
+                ? h('nav', { key: block.id, class: cn(baseClassName, 'my-4 rounded-md border border-stone-200 dark:border-stone-700 px-3 py-2') }, [
+                    h('p', { class: 'text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400 mb-2' }, 'Table of contents'),
                     h('ul', { class: 'space-y-1' }, model.toc.map(item =>
                       h('li', { key: `${block.id}-${item.id}`, style: { marginLeft: `${item.indentLevel * 14}px` } }, [
                         h('a', {
                           href: `#${getHeadingAnchorId(item.id)}`,
-                          class: 'text-sm text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100'
+                          class: 'text-sm text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
                         }, item.text)
                       ])
                     ))
@@ -566,7 +566,7 @@ export default defineComponent({
                 hasChildren
                   ? renderChildren(block.id)
                   : h('div', {
-                      class: 'my-3 rounded border border-dashed border-zinc-300 dark:border-zinc-700 p-3 text-sm text-zinc-500 dark:text-zinc-400'
+                      class: 'my-3 rounded border border-dashed border-stone-300 dark:border-stone-700 p-3 text-sm text-stone-500 dark:text-stone-400'
                     }, syncedFrom ? `Synced block (${syncedFrom.slice(0, 8)}...)` : 'Synced block')
               ])
             })
@@ -585,11 +585,11 @@ export default defineComponent({
                 h('div', { class: 'my-4' }, [
                   iframeUrl || normalizedEmbedUrl
                     ? h('div', {
-                        class: 'notion-embed-frame overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800'
+                        class: 'notion-embed-frame overflow-hidden rounded-md border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800'
                       }, [
                         embedHostname
-                          ? h('div', { class: 'flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-400 dark:text-zinc-500 border-b border-zinc-200 dark:border-zinc-800' }, [
-                              h('span', { class: 'inline-block h-2.5 w-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600' }),
+                          ? h('div', { class: 'flex items-center gap-1.5 px-3 py-1.5 text-xs text-stone-400 dark:text-stone-500 border-b border-stone-200 dark:border-stone-800' }, [
+                              h('span', { class: 'inline-block h-2.5 w-2.5 rounded-full bg-stone-300 dark:bg-stone-600' }),
                               h('span', { class: 'truncate' }, embedHostname)
                             ])
                           : null,
@@ -643,12 +643,12 @@ export default defineComponent({
                     ? h(Unsupported, { block, class: '', message: 'Unsupported video block' })
                     : iframeUrl
                       ? h('div', {
-                          class: 'relative w-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700',
+                          class: 'relative w-full overflow-hidden rounded-md border border-stone-200 dark:border-stone-700',
                           style: { paddingTop: '56.25%' }
                         }, [
                           h('iframe', { src: iframeUrl, title: source || block.id, class: 'absolute top-0 left-0 h-full w-full', allowfullscreen: true, loading: 'lazy' })
                         ])
-                      : h('video', { src: source, controls: true, preload: 'metadata', class: 'w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-black' }),
+                      : h('video', { src: source, controls: true, preload: 'metadata', class: 'w-full rounded-md border border-stone-200 dark:border-stone-700 bg-black' }),
                   caption.length > 0
                     ? h('div', { class: 'notion-asset-caption mt-2 whitespace-pre-wrap' }, [renderRichText(caption)])
                     : null
@@ -679,16 +679,16 @@ export default defineComponent({
               const source = getFileBlockUrl(block.pdf)
               const caption = block.pdf.caption || []
               return h('div', { key: block.id, class: baseClassName }, [
-                h('div', { class: 'my-4 rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden' }, [
+                h('div', { class: 'my-4 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden' }, [
                   !source
-                    ? h('div', { class: 'p-3 text-sm text-zinc-500 dark:text-zinc-400' }, 'Unsupported pdf block')
+                    ? h('div', { class: 'p-3 text-sm text-stone-500 dark:text-stone-400' }, 'Unsupported pdf block')
                     : [
                         h('iframe', { src: source, title: source || block.id, class: 'w-full', style: { height: '620px' }, loading: 'lazy' }),
                         h('a', {
                           href: source,
                           target: '_blank',
                           rel: 'noopener noreferrer',
-                          class: 'block border-t border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:underline'
+                          class: 'block border-t border-stone-200 dark:border-stone-700 px-3 py-2 text-sm text-stone-600 dark:text-stone-400 hover:underline'
                         }, 'Open PDF')
                       ]
                 ]),
@@ -773,7 +773,7 @@ export default defineComponent({
           }
           case 'divider': {
             return renderBlockWithOverride(block, () => h('div', { key: block.id, class: baseClassName }, [
-              h('hr', { class: 'notion-hr my-4 border-zinc-200 dark:border-zinc-700' }),
+              h('hr', { class: 'notion-hr my-4 border-stone-200 dark:border-stone-700' }),
               renderChildren(block.id)
             ]))
           }

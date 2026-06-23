@@ -88,7 +88,7 @@ function resolveRenderOptions(input?: NotionRenderOptions): ResolvedNotionRender
 function UnsupportedBlock({ block, className, message }: UnsupportedBlockProps) {
   return (
     <div className={className}>
-      <div className="my-4 rounded border border-dashed border-zinc-300 dark:border-zinc-700 p-3 text-sm text-zinc-500 dark:text-zinc-400">
+      <div className="my-4 rounded border border-dashed border-stone-300 dark:border-stone-700 p-3 text-sm text-stone-500 dark:text-stone-400">
         {message || `Unsupported block type: ${block.type}`}
       </div>
     </div>
@@ -223,7 +223,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
 
   const renderPageReferenceCard = (label: string, href: string, className: string, prefix: string) => {
     const isInternal = href.startsWith('/')
-    const cardClassName = 'inline-flex items-center gap-2 rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300'
+    const cardClassName = 'inline-flex items-center gap-2 rounded-md border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/40 px-3 py-1.5 text-sm text-stone-700 dark:text-stone-300'
     return (
       <div className={cn(className, 'my-3')}>
         {href
@@ -232,7 +232,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
               href={href}
               target={isInternal ? undefined : '_blank'}
               rel={isInternal ? undefined : 'noopener noreferrer'}
-              className={cn(cardClassName, 'hover:border-zinc-400 dark:hover:border-zinc-500')}
+              className={cn(cardClassName, 'hover:border-stone-400 dark:hover:border-stone-500')}
             >
               <span aria-hidden="true">{prefix}</span>
               <span className="whitespace-pre-wrap">{label}</span>
@@ -314,7 +314,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'quote': {
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
-            <blockquote className="notion-quote border-l-4 border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-r-md whitespace-pre-wrap">
+            <blockquote className="notion-quote border-l-4 border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 rounded-r-md whitespace-pre-wrap">
               {renderRichText(block.quote.rich_text)}
             </blockquote>
             {renderChildren(block.id)}
@@ -327,7 +327,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const iconUrl = getCalloutIconUrl(block.callout.icon || null)
           return (
             <div key={block.id} className={baseClassName}>
-              <div className="notion-callout my-4 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-start">
+              <div className="notion-callout my-4 rounded-md border border-stone-200 dark:border-stone-700 px-3 py-2 flex items-start">
                 <span className="notion-page-icon-inline flex-none">
                   {emoji ? <span aria-hidden="true">{emoji}</span> : iconUrl ? <img src={iconUrl} alt="" className="h-[1.05em] w-[1.05em] object-contain" /> : <span aria-hidden="true">i</span>}
                 </span>
@@ -391,7 +391,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           }
           return (
             <figure key={block.id} className={cn(baseClassName, 'my-6')}>
-              <img src={source} alt={captionText || 'Notion image'} loading="lazy" className="w-full rounded-md border border-zinc-200 dark:border-zinc-800" />
+              <img src={source} alt={captionText || 'Notion image'} loading="lazy" className="w-full rounded-md border border-stone-200 dark:border-stone-800" />
               {caption.length > 0 && <figcaption className="mt-2 notion-asset-caption whitespace-pre-wrap">{renderRichText(caption)}</figcaption>}
               {renderChildren(block.id)}
             </figure>
@@ -505,12 +505,12 @@ export default function NotionRenderer({ model, components, renderOptions, class
         return renderBlockWithOverride(block, () => (
           model.toc.length
             ? (
-              <nav key={block.id} className={cn(baseClassName, 'my-4 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2')}>
-                <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-2">Table of contents</p>
+              <nav key={block.id} className={cn(baseClassName, 'my-4 rounded-md border border-stone-200 dark:border-stone-700 px-3 py-2')}>
+                <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400 mb-2">Table of contents</p>
                 <ul className="space-y-1">
                   {model.toc.map(item => (
                     <li key={`${block.id}-${item.id}`} style={{ marginLeft: `${item.indentLevel * 14}px` }}>
-                      <a href={`#${getHeadingAnchorId(item.id)}`} className="text-sm text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100">
+                      <a href={`#${getHeadingAnchorId(item.id)}`} className="text-sm text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100">
                         {item.text}
                       </a>
                     </li>
@@ -562,7 +562,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
             <div key={block.id} className={baseClassName}>
               {hasChildren
                 ? renderChildren(block.id)
-                : <div className="my-3 rounded border border-dashed border-zinc-300 dark:border-zinc-700 p-3 text-sm text-zinc-500 dark:text-zinc-400">{syncedFrom ? `Synced block (${syncedFrom.slice(0, 8)}...)` : 'Synced block'}</div>}
+                : <div className="my-3 rounded border border-dashed border-stone-300 dark:border-stone-700 p-3 text-sm text-stone-500 dark:text-stone-400">{syncedFrom ? `Synced block (${syncedFrom.slice(0, 8)}...)` : 'Synced block'}</div>}
             </div>
           )
         })
@@ -582,10 +582,10 @@ export default function NotionRenderer({ model, components, renderOptions, class
               <div className="my-4">
                 {iframeUrl || normalizedEmbedUrl
                   ? (
-                    <div className="notion-embed-frame overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800">
+                    <div className="notion-embed-frame overflow-hidden rounded-md border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800">
                       {embedHostname && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-400 dark:text-zinc-500 border-b border-zinc-200 dark:border-zinc-800">
-                          <span className="inline-block h-2.5 w-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-stone-400 dark:text-stone-500 border-b border-stone-200 dark:border-stone-800">
+                          <span className="inline-block h-2.5 w-2.5 rounded-full bg-stone-300 dark:bg-stone-600" />
                           <span className="truncate">{embedHostname}</span>
                         </div>
                       )}
@@ -635,11 +635,11 @@ export default function NotionRenderer({ model, components, renderOptions, class
                   ? <Unsupported block={block} className="" message="Unsupported video block" />
                   : iframeUrl
                     ? (
-                      <div className="relative w-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700" style={{ paddingTop: '56.25%' }}>
+                      <div className="relative w-full overflow-hidden rounded-md border border-stone-200 dark:border-stone-700" style={{ paddingTop: '56.25%' }}>
                         <iframe src={iframeUrl} title={source || block.id} className="absolute top-0 left-0 h-full w-full" allowFullScreen loading="lazy" />
                       </div>
                     )
-                    : <video src={source} controls preload="metadata" className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-black" />}
+                    : <video src={source} controls preload="metadata" className="w-full rounded-md border border-stone-200 dark:border-stone-700 bg-black" />}
                 {caption.length > 0 && <div className="notion-asset-caption mt-2 whitespace-pre-wrap">{renderRichText(caption)}</div>}
               </div>
               {renderChildren(block.id)}
@@ -668,13 +668,13 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const caption = block.pdf.caption || []
           return (
             <div key={block.id} className={baseClassName}>
-              <div className="my-4 rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+              <div className="my-4 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
                 {!source
-                  ? <div className="p-3 text-sm text-zinc-500 dark:text-zinc-400">Unsupported pdf block</div>
+                  ? <div className="p-3 text-sm text-stone-500 dark:text-stone-400">Unsupported pdf block</div>
                   : (
                     <>
                       <iframe src={source} title={source || block.id} className="w-full" style={{ height: '620px' }} loading="lazy" />
-                      <a href={source} target="_blank" rel="noopener noreferrer" className="block border-t border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:underline">
+                      <a href={source} target="_blank" rel="noopener noreferrer" className="block border-t border-stone-200 dark:border-stone-700 px-3 py-2 text-sm text-stone-600 dark:text-stone-400 hover:underline">
                         Open PDF
                       </a>
                     </>
@@ -769,7 +769,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'divider':
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
-            <hr className="notion-hr my-4 border-zinc-200 dark:border-zinc-700" />
+            <hr className="notion-hr my-4 border-stone-200 dark:border-stone-700" />
             {renderChildren(block.id)}
           </div>
         ))

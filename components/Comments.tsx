@@ -19,7 +19,7 @@ const Comments = ({ frontMatter, comment, appearance }: CommentsProps) => {
   return (
     <section
       className={cn(
-        'px-4 font-medium text-zinc-500 dark:text-zinc-400 my-5',
+        'px-4 font-medium text-stone-500 dark:text-stone-400 my-5',
         fullWidth ? 'md:px-24' : `mx-auto ${ARTICLE_CONTENT_MAX_WIDTH_CLASS}`
       )}
     >

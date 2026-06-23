@@ -183,11 +183,11 @@ export default function SearchClient({
           placeholder={
             currentTag ? `Search in #${currentTag}` : 'Search Articles'
           }
-          className="block w-full rounded-md border px-4 py-2 border-zinc-300 bg-transparent text-zinc-900 placeholder:text-zinc-400 transition-colors duration-150 ease-out focus:border-zinc-400 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500"
+          className="block w-full rounded-md border px-4 py-2 border-stone-300 bg-transparent text-stone-900 placeholder:text-stone-400 transition-colors duration-150 ease-out focus:border-stone-400 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-stone-500"
           onChange={e => setSearchValue(e.target.value)}
         />
         <svg
-          className="absolute right-3 top-3 h-5 w-5 text-zinc-400 dark:text-zinc-500"
+          className="absolute right-3 top-3 h-5 w-5 text-stone-400 dark:text-stone-500"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -214,16 +214,16 @@ export default function SearchClient({
           </p>
         )}
         {showNotionSearchHint && (
-          <p id={searchHintId} className="text-zinc-500 dark:text-zinc-400">{notionSearchHint}</p>
+          <p id={searchHintId} className="text-stone-500 dark:text-stone-400">{notionSearchHint}</p>
         )}
         {isSearching && (
-          <p className="text-zinc-500 dark:text-zinc-400" role="status">Searching...</p>
+          <p className="text-stone-500 dark:text-stone-400" role="status">Searching...</p>
         )}
         {!isSearching && !!searchError && (
-          <p className="text-zinc-600 dark:text-zinc-300 font-medium" role="alert">{searchError}</p>
+          <p className="text-stone-600 dark:text-stone-300 font-medium" role="alert">{searchError}</p>
         )}
         {showEmptyState && (
-          <p className="text-zinc-500 dark:text-zinc-400" role="status">No posts found.</p>
+          <p className="text-stone-500 dark:text-stone-400" role="status">No posts found.</p>
         )}
         {filteredBlogPosts.slice(0, 20).map(post => (
           <BlogPost key={post.id} post={post} blogPath={blogPath} lang={lang} timezone={timezone} />

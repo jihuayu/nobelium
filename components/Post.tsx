@@ -31,18 +31,18 @@ export default function Post(props: PostProps) {
   return (
     <article className={cn('flex flex-col', fullWidth ? 'md:px-24' : 'items-center')}>
       <h1 className={cn(
-        'w-full font-semibold text-[2rem] leading-tight tracking-[-0.01em] text-zinc-900 dark:text-zinc-100',
+        'w-full font-semibold text-[2rem] leading-tight tracking-[-0.01em] text-stone-900 dark:text-stone-100',
         !fullWidth && `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`
       )}>
         {post.title}
       </h1>
       {post.type[0] !== 'Page' && (
         <nav className={cn(
-          'w-full flex mt-6 items-start text-sm text-zinc-400 dark:text-zinc-500',
+          'w-full flex mt-6 items-start text-sm text-stone-400 dark:text-stone-500',
           !fullWidth && `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`
         )}>
           <div className="flex mb-4">
-            <a href={config.socialLink || '#'} className="flex hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors duration-150 ease-out">
+            <a href={config.socialLink || '#'} className="flex hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-150 ease-out">
               <p className="ml-2 md:block">{config.author}</p>
             </a>
             <span className="block">&nbsp;/&nbsp;</span>

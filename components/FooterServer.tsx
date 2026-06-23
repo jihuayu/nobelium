@@ -11,11 +11,11 @@ export default function FooterServer({ fullWidth }: FooterServerProps) {
 
   return (
     <div
-      className={`mt-12 flex-shrink-0 m-auto w-full text-zinc-400 dark:text-zinc-500 transition-all ${
+      className={`mt-12 flex-shrink-0 m-auto w-full text-stone-400 dark:text-stone-500 transition-all ${
         !fullWidth ? `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4` : 'px-4 md:px-24'
       }`}
     >
-      <hr className="border-zinc-200 dark:border-zinc-800" />
+      <hr className="border-stone-200 dark:border-stone-800" />
       <div className="my-4 text-sm leading-6">
         <div className="flex align-baseline justify-between flex-wrap">
           <p>
