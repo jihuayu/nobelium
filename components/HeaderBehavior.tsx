@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
+
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 interface HeaderBehaviorProps {
   useSticky: boolean
@@ -10,7 +12,7 @@ interface HeaderBehaviorProps {
 const WIDTH_STORAGE_KEY = 'notion-header-fullwidth'
 
 export default function HeaderBehavior({ useSticky, fullWidth = false }: HeaderBehaviorProps) {
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     const navEl = document.getElementById('sticky-nav')
     const sentinelEl = document.getElementById('header-sentinel')
     const titleEl = document.getElementById('header-title')
