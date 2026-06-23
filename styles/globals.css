@@ -224,3 +224,40 @@ nav {
     align-items: center;
   }
 }
+
+/* Header width transition on page navigation (wide ↔ normal) */
+@keyframes header-width-normal {
+  from { max-width: 60rem; }
+  to { max-width: 50.6rem; }
+}
+
+@keyframes header-width-wide {
+  from { max-width: 50.6rem; }
+  to { max-width: 60rem; }
+}
+
+.notion-header-anim-normal {
+  animation: header-width-normal 300ms ease-out;
+}
+
+.notion-header-anim-wide {
+  animation: header-width-wide 300ms ease-out;
+}
+
+@keyframes footer-width-normal {
+  from { max-width: 60rem; }
+  to { max-width: 50.6rem; }
+}
+
+@keyframes footer-width-wide {
+  from { max-width: 50.6rem; }
+  to { max-width: 60rem; }
+}
+
+.notion-footer-anim-normal {
+  animation: footer-width-normal 300ms ease-out;
+}
+
+.notion-footer-anim-wide {
+  animation: footer-width-wide 300ms ease-out;
+}
