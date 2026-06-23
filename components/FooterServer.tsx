@@ -1,4 +1,4 @@
-import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
+import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import { config } from '@/lib/server/config'
 
 interface FooterServerProps {
@@ -8,7 +8,7 @@ interface FooterServerProps {
 export default function FooterServer({ fullWidth }: FooterServerProps) {
   const currentYear = new Date().getFullYear()
   const since = +config.since
-  const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
+  const contentWidthClass = ARTICLE_CONTENT_MAX_WIDTH_CLASS
 
   return (
     <div

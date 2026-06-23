@@ -91,7 +91,7 @@ export default function Header({
   autoCollapsedNavBar,
   navLocale
 }: HeaderProps) {
-  const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
+  const contentWidthClass = ARTICLE_CONTENT_MAX_WIDTH_CLASS
 
   return (
     <>
