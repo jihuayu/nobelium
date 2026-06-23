@@ -10,7 +10,7 @@ const BLOG = {
   timezone: 'Asia/Shanghai',
   appearance: 'auto',
   font: 'sans-serif',
-  lightBackground: '#fafaf9',
+  lightBackground: '#ffffff',
   darkBackground: '#0c0a09',
   path: '',
   since: 2024,

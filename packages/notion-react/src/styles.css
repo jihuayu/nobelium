@@ -1,7 +1,7 @@
 @import 'katex/dist/katex.min.css';
 
 :root {
-  --no-leading: 1.75;
+  --no-leading: 1.82;
   --notion-font-family: inherit;
   --notion-font-size: clamp(16.5px, 1rem + 0.16vw, 18px);
   --notion-letter-spacing: 0.012em;
