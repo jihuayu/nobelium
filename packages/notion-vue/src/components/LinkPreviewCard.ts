@@ -68,10 +68,10 @@ export default defineComponent({
           ]),
           generatedImageUrl
             ? h('div', { class: 'link-preview-card-media basis-[35%] shrink-0 h-full' }, [
-                h('div', { class: 'relative h-full w-full overflow-hidden bg-zinc-200/80 dark:bg-zinc-700/70' }, [
+                h('div', { class: 'relative h-full w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800' }, [
                   h('img', {
                     src: generatedImageUrl,
-                    alt: resolvedPreview.title || resolvedPreview.hostname || 'Link preview',
+                    alt: '',
                     class: 'link-preview-cover pointer-events-none h-full w-full object-cover transition-opacity duration-200',
                     style: 'filter: none',
                     loading: 'lazy'

@@ -406,7 +406,7 @@ export default defineComponent({
                 return h(Unsupported, { key: block.id, block, class: baseClassName, message: 'Unsupported image source' })
               }
               return h('figure', { key: block.id, class: cn(baseClassName, 'my-6') }, [
-                h('img', { src: source, alt: captionText || 'Notion image', loading: 'lazy', class: 'w-full rounded-md' }),
+                h('img', { src: source, alt: captionText || 'Notion image', loading: 'lazy', class: 'w-full rounded-md border border-zinc-200 dark:border-zinc-800' }),
                 caption.length > 0
                   ? h('figcaption', { class: 'mt-2 notion-asset-caption whitespace-pre-wrap' }, [renderRichText(caption)])
                   : null,
@@ -579,20 +579,32 @@ export default defineComponent({
               const iframeUrl = resolveEmbedIframeUrl(embedUrl)
               const normalizedEmbedUrl = normalizeRichTextUrl(embedUrl)
               const caption = block.embed.caption || []
+              let embedHostname = ''
+              try { if (embedUrl) embedHostname = new URL(embedUrl).hostname.replace(/^www\./i, '') } catch { embedHostname = '' }
               return h('div', { key: block.id, class: baseClassName }, [
                 h('div', { class: 'my-4' }, [
                   iframeUrl || normalizedEmbedUrl
                     ? h('div', {
-                        class: 'relative w-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700',
-                        style: { paddingTop: '56.25%' }
+                        class: 'notion-embed-frame overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800'
                       }, [
-                        h('iframe', {
-                          src: iframeUrl || normalizedEmbedUrl,
-                          title: embedUrl || block.id,
-                          class: 'absolute top-0 left-0 h-full w-full',
-                          allowfullscreen: true,
-                          loading: 'lazy'
-                        })
+                        embedHostname
+                          ? h('div', { class: 'flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-400 dark:text-zinc-500 border-b border-zinc-200 dark:border-zinc-800' }, [
+                              h('span', { class: 'inline-block h-2.5 w-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600' }),
+                              h('span', { class: 'truncate' }, embedHostname)
+                            ])
+                          : null,
+                        h('div', {
+                          class: 'relative w-full',
+                          style: { paddingTop: '56.25%' }
+                        }, [
+                          h('iframe', {
+                            src: iframeUrl || normalizedEmbedUrl,
+                            title: embedUrl || block.id,
+                            class: 'absolute top-0 left-0 h-full w-full',
+                            allowfullscreen: true,
+                            loading: 'lazy'
+                          })
+                        ])
                       ])
                     : embedUrl
                       ? renderLinkPreviewCard(embedUrl, normalizeRichTextUrl(embedUrl))
@@ -653,7 +665,7 @@ export default defineComponent({
                 h('div', { class: 'my-4' }, [
                   !source
                     ? h(Unsupported, { block, class: '', message: 'Unsupported audio block' })
-                    : h('audio', { src: source, controls: true, preload: 'metadata', class: 'w-full' }),
+                    : h('audio', { src: source, controls: true, preload: 'metadata', class: 'notion-audio-block' }),
                   caption.length > 0
                     ? h('div', { class: 'notion-asset-caption mt-2 whitespace-pre-wrap' }, [renderRichText(caption)])
                     : null

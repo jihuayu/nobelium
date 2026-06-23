@@ -81,7 +81,7 @@ const highlightHtmlCache = new Map<string, { html: string, language: string }>()
 function getBaseHighlighter(): Promise<Highlighter> {
   if (!baseHighlighterPromise) {
     baseHighlighterPromise = createHighlighter({
-      themes: ['github-light', 'github-dark'],
+      themes: ['vitesse-light', 'vitesse-dark'],
       langs: [...SHIKI_LANGUAGES]
     })
   }
@@ -92,7 +92,7 @@ function getBaseHighlighter(): Promise<Highlighter> {
 function getExtendedHighlighter(): Promise<Highlighter> {
   if (!extendedHighlighterPromise) {
     extendedHighlighterPromise = createHighlighter({
-      themes: ['github-light', 'github-dark'],
+      themes: ['vitesse-light', 'vitesse-dark'],
       langs: [...SHIKI_LANGUAGES, ...SHIKI_EXTENDED_LANGUAGES]
     })
   }
@@ -116,7 +116,7 @@ function escapeHtml(input: string): string {
 }
 
 function renderFallbackHtml(source: string): string {
-  return `<pre class="shiki shiki-themes github-light github-dark" style="color:#24292e;background-color:#fff;--shiki-light:#24292e;--shiki-light-bg:#fff;--shiki-dark:#e1e4e8;--shiki-dark-bg:#24292e"><code>${escapeHtml(source)}</code></pre>`
+  return `<pre class="shiki shiki-themes vitesse-light vitesse-dark" style="color:#4a4a4a;background-color:#ffffff;--shiki-light:#4a4a4a;--shiki-light-bg:#ffffff;--shiki-dark:#dbd7ca;--shiki-dark-bg:#1b1b1b"><code>${escapeHtml(source)}</code></pre>`
 }
 
 function buildHighlightCacheKey(source: string, language: string): string {
@@ -179,8 +179,8 @@ export async function highlightCodeToHtml(source: string, rawLanguage: string): 
     const html = highlighter.codeToHtml(source, {
       lang: language as BundledLanguage | SpecialLanguage,
       themes: {
-        light: 'github-light',
-        dark: 'github-dark'
+        light: 'vitesse-light',
+        dark: 'vitesse-dark'
       }
     })
 

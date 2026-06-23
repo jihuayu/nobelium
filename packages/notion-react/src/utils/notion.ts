@@ -44,7 +44,7 @@ export function getCalloutIconUrl(icon: unknown): string {
 }
 
 export function renderFallbackHighlightedCodeHtml(source: string): string {
-  return `<pre class="shiki shiki-themes github-light github-dark" style="color:#24292e;background-color:#fff;--shiki-light:#24292e;--shiki-light-bg:#fff;--shiki-dark:#e1e4e8;--shiki-dark-bg:#24292e"><code>${escapeHtml(source)}</code></pre>`
+  return `<pre class="shiki shiki-themes vitesse-light vitesse-dark" style="color:#4a4a4a;background-color:#ffffff;--shiki-light:#4a4a4a;--shiki-light-bg:#ffffff;--shiki-dark:#dbd7ca;--shiki-dark-bg:#1b1b1b"><code>${escapeHtml(source)}</code></pre>`
 }
 
 export function getAnnotationColorClasses(annotations: NotionTextAnnotations | undefined): {

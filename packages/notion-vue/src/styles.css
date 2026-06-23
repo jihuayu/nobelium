@@ -34,8 +34,8 @@
   --notion-url-hover-border: rgb(228 228 231 / 0.95);
   --notion-url-hover-bg: rgb(255 255 255);
   --notion-url-hover-shadow:
-    0 8px 20px rgb(15 23 42 / 0.16),
-    0 2px 6px rgb(15 23 42 / 0.08);
+    0 4px 14px rgb(24 24 27 / 0.08),
+    0 1px 3px rgb(24 24 27 / 0.06);
   --notion-url-hover-cover-bg: rgb(244 244 245);
   --notion-url-hover-body-px: calc(0.6rem + 5px);
   --notion-url-hover-body-pt: calc(0.52rem + 5px);
@@ -64,8 +64,8 @@
   --notion-url-hover-border: rgb(82 82 91 / 0.9);
   --notion-url-hover-bg: rgb(24 24 27);
   --notion-url-hover-shadow:
-    0 8px 20px rgb(0 0 0 / 0.42),
-    0 2px 6px rgb(0 0 0 / 0.28);
+    0 4px 14px rgb(0 0 0 / 0.34),
+    0 1px 3px rgb(0 0 0 / 0.22);
   --notion-url-hover-cover-bg: rgb(39 39 42);
 }
 
@@ -250,8 +250,8 @@
   border: 1px solid rgb(228 228 231 / 0.95);
   background-color: rgb(255 255 255);
   box-shadow:
-    0 8px 20px rgb(15 23 42 / 0.16),
-    0 2px 6px rgb(15 23 42 / 0.08);
+    0 4px 14px rgb(24 24 27 / 0.08),
+    0 1px 3px rgb(24 24 27 / 0.06);
   z-index: 2147483000;
   color: rgb(39 39 42);
 }
@@ -267,8 +267,8 @@
   border-color: rgb(82 82 91 / 0.9);
   background-color: rgb(24 24 27);
   box-shadow:
-    0 8px 20px rgb(0 0 0 / 0.42),
-    0 2px 6px rgb(0 0 0 / 0.28);
+    0 4px 14px rgb(0 0 0 / 0.34),
+    0 1px 3px rgb(0 0 0 / 0.22);
   color: rgb(244 244 245);
 }
 
@@ -367,7 +367,7 @@
   margin: 1.5rem 0;
   padding: 0.95rem 1rem 1rem;
   border: 1px solid rgb(228 228 231 / 0.92);
-  border-radius: 1.2rem;
+  border-radius: 0.75rem;
   background-color: rgb(255 255 255 / 0.92);
 }
 
@@ -421,13 +421,13 @@
 .notion-tab-input:checked + .notion-tab-label {
   color: inherit;
   border-color: rgb(228 228 231 / 0.96);
-  background-color: rgb(241 241 239);
-  box-shadow: 0 1px 1px rgb(15 23 42 / 0.04);
+  background-color: rgb(244 244 245);
+  box-shadow: 0 1px 1px rgb(24 24 27 / 0.04);
 }
 
 .dark .notion-tab-input:checked + .notion-tab-label {
   border-color: rgb(63 63 70 / 0.96);
-  background-color: rgb(47 47 47);
+  background-color: rgb(39 39 42);
 }
 
 .notion-tab-label-icon {
@@ -491,7 +491,7 @@
   border-radius: 0.5rem;
   color: inherit;
   text-decoration: none;
-  background-color: rgb(248 250 252 / 0.55);
+  background-color: rgb(244 244 245 / 0.7);
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
@@ -501,7 +501,7 @@
 
 .dark .notion-file-block {
   border-color: rgb(63 63 70 / 0.85);
-  background-color: rgb(24 24 27 / 0.45);
+  background-color: rgb(39 39 42 / 0.5);
 }
 
 .dark .notion-file-block:hover { border-color: rgb(82 82 91 / 0.95); }
@@ -534,13 +534,13 @@
 .notion-mermaid-block {
   border: 1px solid rgb(228 228 231 / 0.9);
   border-radius: 0.5rem;
-  background-color: rgb(248 250 252 / 0.55);
+  background-color: rgb(244 244 245 / 0.7);
   overflow: hidden;
 }
 
 .dark .notion-mermaid-block {
   border-color: rgb(63 63 70 / 0.85);
-  background-color: rgb(24 24 27 / 0.45);
+  background-color: rgb(39 39 42 / 0.5);
 }
 
 .notion-mermaid-svg {
@@ -559,12 +559,12 @@
   position: relative;
   border: 1px solid rgb(228 228 231 / 0.75);
   border-radius: 0.5rem;
-  background-color: rgb(248 250 252 / 0.55);
+  background-color: rgb(244 244 245 / 0.7);
 }
 
 .dark .notion-code-block {
   border-color: rgb(63 63 70 / 0.8);
-  background-color: rgb(24 24 27 / 0.45);
+  background-color: rgb(39 39 42 / 0.5);
 }
 
 .notion-code-language { color: rgb(82 82 91 / 0.92); }
@@ -655,8 +655,8 @@
   font-size: 1.05em;
 }
 
-.notion-callout { background-color: rgb(248 250 252 / 0.55); }
-.dark .notion-callout { background-color: rgb(24 24 27 / 0.45); }
+.notion-callout { background-color: rgb(244 244 245 / 0.7); }
+.dark .notion-callout { background-color: rgb(39 39 42 / 0.5); }
 
 .notion-callout-text {
   min-width: 0;
@@ -689,18 +689,34 @@ div[data-link-preview-card='true'].link-preview-card {
 
 .notion-asset-caption {
   text-align: center;
-  color: rgb(107 114 128);
+  color: rgb(161 161 170);
 }
 
-.dark .notion-asset-caption { color: rgb(156 163 175); }
+.dark .notion-asset-caption { color: rgb(113 113 122); }
+
+.notion-audio-block {
+  display: block;
+  width: 100%;
+  margin: 0.75rem 0;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgb(228 228 231 / 0.9);
+  border-radius: 0.5rem;
+  background-color: rgb(244 244 245 / 0.7);
+}
+
+.dark .notion-audio-block {
+  border-color: rgb(63 63 70 / 0.85);
+  background-color: rgb(39 39 42 / 0.5);
+}
 
 .notion-quote { padding: 0.2em 0.9em; }
 .notion-hr {
   border-top-width: 1px;
   border-top-style: solid;
+  border-top-color: rgb(228 228 231);
 }
 
-.dark .notion-hr { border-top-color: rgba(255, 255, 255, 0.13); }
+.dark .notion-hr { border-top-color: rgb(63 63 70); }
 
 .notion-list {
   width: 100%;
@@ -738,9 +754,9 @@ div[data-link-preview-card='true'].link-preview-card {
 }
 
 .notion-to-do-checkbox.is-checked {
-  border-color: rgb(22 163 74);
-  color: rgb(22 163 74);
-  background-color: rgb(22 163 74 / 0.08);
+  border-color: rgb(24 24 27);
+  color: rgb(250 250 251);
+  background-color: rgb(24 24 27);
 }
 
 .dark .notion-to-do-checkbox {
@@ -749,9 +765,9 @@ div[data-link-preview-card='true'].link-preview-card {
 }
 
 .dark .notion-to-do-checkbox.is-checked {
-  border-color: rgb(74 222 128);
-  color: rgb(74 222 128);
-  background-color: rgb(74 222 128 / 0.12);
+  border-color: rgb(244 244 245);
+  color: rgb(24 24 27);
+  background-color: rgb(244 244 245);
 }
 
 .notion-to-do-body {
@@ -782,14 +798,14 @@ div[data-link-preview-card='true'].link-preview-card {
   padding: 0.55rem 0.7rem;
   border: 1px solid rgb(228 228 231 / 0.9);
   border-radius: 0.5rem;
-  background-color: rgb(248 250 252 / 0.55);
+  background-color: rgb(244 244 245 / 0.7);
   transition: border-color 120ms ease, background-color 120ms ease;
   position: relative;
 }
 
 .dark .nobelium-toggle {
   border-color: rgb(63 63 70 / 0.85);
-  background-color: rgb(24 24 27 / 0.45);
+  background-color: rgb(39 39 42 / 0.5);
 }
 
 .nobelium-toggle ::marker {
@@ -831,25 +847,24 @@ div[data-link-preview-card='true'].link-preview-card {
 
 .nobelium-toggle > .nobelium-toggle-summary .button-wrap {
   align-items: center;
-  backdrop-filter: blur(12px);
-  background-color: rgb(245 245 245);
-  border: 1px solid rgb(33 39 46 / 0.12);
-  border-radius: 2px;
-  color: rgb(75 85 99 / 0.6);
+  background-color: rgb(244 244 245);
+  border: 1px solid rgb(228 228 231);
+  border-radius: 6px;
+  color: rgb(82 82 91);
   cursor: pointer;
   display: flex;
   flex: none;
   font-size: 100%;
   height: 27px;
   justify-content: center;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
   width: 27px;
 }
 
 .dark .nobelium-toggle > .nobelium-toggle-summary .button-wrap {
-  background-color: rgb(34 34 34);
-  border-color: rgb(41 41 41);
-  color: rgb(144 144 144);
+  background-color: rgb(39 39 42);
+  border-color: rgb(63 63 70);
+  color: rgb(161 161 170);
 }
 
 .nobelium-toggle > .nobelium-toggle-summary .button-wrap svg {
