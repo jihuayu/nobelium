@@ -22,11 +22,11 @@
 
 html {
   --scrollbarBG: #ffffff00;
-  --thumbBG: #c7c7cd;
+  --thumbBG: #a8a29e;
   scroll-behavior: smooth;
 }
 html.dark {
-  --thumbBG: #3f3f46;
+  --thumbBG: #44403c;
 }
 body::-webkit-scrollbar {
   width: 5px;
@@ -51,12 +51,12 @@ body::-webkit-scrollbar-thumb {
 
 /* Quiet, monochrome focus ring (replaces browser blue outline) */
 :focus-visible {
-  outline: 2px solid rgb(24 24 27 / 0.45);
+  outline: 2px solid rgb(28 25 23 / 0.45);
   outline-offset: 2px;
   border-radius: 1px;
 }
 .dark :focus-visible {
-  outline-color: rgb(244 244 245 / 0.5);
+  outline-color: rgb(245 245 244 / 0.5);
 }
 
 .wrapper {
@@ -82,7 +82,7 @@ body::-webkit-scrollbar-thumb {
 }
 
 .sticky-nav-full {
-  @apply cursor-pointer border-b border-zinc-200/70 dark:border-zinc-700/50;
+  @apply cursor-pointer border-b border-stone-200/70 dark:border-stone-700/50;
 }
 
 .sticky-nav:not(.sticky-nav-full) .caret {
@@ -95,7 +95,7 @@ body::-webkit-scrollbar-thumb {
 }
 
 .sticky-nav-full .nav {
-  @apply text-zinc-500 dark:text-zinc-400;
+  @apply text-stone-500 dark:text-stone-400;
 }
 
 nav {
@@ -123,7 +123,7 @@ nav {
 
 @media (min-width: 768px) {
   .sticky-nav-full {
-    @apply max-w-full border-b border-zinc-200/70 dark:border-zinc-700/50;
+    @apply max-w-full border-b border-stone-200/70 dark:border-stone-700/50;
   }
   .header-name {
     display: grid;

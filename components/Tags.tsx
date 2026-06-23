@@ -17,8 +17,8 @@ const Tags = ({ tags, currentTag }: TagsProps) => {
               key={key}
               className={`mr-3 font-medium border whitespace-nowrap rounded-md transition-colors duration-150 ease-out ${
                 selected
-                  ? 'text-white bg-zinc-900 border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100'
-                  : 'bg-transparent border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:text-zinc-100'
+                  ? 'text-white bg-stone-900 border-stone-900 dark:bg-stone-100 dark:text-stone-900 dark:border-stone-100'
+                  : 'bg-transparent border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-900 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-500 dark:hover:text-stone-100'
               }`}
             >
               <Link

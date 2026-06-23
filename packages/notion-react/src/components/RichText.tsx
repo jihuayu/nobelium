@@ -204,7 +204,7 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
               annotations.underline && 'underline',
               textColorClassName,
               backgroundColorClassName,
-              annotations.code && 'font-mono text-[0.9em] px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800'
+              annotations.code && 'font-mono text-[0.9em] px-1 py-0.5 rounded bg-stone-100 dark:bg-stone-800'
             )}
           >
             {textContent}
@@ -270,7 +270,7 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
             href={href}
             target={isInternalHref(href) ? undefined : '_blank'}
             rel={isInternalHref(href) ? undefined : 'noopener noreferrer'}
-            className="text-zinc-900 dark:text-zinc-100 underline underline-offset-4 decoration-zinc-400 dark:decoration-zinc-600"
+            className="text-stone-900 dark:text-stone-100 underline underline-offset-4 decoration-stone-400 dark:decoration-stone-600"
           >
             {content}
           </a>

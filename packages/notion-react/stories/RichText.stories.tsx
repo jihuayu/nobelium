@@ -22,7 +22,7 @@ const meta = {
     }
   },
   render: (args) => (
-    <div className="max-w-xl text-[17px] leading-8 text-zinc-900 dark:text-zinc-100">
+    <div className="max-w-xl text-[17px] leading-8 text-stone-900 dark:text-stone-100">
       <RichText {...args} />
     </div>
   )

@@ -37,7 +37,7 @@ const NavBar = ({ path, showAbout, locale }: NavBarProps) => {
                 <Link
                   href={link.to}
                   target={link.external ? '_blank' : undefined}
-                  className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors duration-150 ease-out"
+                  className="text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 transition-colors duration-150 ease-out"
                 >
                   {link.name}
                 </Link>
@@ -70,12 +70,12 @@ function HeaderName({ siteTitle, siteDescription, postTitle }: HeaderNameProps) 
   return (
     <p
       id="header-title"
-      className={`header-name ${!postTitle ? 'header-name-no-post-title' : ''} font-semibold text-zinc-900 dark:text-zinc-100 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none`}
+      className={`header-name ${!postTitle ? 'header-name-no-post-title' : ''} font-semibold text-stone-900 dark:text-stone-100 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none`}
     >
       {postTitle && <span className="post-title row-start-1 col-start-1 tracking-tight">{postTitle}</span>}
       <span className="row-start-1 col-start-1">
         <span className="site-title tracking-tight">{siteTitle}</span>
-        <span className="site-description ml-2 text-xs font-normal text-zinc-400 dark:text-zinc-500">{siteDescription}</span>
+        <span className="site-description ml-2 text-xs font-normal text-stone-400 dark:text-stone-500">{siteDescription}</span>
       </span>
     </p>
   )

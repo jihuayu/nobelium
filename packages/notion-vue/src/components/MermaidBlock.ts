@@ -16,36 +16,36 @@ function isDarkMode() {
 }
 
 const MERMAID_LIGHT_THEME_VARIABLES = {
-  primaryColor: '#F4F4F5',
-  primaryBorderColor: '#D4D4D8',
-  primaryTextColor: '#27272A',
-  lineColor: '#52525B',
-  secondaryColor: '#E4E4E7',
-  tertiaryColor: '#FAFAFB',
-  background: '#FAFAFB',
-  mainBkg: '#F4F4F5',
-  nodeBorder: '#D4D4D8',
-  clusterBkg: '#FAFAFB',
-  clusterBorder: '#E4E4E7',
-  titleColor: '#27272A',
-  edgeLabelBackground: '#FAFAFB',
+  primaryColor: '#f5f5f4',
+  primaryBorderColor: '#d6d3d1',
+  primaryTextColor: '#292524',
+  lineColor: '#57534e',
+  secondaryColor: '#e7e5e4',
+  tertiaryColor: '#fafaf9',
+  background: '#fafaf9',
+  mainBkg: '#f5f5f4',
+  nodeBorder: '#d6d3d1',
+  clusterBkg: '#fafaf9',
+  clusterBorder: '#e7e5e4',
+  titleColor: '#292524',
+  edgeLabelBackground: '#fafaf9',
   fontFamily: 'inherit'
 }
 
 const MERMAID_DARK_THEME_VARIABLES = {
-  primaryColor: '#27272A',
-  primaryBorderColor: '#3F3F46',
-  primaryTextColor: '#E4E4E5',
-  lineColor: '#A1A1AA',
-  secondaryColor: '#3F3F46',
-  tertiaryColor: '#18181B',
-  background: '#18181B',
-  mainBkg: '#27272A',
-  nodeBorder: '#3F3F46',
-  clusterBkg: '#18181B',
-  clusterBorder: '#27272A',
-  titleColor: '#E4E4E5',
-  edgeLabelBackground: '#18181B',
+  primaryColor: '#292524',
+  primaryBorderColor: '#44403c',
+  primaryTextColor: '#e7e5e4',
+  lineColor: '#a8a29e',
+  secondaryColor: '#44403c',
+  tertiaryColor: '#0c0a09',
+  background: '#0c0a09',
+  mainBkg: '#292524',
+  nodeBorder: '#44403c',
+  clusterBkg: '#0c0a09',
+  clusterBorder: '#292524',
+  titleColor: '#e7e5e4',
+  edgeLabelBackground: '#0c0a09',
   fontFamily: 'inherit'
 }
 
@@ -192,7 +192,7 @@ export default defineComponent({
 
       if (renderError.value) {
         return h('div', { ref: hostRef, class: blockClass }, [
-          h('pre', { class: 'overflow-x-auto p-3 text-sm text-zinc-900 dark:text-zinc-100' }, [
+          h('pre', { class: 'overflow-x-auto p-3 text-sm text-stone-900 dark:text-stone-100' }, [
             h('code', props.code)
           ]),
           h('p', { class: 'px-3 pb-3 text-xs text-red-600 dark:text-red-400' }, `Mermaid render error: ${renderError.value}`)
@@ -202,7 +202,7 @@ export default defineComponent({
       return h('div', { ref: hostRef, class: blockClass }, [
         shouldRender.value
           ? h('div', { ref: containerRef, class: 'notion-mermaid-svg' })
-          : h('pre', { class: 'overflow-x-auto p-3 text-sm text-zinc-500 dark:text-zinc-400' }, [
+          : h('pre', { class: 'overflow-x-auto p-3 text-sm text-stone-500 dark:text-stone-400' }, [
               h('code', 'Mermaid diagram deferred')
             ])
       ])

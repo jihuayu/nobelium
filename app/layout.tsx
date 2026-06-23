@@ -151,8 +151,8 @@ export default async function RootLayout({
   const colorSchemeClass = initialColorScheme[config.appearance] || ''
 
   const dayBg = sanitizeThemeColor(config.lightBackground, '#ffffff')
-  const nightBg = sanitizeThemeColor(config.darkBackground, '#111827')
-  const nightText = 'rgb(222, 222, 228)'
+  const nightBg = sanitizeThemeColor(config.darkBackground, '#0c0a09')
+  const nightText = 'rgb(214, 211, 209)'
   const themeBootstrapScript = `(() => {
     const appearance = ${JSON.stringify(config.appearance)};
     const root = document.documentElement;
@@ -203,10 +203,10 @@ export default async function RootLayout({
               .color-scheme-unset .text-gray-700,
               .color-scheme-unset .text-gray-600,
               .color-scheme-unset .text-gray-500,
-              .color-scheme-unset .text-zinc-900,
-              .color-scheme-unset .text-zinc-800,
-              .color-scheme-unset .text-zinc-700,
-              .color-scheme-unset .text-zinc-600 {
+              .color-scheme-unset .text-stone-900,
+              .color-scheme-unset .text-stone-800,
+              .color-scheme-unset .text-stone-700,
+              .color-scheme-unset .text-stone-600 {
                 color: ${nightText} !important;
               }
               .color-scheme-unset .fill-black {

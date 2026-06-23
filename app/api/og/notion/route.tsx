@@ -137,7 +137,7 @@ function renderCoverOnlyOgImage({
   fontFamily: string
 }) {
   return (
-    <div style={buildBaseContainer('#18181b', '#ffffff', fontFamily)}>
+    <div style={buildBaseContainer('#1c1917', '#ffffff', fontFamily)}>
       <img
         src={coverDataUrl}
         alt=""
@@ -161,7 +161,7 @@ function renderTitleOgImage({
   const titleLines = wrapTextLines(title, 14, 3)
 
   return (
-    <div style={buildBaseContainer(config.lightBackground || '#ffffff', '#18181b', fontFamily)}>
+    <div style={buildBaseContainer(config.lightBackground || '#ffffff', '#1c1917', fontFamily)}>
       <div
         style={{
           position: 'absolute',
@@ -201,7 +201,7 @@ function renderTitleOgImage({
             width: 148,
             height: 12,
             borderRadius: 999,
-            background: '#18181b'
+            background: '#1c1917'
           }}
         />
         <div
@@ -343,7 +343,7 @@ function createSvgFallbackMarkup({
   return coverDataUrl
     ? (() => {
         return `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" viewBox="0 0 ${IMAGE_WIDTH} ${IMAGE_HEIGHT}">
-<rect width="1200" height="630" fill="#18181b"/>
+<rect width="1200" height="630" fill="#1c1917"/>
 <image href="${escapeSvgText(coverDataUrl)}" x="0" y="0" width="1200" height="630" preserveAspectRatio="xMidYMid slice"/>
 </svg>`
       })()
@@ -354,7 +354,7 @@ function createSvgFallbackMarkup({
 <rect width="1200" height="630" fill="${escapeSvgText(config.lightBackground || '#ffffff')}"/>
 <circle cx="1060" cy="40" r="210" fill="rgba(24,24,27,0.05)"/>
 <circle cx="30" cy="640" r="240" fill="rgba(24,24,27,0.08)"/>
-<rect x="72" y="72" width="148" height="12" rx="6" fill="#18181b"/>
+<rect x="72" y="72" width="148" height="12" rx="6" fill="#1c1917"/>
 ${buildSvgTextElements({
   lines: titleLines,
   x: 72,
@@ -362,7 +362,7 @@ ${buildSvgTextElements({
   lineHeight: titleLineHeight,
   fontSize: 68,
   fontWeight: 700,
-  fill: '#18181b'
+  fill: '#1c1917'
 })}
 <text x="72" y="558" fill="rgba(24,24,27,0.72)" font-family="${escapeSvgText(SVG_SYSTEM_FONT_STACK)}" font-size="24" letter-spacing="4">${safeSiteTitle}</text>
 </svg>`
