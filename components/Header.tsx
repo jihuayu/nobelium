@@ -92,14 +92,13 @@ export default function Header({
   navLocale
 }: HeaderProps) {
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
-  const headerAnimClass = fullWidth ? 'notion-header-anim-wide' : ''
 
   return (
     <>
-      <HeaderBehavior useSticky={!autoCollapsedNavBar} />
+      <HeaderBehavior useSticky={!autoCollapsedNavBar} fullWidth={fullWidth} />
       <div className="observer-element h-4 md:h-12" id="header-sentinel" />
       <div
-        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 px-4 ${headerAnimClass} ${contentWidthClass}`}
+        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 px-4 ${contentWidthClass}`}
         id="sticky-nav"
       >
         <svg

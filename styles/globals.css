@@ -225,21 +225,21 @@ nav {
   }
 }
 
-/* Header/Footer width transition: only animate when entering wide mode */
+/* Header/Footer width transition: animate when crossing wide↔normal boundary */
 @keyframes header-width-wide {
   from { max-width: 50.6rem; }
   to { max-width: 60rem; }
 }
 
-@keyframes footer-width-wide {
-  from { max-width: 50.6rem; }
-  to { max-width: 60rem; }
+@keyframes header-width-normal {
+  from { max-width: 60rem; }
+  to { max-width: 50.6rem; }
 }
 
 .notion-header-anim-wide {
   animation: header-width-wide 300ms ease-out;
 }
 
-.notion-footer-anim-wide {
-  animation: footer-width-wide 300ms ease-out;
+.notion-header-anim-normal {
+  animation: header-width-normal 300ms ease-out;
 }
