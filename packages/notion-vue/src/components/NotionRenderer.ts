@@ -299,14 +299,14 @@ export default defineComponent({
                   class: cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading my-3', !hasChildren && 'nobelium-toggle-empty')
                 }, [
                   h('summary', { class: 'nobelium-toggle-summary' }, [
-                    h(headingTag, { class: cn(headingClass, 'nobelium-toggle-title whitespace-pre-wrap') }, [content]),
                     ...(hasChildren ? [
                       h('span', { class: 'nobelium-toggle-chevron', 'aria-hidden': 'true' }, [
                         h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', role: 'presentation' }, [
                           h('path', { d: 'M6 9l6 6 6-6' })
                         ])
                       ])
-                    ] : [])
+                    ] : []),
+                    h(headingTag, { class: cn(headingClass, 'nobelium-toggle-title whitespace-pre-wrap') }, [content])
                   ]),
                   hasChildren
                     ? h('div', { class: 'nobelium-toggle-content' }, [
@@ -427,14 +427,14 @@ export default defineComponent({
                 class: cn(baseClassName, 'nobelium-toggle my-2', !hasChildren && 'nobelium-toggle-empty')
               }, [
                 h('summary', { class: 'nobelium-toggle-summary' }, [
-                  h('span', { class: 'nobelium-toggle-title whitespace-pre-wrap' }, [renderRichText(block.toggle.rich_text)]),
                   ...(hasChildren ? [
                     h('span', { class: 'nobelium-toggle-chevron', 'aria-hidden': 'true' }, [
                       h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', role: 'presentation' }, [
                         h('path', { d: 'M6 9l6 6 6-6' })
                       ])
                     ])
-                  ] : [])
+                  ] : []),
+                  h('span', { class: 'nobelium-toggle-title whitespace-pre-wrap' }, [renderRichText(block.toggle.rich_text)])
                 ]),
                 hasChildren
                   ? h('div', { class: 'nobelium-toggle-content' }, [

@@ -281,7 +281,6 @@ export default function NotionRenderer({ model, components, renderOptions, class
             return (
               <details key={block.id} id={getHeadingAnchorId(block.id)} className={cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading my-3', !hasChildren && 'nobelium-toggle-empty')}>
                 <summary className="nobelium-toggle-summary">
-                  <HeadingTag className={cn(headingClass, 'nobelium-toggle-title whitespace-pre-wrap')}>{content}</HeadingTag>
                   {hasChildren && (
                     <span className="nobelium-toggle-chevron" aria-hidden="true">
                       <svg width="16" height="16" viewBox="0 0 24 24" role="presentation">
@@ -289,6 +288,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
                       </svg>
                     </span>
                   )}
+                  <HeadingTag className={cn(headingClass, 'nobelium-toggle-title whitespace-pre-wrap')}>{content}</HeadingTag>
                 </summary>
                 {hasChildren && <div className="nobelium-toggle-content"><div className="content">{renderChildren(block.id)}</div></div>}
               </details>
@@ -408,7 +408,6 @@ export default function NotionRenderer({ model, components, renderOptions, class
           return (
             <details key={block.id} className={cn(baseClassName, 'nobelium-toggle my-2', !hasChildren && 'nobelium-toggle-empty')}>
               <summary className="nobelium-toggle-summary">
-                <span className="nobelium-toggle-title whitespace-pre-wrap">{renderRichText(block.toggle.rich_text)}</span>
                 {hasChildren && (
                   <span className="nobelium-toggle-chevron" aria-hidden="true">
                     <svg width="16" height="16" viewBox="0 0 24 24" role="presentation">
@@ -416,6 +415,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
                     </svg>
                   </span>
                 )}
+                <span className="nobelium-toggle-title whitespace-pre-wrap">{renderRichText(block.toggle.rich_text)}</span>
               </summary>
               {hasChildren && <div className="nobelium-toggle-content"><div className="content">{renderChildren(block.id)}</div></div>}
             </details>
