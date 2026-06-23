@@ -1,11 +1,11 @@
 @import 'katex/dist/katex.min.css';
 
 :root {
-  --no-leading: 1.82;
+  --no-leading: 1.75;
   --notion-font-family: inherit;
   --notion-font-size: clamp(16.5px, 1rem + 0.16vw, 18px);
   --notion-letter-spacing: 0.012em;
-  --notion-paragraph-spacing: 0.8em;
+  --notion-paragraph-spacing: 0.64em;
   --notion-text-color: rgb(40, 37, 35);
   --notion-text-color-dark: rgb(214, 211, 209);
   --notion-gray: rgb(120, 119, 116);
