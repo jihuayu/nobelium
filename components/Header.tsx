@@ -91,14 +91,14 @@ export default function Header({
   autoCollapsedNavBar,
   navLocale
 }: HeaderProps) {
-  const contentWidthClass = ARTICLE_CONTENT_MAX_WIDTH_CLASS
+  const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
 
   return (
     <>
       <HeaderBehavior useSticky={!autoCollapsedNavBar} />
       <div className="observer-element h-4 md:h-12" id="header-sentinel" />
       <div
-        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 px-4 ${contentWidthClass}`}
+        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 px-4 transition-[max-width] duration-300 ease-out ${contentWidthClass}`}
         id="sticky-nav"
       >
         <svg
