@@ -88,7 +88,7 @@ export default function DeferredComments({ issueTerm, repo, appearance }: Deferr
       {enabled ? (
         <Utterances issueTerm={issueTerm} repo={repo} appearance={appearance} />
       ) : (
-        <div className="h-24 rounded border border-zinc-200/70 dark:border-zinc-700/70 bg-zinc-50/60 dark:bg-zinc-800/40" />
+        <div className="h-24 rounded border border-zinc-200/70 dark:border-zinc-700/70 bg-zinc-50/60 dark:bg-zinc-800/60" />
       )}
     </div>
   )

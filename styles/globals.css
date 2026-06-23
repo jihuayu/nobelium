@@ -43,10 +43,10 @@ body::-webkit-scrollbar-thumb {
 }
 
 ::selection {
-  background: rgba(24, 24, 27, 0.13);
+  background: rgba(24, 24, 27, 0.15);
 }
 .dark ::selection {
-  background: rgba(244, 244, 245, 0.2);
+  background: rgba(244, 244, 245, 0.18);
 }
 
 /* Quiet, monochrome focus ring (replaces browser blue outline) */

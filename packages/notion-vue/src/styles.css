@@ -30,7 +30,7 @@
   --notion-red_background: rgb(253, 235, 236);
   --notion-url-hover-width: 280px;
   --notion-url-hover-viewport-padding: 24px;
-  --notion-url-hover-radius: 0.52rem;
+  --notion-url-hover-radius: 0.5rem;
   --notion-url-hover-border: rgb(228 228 231 / 0.95);
   --notion-url-hover-bg: rgb(255 255 255);
   --notion-url-hover-shadow:
@@ -38,7 +38,7 @@
     0 1px 3px rgb(24 24 27 / 0.06);
   --notion-url-hover-cover-bg: rgb(244 244 245);
   --notion-url-hover-body-px: calc(0.6rem + 5px);
-  --notion-url-hover-body-pt: calc(0.52rem + 5px);
+  --notion-url-hover-body-pt: calc(0.5rem + 5px);
   --notion-url-hover-body-pb: calc(0.55rem + 5px);
 }
 
@@ -246,7 +246,7 @@
   max-width: 320px;
   box-sizing: border-box;
   padding: 0.3rem 0.4rem;
-  border-radius: 0.35rem;
+  border-radius: 0.25rem;
   border: 1px solid rgb(228 228 231 / 0.95);
   background-color: rgb(255 255 255);
   box-shadow:

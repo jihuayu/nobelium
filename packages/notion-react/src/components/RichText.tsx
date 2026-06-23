@@ -270,7 +270,7 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
             href={href}
             target={isInternalHref(href) ? undefined : '_blank'}
             rel={isInternalHref(href) ? undefined : 'noopener noreferrer'}
-            className="text-blue-600 dark:text-blue-400 underline underline-offset-4"
+            className="text-zinc-900 dark:text-zinc-100 underline underline-offset-4 decoration-zinc-400 dark:decoration-zinc-600"
           >
             {content}
           </a>
