@@ -279,27 +279,18 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const content = renderRichText(headingPayload.rich_text)
           if (headingPayload.is_toggleable) {
             return (
-              <details key={block.id} id={getHeadingAnchorId(block.id)} className={cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading callout-wrap my-3', !hasChildren && 'nobelium-toggle-empty')}>
+              <details key={block.id} id={getHeadingAnchorId(block.id)} className={cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading my-3', !hasChildren && 'nobelium-toggle-empty')}>
                 <summary className="nobelium-toggle-summary">
-                  <HeadingTag className={cn(headingClass, 'collapsed-label nobelium-toggle-title whitespace-pre-wrap')}>{content}</HeadingTag>
-                  <span className="button-wrap expand-icon" aria-hidden="true">
-                    <svg width="24" height="24" viewBox="0 0 24 24" role="presentation">
-                      <path d="M8.67383 5.36887L12.0427 2L15.4116 5.36887" />
-                      <path d="M15.4116 18.8443L12.0427 22.2132L8.67383 18.8443" />
-                      <path d="M12.0426 2.00003V10.0853" />
-                      <path d="M12.0426 22.2132V14.1279" />
-                    </svg>
-                  </span>
-                  <span className="button-wrap collapse-icon" aria-hidden="true">
-                    <svg width="24" height="24" viewBox="0 0 24 24" role="presentation">
-                      <path d="M8.67383 17.3689L12.0427 14L15.4116 17.3689" />
-                      <path d="M15.4116 6.7164L12.0427 10.0853L8.67383 6.7164" />
-                      <path d="M12.0426 14V22.0853" />
-                      <path d="M12.0426 10.0853V1.99999" />
-                    </svg>
-                  </span>
+                  <HeadingTag className={cn(headingClass, 'nobelium-toggle-title whitespace-pre-wrap')}>{content}</HeadingTag>
+                  {hasChildren && (
+                    <span className="nobelium-toggle-chevron" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" role="presentation">
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </span>
+                  )}
                 </summary>
-                {hasChildren && <div className="nobelium-toggle-content callout-content"><div className="content">{renderChildren(block.id)}</div></div>}
+                {hasChildren && <div className="nobelium-toggle-content"><div className="content">{renderChildren(block.id)}</div></div>}
               </details>
             )
           }
@@ -415,27 +406,18 @@ export default function NotionRenderer({ model, components, renderOptions, class
         return renderBlockWithOverride(block, () => {
           const hasChildren = (childrenById[block.id] || []).length > 0
           return (
-            <details key={block.id} className={cn(baseClassName, 'nobelium-toggle callout-wrap my-3', !hasChildren && 'nobelium-toggle-empty')}>
+            <details key={block.id} className={cn(baseClassName, 'nobelium-toggle my-2', !hasChildren && 'nobelium-toggle-empty')}>
               <summary className="nobelium-toggle-summary">
-                <span className="collapsed-label nobelium-toggle-title whitespace-pre-wrap">{renderRichText(block.toggle.rich_text)}</span>
-                <span className="button-wrap expand-icon" aria-hidden="true">
-                  <svg width="24" height="24" viewBox="0 0 24 24" role="presentation">
-                    <path d="M8.67383 5.36887L12.0427 2L15.4116 5.36887" />
-                    <path d="M15.4116 18.8443L12.0427 22.2132L8.67383 18.8443" />
-                    <path d="M12.0426 2.00003V10.0853" />
-                    <path d="M12.0426 22.2132V14.1279" />
-                  </svg>
-                </span>
-                <span className="button-wrap collapse-icon" aria-hidden="true">
-                  <svg width="24" height="24" viewBox="0 0 24 24" role="presentation">
-                    <path d="M8.67383 17.3689L12.0427 14L15.4116 17.3689" />
-                    <path d="M15.4116 6.7164L12.0427 10.0853L8.67383 6.7164" />
-                    <path d="M12.0426 14V22.0853" />
-                    <path d="M12.0426 10.0853V1.99999" />
-                  </svg>
-                </span>
+                <span className="nobelium-toggle-title whitespace-pre-wrap">{renderRichText(block.toggle.rich_text)}</span>
+                {hasChildren && (
+                  <span className="nobelium-toggle-chevron" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" role="presentation">
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </span>
+                )}
               </summary>
-              {hasChildren && <div className="nobelium-toggle-content callout-content"><div className="content">{renderChildren(block.id)}</div></div>}
+              {hasChildren && <div className="nobelium-toggle-content"><div className="content">{renderChildren(block.id)}</div></div>}
             </details>
           )
         })

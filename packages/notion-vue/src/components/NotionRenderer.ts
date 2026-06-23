@@ -296,29 +296,20 @@ export default defineComponent({
                 return h('details', {
                   key: block.id,
                   id: getHeadingAnchorId(block.id),
-                  class: cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading callout-wrap my-3', !hasChildren && 'nobelium-toggle-empty')
+                  class: cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading my-3', !hasChildren && 'nobelium-toggle-empty')
                 }, [
                   h('summary', { class: 'nobelium-toggle-summary' }, [
-                    h(headingTag, { class: cn(headingClass, 'collapsed-label nobelium-toggle-title whitespace-pre-wrap') }, [content]),
-                    h('span', { class: 'button-wrap expand-icon', 'aria-hidden': 'true' }, [
-                      h('svg', { width: '24', height: '24', viewBox: '0 0 24 24', role: 'presentation' }, [
-                        h('path', { d: 'M8.67383 5.36887L12.0427 2L15.4116 5.36887' }),
-                        h('path', { d: 'M15.4116 18.8443L12.0427 22.2132L8.67383 18.8443' }),
-                        h('path', { d: 'M12.0426 2.00003V10.0853' }),
-                        h('path', { d: 'M12.0426 22.2132V14.1279' })
+                    h(headingTag, { class: cn(headingClass, 'nobelium-toggle-title whitespace-pre-wrap') }, [content]),
+                    ...(hasChildren ? [
+                      h('span', { class: 'nobelium-toggle-chevron', 'aria-hidden': 'true' }, [
+                        h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', role: 'presentation' }, [
+                          h('path', { d: 'M6 9l6 6 6-6' })
+                        ])
                       ])
-                    ]),
-                    h('span', { class: 'button-wrap collapse-icon', 'aria-hidden': 'true' }, [
-                      h('svg', { width: '24', height: '24', viewBox: '0 0 24 24', role: 'presentation' }, [
-                        h('path', { d: 'M8.67383 17.3689L12.0427 14L15.4116 17.3689' }),
-                        h('path', { d: 'M15.4116 6.7164L12.0427 10.0853L8.67383 6.7164' }),
-                        h('path', { d: 'M12.0426 14V22.0853' }),
-                        h('path', { d: 'M12.0426 10.0853V1.99999' })
-                      ])
-                    ])
+                    ] : [])
                   ]),
                   hasChildren
-                    ? h('div', { class: 'nobelium-toggle-content callout-content' }, [
+                    ? h('div', { class: 'nobelium-toggle-content' }, [
                         h('div', { class: 'content' }, [renderChildren(block.id)])
                       ])
                     : null
@@ -433,29 +424,20 @@ export default defineComponent({
               const hasChildren = (childrenById[block.id] || []).length > 0
               return h('details', {
                 key: block.id,
-                class: cn(baseClassName, 'nobelium-toggle callout-wrap my-3', !hasChildren && 'nobelium-toggle-empty')
+                class: cn(baseClassName, 'nobelium-toggle my-2', !hasChildren && 'nobelium-toggle-empty')
               }, [
                 h('summary', { class: 'nobelium-toggle-summary' }, [
-                  h('span', { class: 'collapsed-label nobelium-toggle-title whitespace-pre-wrap' }, [renderRichText(block.toggle.rich_text)]),
-                  h('span', { class: 'button-wrap expand-icon', 'aria-hidden': 'true' }, [
-                    h('svg', { width: '24', height: '24', viewBox: '0 0 24 24', role: 'presentation' }, [
-                      h('path', { d: 'M8.67383 5.36887L12.0427 2L15.4116 5.36887' }),
-                      h('path', { d: 'M15.4116 18.8443L12.0427 22.2132L8.67383 18.8443' }),
-                      h('path', { d: 'M12.0426 2.00003V10.0853' }),
-                      h('path', { d: 'M12.0426 22.2132V14.1279' })
+                  h('span', { class: 'nobelium-toggle-title whitespace-pre-wrap' }, [renderRichText(block.toggle.rich_text)]),
+                  ...(hasChildren ? [
+                    h('span', { class: 'nobelium-toggle-chevron', 'aria-hidden': 'true' }, [
+                      h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', role: 'presentation' }, [
+                        h('path', { d: 'M6 9l6 6 6-6' })
+                      ])
                     ])
-                  ]),
-                  h('span', { class: 'button-wrap collapse-icon', 'aria-hidden': 'true' }, [
-                    h('svg', { width: '24', height: '24', viewBox: '0 0 24 24', role: 'presentation' }, [
-                      h('path', { d: 'M8.67383 17.3689L12.0427 14L15.4116 17.3689' }),
-                      h('path', { d: 'M15.4116 6.7164L12.0427 10.0853L8.67383 6.7164' }),
-                      h('path', { d: 'M12.0426 14V22.0853' }),
-                      h('path', { d: 'M12.0426 10.0853V1.99999' })
-                    ])
-                  ])
+                  ] : [])
                 ]),
                 hasChildren
-                  ? h('div', { class: 'nobelium-toggle-content callout-content' }, [
+                  ? h('div', { class: 'nobelium-toggle-content' }, [
                       h('div', { class: 'content' }, [renderChildren(block.id)])
                     ])
                   : null
