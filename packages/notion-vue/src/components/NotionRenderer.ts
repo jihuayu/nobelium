@@ -59,6 +59,8 @@ import {
 } from '../utils/notion'
 import DefaultLinkPreviewCard from './LinkPreviewCard'
 import DefaultMermaidBlock from './MermaidBlock'
+import CodeBlockCopyButton from './CodeBlockCopyButton'
+import ImageLightbox from './ImageLightbox'
 import { RichText } from './RichText'
 
 function renderEquationHtml(expression: string, displayMode = false): string {
@@ -374,12 +376,15 @@ export default defineComponent({
                 ])
               }
               const highlighted = model.highlightedCodeByBlockId[block.id]
+              const codeContentId = `notion-code-content-${block.id.replaceAll('-', '')}`
               return h('div', { key: block.id, class: baseClassName }, [
                 h('div', { class: 'notion-code-block my-5 overflow-hidden' }, [
                   h('span', { class: 'notion-code-language notion-code-language-floating' },
                     highlighted?.displayLanguage || `${block.code.language || ''}`.trim() || 'plain text'
                   ),
+                  h(CodeBlockCopyButton, { codeSelector: `#${codeContentId} code` }),
                   h('div', {
+                    id: codeContentId,
                     class: 'notion-code-content',
                     innerHTML: highlighted?.html || renderFallbackHighlightedCodeHtml(source)
                   })
@@ -806,7 +811,10 @@ export default defineComponent({
         return nodes
       }
 
-      return h('div', { class: cn('notion', props.class), style: props.style }, renderBlockList(rootIds))
+      return h('div', { class: cn('notion', props.class), style: props.style }, [
+        renderBlockList(rootIds),
+        h(ImageLightbox)
+      ])
     }
   }
 })
