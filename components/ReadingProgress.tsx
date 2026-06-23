@@ -1,34 +1,48 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 export default function ReadingProgress() {
-  const [progress, setProgress] = useState(0)
+  const barRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    const handler = () => {
+    let rafId: number | null = null
+
+    const update = () => {
+      rafId = null
+      const bar = barRef.current
+      if (!bar) return
       const scrollTop = window.scrollY
       const docHeight = document.documentElement.scrollHeight - window.innerHeight
-      if (docHeight <= 0) {
-        setProgress(0)
-        return
-      }
-      setProgress(Math.min(1, Math.max(0, scrollTop / docHeight)))
+      const progress = docHeight <= 0
+        ? 0
+        : Math.min(1, Math.max(0, scrollTop / docHeight))
+      bar.style.transform = `scaleX(${progress})`
     }
-    handler()
-    window.addEventListener('scroll', handler, { passive: true })
-    window.addEventListener('resize', handler)
+
+    const scheduleUpdate = () => {
+      if (rafId !== null) return
+      rafId = window.requestAnimationFrame(update)
+    }
+
+    scheduleUpdate()
+    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate)
     return () => {
-      window.removeEventListener('scroll', handler)
-      window.removeEventListener('resize', handler)
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId)
+      }
+      window.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('resize', scheduleUpdate)
     }
   }, [])
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 h-0.5 pointer-events-none">
       <div
-        className="h-full bg-stone-400 dark:bg-stone-500 transition-[width] duration-75 ease-out"
-        style={{ width: `${progress * 100}%` }}
+        ref={barRef}
+        className="h-full bg-stone-400 dark:bg-stone-500 transition-transform duration-75 ease-out will-change-transform"
+        style={{ transform: 'scaleX(0)', transformOrigin: 'left center' }}
       />
     </div>
   )
