@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import Post from '@/components/Post'
+import ReadingProgress from '@/components/ReadingProgress'
 import type { NotionDocument, PagePreviewMap } from '@jihuayu/notion-type'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
@@ -34,6 +35,7 @@ export default function SlugPostClient({
 
   return (
     <>
+      <ReadingProgress />
       <Post
         post={post}
         document={document}
