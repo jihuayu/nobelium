@@ -794,8 +794,13 @@ div[data-link-preview-card='true'].link-preview-card {
 
 .nobelium-toggle {
   width: 100%;
-  margin: 0.4rem 0;
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
   position: relative;
+}
+
+.nobelium-toggle + .nobelium-toggle {
+  margin-top: 0;
 }
 
 .nobelium-toggle ::marker {
@@ -860,7 +865,6 @@ div[data-link-preview-card='true'].link-preview-card {
 
 .nobelium-toggle-heading > .nobelium-toggle-summary .nobelium-toggle-chevron {
   align-self: baseline;
-  margin-top: 0.2em;
 }
 
 .dark .nobelium-toggle > .nobelium-toggle-summary .nobelium-toggle-chevron {
@@ -899,11 +903,11 @@ div[data-link-preview-card='true'].link-preview-card {
   margin-top: 0.15rem;
   padding: 0.25rem 0.5rem 0.25rem 1.4rem;
   border-radius: 0.25rem;
-  background-color: rgb(245 245 244 / 0.45);
+  background-color: rgb(245 245 244 / 0.7);
 }
 
 .dark .nobelium-toggle > .nobelium-toggle-content {
-  background-color: rgb(41 37 36 / 0.35);
+  background-color: rgb(41 37 36 / 0.5);
 }
 
 .nobelium-toggle[open] > .nobelium-toggle-content {

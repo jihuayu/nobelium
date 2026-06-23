@@ -284,7 +284,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
                   {hasChildren && (
                     <span className="nobelium-toggle-chevron" aria-hidden="true">
                       <svg width="16" height="16" viewBox="0 0 24 24" role="presentation">
-                        <path d="M6 9l6 6 6-6" />
+                        <path d="M9 6l6 6-6 6" />
                       </svg>
                     </span>
                   )}

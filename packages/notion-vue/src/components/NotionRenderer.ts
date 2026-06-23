@@ -302,7 +302,7 @@ export default defineComponent({
                     ...(hasChildren ? [
                       h('span', { class: 'nobelium-toggle-chevron', 'aria-hidden': 'true' }, [
                         h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', role: 'presentation' }, [
-                          h('path', { d: 'M6 9l6 6 6-6' })
+                          h('path', { d: 'M9 6l6 6-6 6' })
                         ])
                       ])
                     ] : []),
@@ -430,7 +430,7 @@ export default defineComponent({
                   ...(hasChildren ? [
                     h('span', { class: 'nobelium-toggle-chevron', 'aria-hidden': 'true' }, [
                       h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', role: 'presentation' }, [
-                        h('path', { d: 'M6 9l6 6 6-6' })
+                        h('path', { d: 'M9 6l6 6-6 6' })
                       ])
                     ])
                   ] : []),
