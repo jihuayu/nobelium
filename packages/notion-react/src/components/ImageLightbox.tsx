@@ -30,7 +30,7 @@ export default function ImageLightbox() {
   }, [open])
 
   useEffect(() => {
-    if (!src) return
+    if (!src) return undefined
     const keyHandler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close()
     }
