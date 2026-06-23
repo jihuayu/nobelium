@@ -4,15 +4,41 @@ import { useEffect } from 'react'
 
 interface HeaderBehaviorProps {
   useSticky: boolean
+  fullWidth?: boolean
 }
 
-export default function HeaderBehavior({ useSticky }: HeaderBehaviorProps) {
+const WIDTH_STORAGE_KEY = 'notion-header-fullwidth'
+
+export default function HeaderBehavior({ useSticky, fullWidth = false }: HeaderBehaviorProps) {
   useEffect(() => {
     const navEl = document.getElementById('sticky-nav')
     const sentinelEl = document.getElementById('header-sentinel')
     const titleEl = document.getElementById('header-title')
 
     if (!navEl || !sentinelEl) return undefined
+
+    // Width transition animation: only animate when crossing wide↔normal boundary
+    let prevWide: boolean | null = null
+    try {
+      const stored = sessionStorage.getItem(WIDTH_STORAGE_KEY)
+      prevWide = stored === null ? null : stored === 'true'
+    } catch {
+      prevWide = null
+    }
+
+    if (prevWide !== null && prevWide !== fullWidth) {
+      const animClass = fullWidth ? 'notion-header-anim-wide' : 'notion-header-anim-normal'
+      navEl.classList.add(animClass)
+      // Remove the animation class after it completes so it can be re-added later
+      const cleanup = () => navEl.classList.remove(animClass)
+      navEl.addEventListener('animationend', cleanup, { once: true })
+    }
+
+    try {
+      sessionStorage.setItem(WIDTH_STORAGE_KEY, String(fullWidth))
+    } catch {
+      // ignore
+    }
 
     if (!useSticky) {
       navEl.classList.add('remove-sticky')
@@ -50,7 +76,7 @@ export default function HeaderBehavior({ useSticky }: HeaderBehaviorProps) {
       observer.disconnect()
       navEl.removeEventListener('click', handleNavClick)
     }
-  }, [useSticky])
+  }, [useSticky, fullWidth])
 
   return null
 }
