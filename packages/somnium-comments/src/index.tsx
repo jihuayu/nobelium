@@ -567,6 +567,8 @@ export function CommentBox({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [composing, setComposing] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState<{ start: number; query: string } | null>(null)
+  const [mentionIndex, setMentionIndex] = useState(0)
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
 
   const copy = { ...defaultLabels, ...labels }
@@ -580,6 +582,15 @@ export function CommentBox({
     const replies = Object.values(replyBuckets).flatMap(bucket => bucket.comments)
     return [...comments, ...replies]
   }, [comments, replyBuckets])
+
+  // Participants: everyone who has commented or replied in this thread,
+  // plus the current user (so they can mention themselves if they want).
+  const participants = useMemo(() => {
+    const set = new Set<string>()
+    for (const c of visibleComments) set.add(c.author.login)
+    if (session) set.add(session.user.login)
+    return set
+  }, [visibleComments, session])
 
   const currentDocumentUrl = useMemo(() => {
     if (isHydrated && typeof window !== 'undefined') {
@@ -889,14 +900,14 @@ export function CommentBox({
     ;(async () => {
       const next: Record<number, string> = {}
       await Promise.all(visibleComments.map(async comment => {
-        next[comment.id] = await renderMarkdown(comment.body)
+        next[comment.id] = await renderMarkdown(comment.body, participants)
       }))
       if (!cancelled) setRenderedHtml(next)
     })()
     return () => {
       cancelled = true
     }
-  }, [visibleComments])
+  }, [visibleComments, participants])
 
   const handleLoadMore = async () => {
     if (!hasMore || busy) return
@@ -1052,13 +1063,6 @@ export function CommentBox({
     void submitDraft()
   }
 
-  const handleTextareaKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-      event.preventDefault()
-      void submitDraft()
-    }
-  }
-
   const handleSignOut = async () => {
     clearStoredSession(storageScope)
     try {
@@ -1079,6 +1083,77 @@ export function CommentBox({
   const totalCount = page?.comment_count ?? visibleComments.length
   const replyTarget = visibleComments.find(comment => comment.id === replyingTo) ?? null
   const isReplying = replyingTo !== null
+
+  // --- @mention autocomplete ---
+  const mentionSuggestions = useMemo(() => {
+    if (!mentionQuery) return []
+    const q = mentionQuery.query.toLowerCase()
+    return Array.from(participants)
+      .filter(login => login.toLowerCase().startsWith(q))
+      .slice(0, 5)
+  }, [mentionQuery, participants])
+
+  const handleComposerChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = event.currentTarget.value
+    const caret = event.currentTarget.selectionStart ?? value.length
+    setDraft(value)
+
+    // Detect @mention pattern at caret position
+    const beforeCaret = value.slice(0, caret)
+    const atMatch = beforeCaret.match(/(?:^|[\s(])@([A-Za-z0-9_-]*)$/)
+    if (atMatch) {
+      const atStart = caret - atMatch[0].length + atMatch[0].indexOf('@')
+      setMentionQuery({ start: atStart, query: atMatch[1] })
+      setMentionIndex(0)
+    } else {
+      setMentionQuery(null)
+    }
+  }
+
+  const handleComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionQuery && mentionSuggestions.length > 0) {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        setMentionIndex(i => (i + 1) % mentionSuggestions.length)
+        return
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        setMentionIndex(i => (i - 1 + mentionSuggestions.length) % mentionSuggestions.length)
+        return
+      }
+      if (event.key === 'Enter' || event.key === 'Tab') {
+        event.preventDefault()
+        insertMention(mentionSuggestions[mentionIndex])
+        return
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setMentionQuery(null)
+        return
+      }
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault()
+      void submitDraft()
+    }
+  }
+
+  const insertMention = (login: string) => {
+    const textarea = composerRef.current
+    if (!textarea || !mentionQuery) return
+    const before = draft.slice(0, mentionQuery.start)
+    const after = draft.slice(textarea.selectionStart ?? draft.length)
+    const inserted = `@${login} `
+    const nextDraft = before + inserted + after
+    setDraft(nextDraft)
+    setMentionQuery(null)
+    const newCaret = before.length + inserted.length
+    window.requestAnimationFrame(() => {
+      textarea.focus()
+      textarea.setSelectionRange(newCaret, newCaret)
+    })
+  }
   const focusComposerForReply = (commentId: number) => {
     setReactionPickerFor(null)
     if (replyingTo === commentId) {
@@ -1481,16 +1556,44 @@ export function CommentBox({
                   <label htmlFor="comment-draft" className="sr-only">
                     {isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
                   </label>
-                  <textarea
-                    ref={composerRef}
-                    id="comment-draft"
-                    value={draft}
-                    disabled={!session || busy}
-                    onChange={event => setDraft(event.currentTarget.value)}
-                    onKeyDown={handleTextareaKeyDown}
-                    placeholder={isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
-                    className="block min-h-28 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:bg-stone-900/60 dark:disabled:text-stone-700"
-                  />
+                  <div className="relative">
+                    <textarea
+                      ref={composerRef}
+                      id="comment-draft"
+                      value={draft}
+                      disabled={!session || busy}
+                      onChange={handleComposerChange}
+                      onKeyDown={handleComposerKeyDown}
+                      onBlur={() => { // delay to allow click on suggestion
+                        window.setTimeout(() => setMentionQuery(null), 150)
+                      }}
+                      placeholder={isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
+                      className="block min-h-28 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:bg-stone-900/60 dark:disabled:text-stone-700"
+                    />
+                    {mentionQuery && mentionSuggestions.length > 0 && (
+                      <div className="absolute bottom-full left-3 z-20 mb-1 min-w-40 overflow-hidden rounded-md border border-stone-200 bg-white py-1 shadow-md dark:border-stone-800 dark:bg-stone-950">
+                        {mentionSuggestions.map((login, i) => (
+                          <button
+                            key={login}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault()
+                              insertMention(login)
+                            }}
+                            className={cx(
+                              'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors',
+                              i === mentionIndex
+                                ? 'bg-stone-100 text-stone-900 dark:bg-stone-800 dark:text-stone-100'
+                                : 'text-stone-600 dark:text-stone-400'
+                            )}
+                          >
+                            <span className="text-stone-400">@</span>
+                            <span className="truncate font-medium">{login}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     {error ? (
                       <p className="text-sm text-stone-500 dark:text-stone-500">

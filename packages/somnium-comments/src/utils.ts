@@ -124,12 +124,46 @@ async function loadPurify(): Promise<typeof import('dompurify')['default']> {
 }
 
 /**
+ * Collect unique usernames from a comment body in the form @username.
+ * Only matches usernames that exist in the provided set.
+ */
+const MENTION_RE = /(^|[\s(])@([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}[A-Za-z0-9])?)/g
+
+/**
+ * Replace @mentions with styled <a> tags for known participants.
+ * Unknown @mentions are left as plain text (no false linkify).
+ */
+function linkifyMentions(html: string, participants: Set<string>): string {
+  // We operate on the already-rendered HTML. To avoid touching @mentions
+  // inside <code> blocks, we split on <code>...</code> and only process
+  // the non-code segments.
+  const segments = html.split(/(<code[\s\S]*?<\/code>|<pre[\s\S]*?<\/pre>)/g)
+  return segments
+    .map((segment, i) => {
+      // Even indices are non-code, odd indices are code blocks
+      if (i % 2 === 1) return segment
+      return segment.replace(MENTION_RE, (_match, prefix: string, login: string) => {
+        if (!participants.has(login)) return `${prefix}@${login}`
+        return `${prefix}<a href="#${login}" class="mention" data-mention="${login}">@${login}</a>`
+      })
+    })
+    .join('')
+}
+
+/**
  * Render a comment body (GitHub-flavoured Markdown) to a sanitized HTML string.
  * DOMPurify is loaded lazily so the bundle stays light and never touches a
  * non-browser environment during SSR.
+ *
+ * @param participants - usernames that should be linkified when mentioned with @
  */
-export async function renderMarkdown(body: string): Promise<string> {
+export async function renderMarkdown(body: string, participants?: Set<string>): Promise<string> {
   const raw = marked.parse(body, { async: false }) as string
   const DOMPurify = await loadPurify()
-  return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } })
+  const sanitized = DOMPurify.sanitize(raw, {
+    USE_PROFILES: { html: true },
+    ADD_ATTR: ['data-mention']
+  })
+  if (!participants || participants.size === 0) return sanitized
+  return linkifyMentions(sanitized, participants)
 }
