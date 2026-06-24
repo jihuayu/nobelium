@@ -1227,22 +1227,18 @@ export function CommentBox({
     }
 
     return (
-      <div className="mt-4 border-l-2 border-stone-200 pl-5 dark:border-stone-800">
+      <div className="mt-3 space-y-0.5">
         {bucket.status === 'loading' && bucket.comments.length === 0 && (
-          <p className="py-2 text-xs text-stone-400 dark:text-stone-600">
+          <p className="py-2 pl-11 text-xs text-stone-400 dark:text-stone-600">
             {copy.loadingReplies}
           </p>
         )}
-        {bucket.comments.length > 0 && (
-          <div className="divide-y divide-stone-200/60 dark:divide-stone-800/70">
-            {bucket.comments.map(reply => renderCommentArticle(reply, false))}
-          </div>
-        )}
+        {bucket.comments.length > 0 && bucket.comments.map(reply => renderCommentArticle(reply, false))}
         {bucket.status === 'error' && (
           <button
             type="button"
             onClick={() => void loadRepliesForComment(comment.id, bucket.nextCursor)}
-            className="mt-2 text-xs font-medium text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200"
+            className="pl-11 text-xs font-medium text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200"
           >
             {bucket.error || copy.retry}
           </button>
@@ -1251,7 +1247,7 @@ export function CommentBox({
           <button
             type="button"
             onClick={() => void loadRepliesForComment(comment.id, bucket.nextCursor)}
-            className="mt-3 text-xs font-medium text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200"
+            className="pl-11 text-xs font-medium text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200"
           >
             {copy.loadMoreReplies}
           </button>
@@ -1260,35 +1256,51 @@ export function CommentBox({
     )
   }
 
-  const renderCommentArticle = (comment: AtriumComment, allowReply: boolean) => (
-    <article key={comment.id} className={allowReply ? 'px-5 py-5' : 'py-4'}>
-      <header className="flex items-center gap-3">
-        {comment.author.avatar_url ? (
-          <img
-            src={comment.author.avatar_url}
-            alt=""
-            className="h-8 w-8 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900"
-          />
-        ) : (
-          <div className="h-8 w-8 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
-        )}
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">
-            {comment.author.login}
-          </p>
-          <time className="block text-xs text-stone-400 dark:text-stone-600">
-            {formatDate(comment.created_at, locale)}
-          </time>
+  const renderCommentArticle = (comment: AtriumComment, allowReply: boolean) => {
+    const hasReplies = allowReply && replyBuckets[comment.id] && (
+      replyBuckets[comment.id].comments.length > 0 ||
+      replyBuckets[comment.id].status === 'loading' ||
+      replyBuckets[comment.id].hasMore
+    )
+    return (
+      <article key={comment.id} className={allowReply ? 'px-5 py-5' : 'py-3'}>
+        <div className="flex gap-3">
+          {/* Avatar column with threading line */}
+          <div className="flex shrink-0 flex-col items-center">
+            {comment.author.avatar_url ? (
+              <img
+                src={comment.author.avatar_url}
+                alt=""
+                className="h-8 w-8 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900"
+              />
+            ) : (
+              <div className="h-8 w-8 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
+            )}
+            {hasReplies && (
+              <div className="mt-1 w-px flex-1 bg-stone-200 dark:bg-stone-800" />
+            )}
+          </div>
+          {/* Content column */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline gap-2">
+              <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">
+                {comment.author.login}
+              </p>
+              <time className="shrink-0 text-xs text-stone-400 dark:text-stone-600">
+                {formatDate(comment.created_at, locale)}
+              </time>
+            </div>
+            <div
+              className="comment-body mt-2 break-words text-[0.95rem] leading-7 text-stone-700 dark:text-stone-300"
+              dangerouslySetInnerHTML={{ __html: renderedHtml[comment.id] ?? '' }}
+            />
+            {renderActions(comment, allowReply)}
+            {allowReply && renderReplies(comment)}
+          </div>
         </div>
-      </header>
-      <div
-        className="comment-body mt-4 break-words text-[0.95rem] leading-7 text-stone-700 dark:text-stone-300"
-        dangerouslySetInnerHTML={{ __html: renderedHtml[comment.id] ?? '' }}
-      />
-      {renderActions(comment, allowReply)}
-      {allowReply && renderReplies(comment)}
-    </article>
-  )
+      </article>
+    )
+  }
 
   return (
     <section
