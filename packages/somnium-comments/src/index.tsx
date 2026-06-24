@@ -176,9 +176,17 @@ async function refreshSession(endpoint: string, session: StoredSession): Promise
 }
 
 async function findThread(endpoint: string, owner: string, repo: string, threadKey: string): Promise<NativeThread | null> {
-  const path = `/api/v1/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/threads?state=all&slug=${encodeURIComponent(threadKey)}`
-  const result = await requestNative<CursorPage<NativeThread>>(endpoint, path)
-  return result.data.length > 0 ? result.data[0] : null
+  // Primary: O(1) slug lookup (new threads created with slug).
+  const slugPath = `/api/v1/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/threads?state=all&slug=${encodeURIComponent(threadKey)}`
+  const slugResult = await requestNative<CursorPage<NativeThread>>(endpoint, slugPath)
+  if (slugResult.data.length > 0) return slugResult.data[0]
+
+  // Fallback: title lookup for legacy threads created before slug support.
+  const titlePath = `/api/v1/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/threads?state=all&title=${encodeURIComponent(threadKey)}`
+  const titleResult = await requestNative<CursorPage<NativeThread>>(endpoint, titlePath)
+  if (titleResult.data.length > 0) return titleResult.data[0]
+
+  return null
 }
 
 async function listComments(
