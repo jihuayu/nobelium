@@ -49,7 +49,8 @@ module.exports = {
     './layouts/**/*.{js,ts,jsx,tsx}',
     './packages/notion-react/.storybook/**/*.{js,ts,jsx,tsx,mdx}',
     './packages/notion-react/stories/**/*.{js,ts,jsx,tsx,mdx}',
-    './packages/notion-react/src/**/*.{js,ts,jsx,tsx}'
+    './packages/notion-react/src/**/*.{js,ts,jsx,tsx}',
+    './packages/somnium-comments/src/**/*.{js,ts,jsx,tsx}'
   ],
   darkMode: 'class',
   theme: {

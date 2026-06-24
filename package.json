@@ -8,8 +8,8 @@
     "url": "https://github.com/jihuayu/somnium.git"
   },
   "scripts": {
-    "dev": "pnpm run notion:build && next dev",
-    "build": "pnpm run notion:build && next build",
+    "dev": "pnpm run comments:build && pnpm run notion:build && next dev",
+    "build": "pnpm run comments:build && pnpm run notion:build && next build",
     "start": "next start",
     "test": "node --import tsx --test tests/**/*.test.ts packages/*/tests/**/*.test.ts",
     "test:packages": "node --import tsx --test packages/*/tests/**/*.test.ts",
@@ -17,12 +17,14 @@
     "tsdoc:check": "node scripts/tsdoc-export.mjs --check",
     "tsdoc:export": "node scripts/tsdoc-export.mjs --export",
     "lint": "eslint .",
+    "comments:build": "pnpm --filter @jihuayu/somnium-comments build",
     "notion:build": "pnpm --filter @jihuayu/notion-type build && pnpm --filter @jihuayu/notion-data build && pnpm --filter @jihuayu/notion-react build",
     "notion-react:build": "pnpm --filter @jihuayu/notion-react build",
     "notion-react:storybook": "storybook dev -p 6006 -c packages/notion-react/.storybook --disable-telemetry",
     "notion-react:storybook:build": "storybook build -c packages/notion-react/.storybook -o packages/notion-react/storybook-static --disable-telemetry"
   },
   "dependencies": {
+    "@jihuayu/somnium-comments": "workspace:*",
     "@jihuayu/notion-data": "workspace:*",
     "@jihuayu/notion-react": "workspace:*",
     "@jihuayu/notion-type": "workspace:*",

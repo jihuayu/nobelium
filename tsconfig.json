@@ -53,6 +53,9 @@
       "@jihuayu/notion-react/prepare": [
         "./packages/notion-react/src/prepare.ts"
       ],
+      "@jihuayu/somnium-comments": [
+        "./packages/somnium-comments/src/index.tsx"
+      ],
       "server-only": [
         "./node_modules/next/dist/compiled/server-only/empty.js"
       ]

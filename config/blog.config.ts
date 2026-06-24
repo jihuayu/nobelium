@@ -37,9 +37,11 @@ const BLOG = {
     googleSiteVerification: ''
   },
   comment: {
-    provider: 'utterances',
-    utterancesConfig: {
-      repo: 'jihuayu/blog-gitalk'
+    provider: 'atrium',
+    atriumConfig: {
+      owner: 'jihuayu',
+      repo: 'blog-gitalk',
+      endpoint: 'https://atrium-production.up.railway.app/'
     }
   },
   isProd: process.env.NODE_ENV === 'production'
