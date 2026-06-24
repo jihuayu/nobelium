@@ -45,6 +45,12 @@ export interface CommentBoxLabels {
   retry?: string
   errorTitle?: string
   authError?: string
+  reply?: string
+  cancelReply?: string
+  replyPlaceholder?: string
+  submitReply?: string
+  loadMoreReplies?: string
+  loadingReplies?: string
   commentsCount?: (count: number) => string
 }
 
@@ -135,6 +141,21 @@ interface CommentTarget {
   pageKey?: string
 }
 
+type ReactionContent = 'like' | 'dislike' | 'heart' | 'laugh' | 'hooray' | 'confused' | 'rocket' | 'eyes'
+
+interface ReactionOption {
+  content: ReactionContent
+  label: string
+}
+
+interface ReplyBucket {
+  comments: AtriumComment[]
+  nextCursor: string | null
+  hasMore: boolean
+  status: 'idle' | 'loading' | 'ready' | 'error'
+  error?: string
+}
+
 const subscribeNoop = () => () => {}
 
 const defaultLabels: Required<Omit<CommentBoxLabels, 'commentsCount'>> = {
@@ -152,10 +173,26 @@ const defaultLabels: Required<Omit<CommentBoxLabels, 'commentsCount'>> = {
   loadMore: '加载更多',
   retry: '重试',
   errorTitle: '评论暂时不可用',
-  authError: '登录状态不可用，请重新登录。'
+  authError: '登录状态不可用，请重新登录。',
+  reply: '回复',
+  cancelReply: '取消',
+  replyPlaceholder: '写下你的回复',
+  submitReply: '发布回复',
+  loadMoreReplies: '加载更多回复',
+  loadingReplies: '正在读取回复'
 }
 
 const defaultCommentsCount = (count: number): string => `${count} 条评论`
+const reactionOptions: ReactionOption[] = [
+  { content: 'like', label: '赞' },
+  { content: 'dislike', label: '踩' },
+  { content: 'heart', label: '喜欢' },
+  { content: 'laugh', label: '会心' },
+  { content: 'hooray', label: '庆祝' },
+  { content: 'confused', label: '困惑' },
+  { content: 'rocket', label: '推荐' },
+  { content: 'eyes', label: '围观' }
+]
 
 function useIsHydrated(): boolean {
   return useSyncExternalStore(
@@ -269,13 +306,47 @@ async function listCurrentComments(
   )
 }
 
+async function listReplies(
+  endpoint: string,
+  target: CommentTarget,
+  pageTitle: string,
+  commentId: number,
+  cursor?: string | null
+): Promise<CursorPage<AtriumComment>> {
+  const explicitPath = explicitPageCommentsPath(target)
+  if (explicitPath) {
+    return requestNative<CursorPage<AtriumComment>>(
+      endpoint,
+      pathWithQuery(explicitPath, {
+        parent_id: commentId,
+        limit: COMMENT_PAGE_SIZE,
+        order: 'asc',
+        cursor
+      })
+    )
+  }
+
+  return requestNative<CursorPage<AtriumComment>>(
+    endpoint,
+    pathWithQuery('/api/v1/comments/current/replies', {
+      comment_id: commentId,
+      page_title: pageTitle,
+      limit: COMMENT_PAGE_SIZE,
+      order: 'asc',
+      cursor
+    })
+  )
+}
+
 async function createComment(
   endpoint: string,
   target: CommentTarget,
   pageTitle: string,
   body: string,
-  session: StoredSession
+  session: StoredSession,
+  parentId?: number | null
 ): Promise<AtriumComment> {
+  const payload = parentId == null ? { body } : { body, parent_id: parentId }
   const explicitPath = explicitPageCommentsPath(target)
   if (explicitPath) {
     return requestNative<AtriumComment>(
@@ -283,7 +354,7 @@ async function createComment(
       explicitPath,
       {
         method: 'POST',
-        body: JSON.stringify({ body })
+        body: JSON.stringify(payload)
       },
       session,
       true
@@ -295,11 +366,59 @@ async function createComment(
     '/api/v1/comments/current',
     {
       method: 'POST',
-      body: JSON.stringify({ body, page_title: pageTitle })
+      body: JSON.stringify({ ...payload, page_title: pageTitle })
     },
     session,
     true
   )
+}
+
+async function setReaction(
+  endpoint: string,
+  target: CommentTarget,
+  commentId: number,
+  content: ReactionContent,
+  session: StoredSession
+): Promise<ReactionCounts> {
+  const path = target.websiteKey
+    ? `/api/v1/websites/${encodeURIComponent(target.websiteKey)}/comments/${commentId}/reactions/${content}`
+    : `/api/v1/comments/current/${commentId}/reactions/${content}`
+  return requestNative<ReactionCounts>(
+    endpoint,
+    path,
+    { method: 'PUT' },
+    session,
+    true
+  )
+}
+
+async function deleteReaction(
+  endpoint: string,
+  target: CommentTarget,
+  commentId: number,
+  content: ReactionContent,
+  session: StoredSession
+): Promise<void> {
+  const path = target.websiteKey
+    ? `/api/v1/websites/${encodeURIComponent(target.websiteKey)}/comments/${commentId}/reactions/${content}`
+    : `/api/v1/comments/current/${commentId}/reactions/${content}`
+  await requestNative<void>(
+    endpoint,
+    path,
+    { method: 'DELETE' },
+    session,
+    true
+  )
+}
+
+function reactionKey(commentId: number, content: ReactionContent): string {
+  return `${commentId}:${content}`
+}
+
+function adjustReactionCounts(reactions: ReactionCounts, content: ReactionContent, delta: number): ReactionCounts {
+  const nextValue = Math.max(0, reactions[content] + delta)
+  const nextTotal = Math.max(0, reactions.total + delta)
+  return { ...reactions, [content]: nextValue, total: nextTotal }
 }
 
 export function CommentBox({
@@ -322,6 +441,12 @@ export function CommentBox({
   const [status, setStatus] = useState<CommentLoadStatus>('idle')
   const [page, setPage] = useState<AtriumPage | null>(null)
   const [comments, setComments] = useState<AtriumComment[]>([])
+  const [replyBuckets, setReplyBuckets] = useState<Record<number, ReplyBucket>>({})
+  const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({})
+  const [replyingTo, setReplyingTo] = useState<number | null>(null)
+  const [replyBusy, setReplyBusy] = useState<Record<number, boolean>>({})
+  const [reactionBusy, setReactionBusy] = useState<Record<string, boolean>>({})
+  const [activeReactions, setActiveReactions] = useState<Record<string, boolean>>({})
   const [renderedHtml, setRenderedHtml] = useState<Record<number, string>>({})
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
@@ -336,6 +461,10 @@ export function CommentBox({
   const target = useMemo<CommentTarget>(() => ({ websiteKey, pageKey }), [pageKey, websiteKey])
   const pageTitleValue = pageTitle || documentTitle || (pageKey ? String(pageKey) : 'Untitled')
   const storageScope = normalizedEndpoint
+  const visibleComments = useMemo(() => {
+    const replies = Object.values(replyBuckets).flatMap(bucket => bucket.comments)
+    return [...comments, ...replies]
+  }, [comments, replyBuckets])
 
   const currentDocumentUrl = useMemo(() => {
     if (pageUrl) return pageUrl
@@ -365,6 +494,71 @@ export function CommentBox({
     return current
   }, [normalizedEndpoint, storageScope])
 
+  const updateCommentEverywhere = useCallback((commentId: number, updater: (comment: AtriumComment) => AtriumComment) => {
+    setComments(current => current.map(comment => comment.id === commentId ? updater(comment) : comment))
+    setReplyBuckets(current => {
+      let changed = false
+      const next: Record<number, ReplyBucket> = {}
+      Object.entries(current).forEach(([key, bucket]) => {
+        let bucketChanged = false
+        const comments = bucket.comments.map(comment => {
+          if (comment.id !== commentId) return comment
+          bucketChanged = true
+          return updater(comment)
+        })
+        if (bucketChanged) changed = true
+        next[Number(key)] = bucketChanged ? { ...bucket, comments } : bucket
+      })
+      return changed ? next : current
+    })
+  }, [])
+
+  const loadRepliesForComment = useCallback(async (commentId: number, cursor?: string | null) => {
+    setReplyBuckets(current => {
+      const existing = current[commentId]
+      return {
+        ...current,
+        [commentId]: {
+          comments: existing?.comments ?? [],
+          nextCursor: existing?.nextCursor ?? null,
+          hasMore: existing?.hasMore ?? false,
+          status: 'loading'
+        }
+      }
+    })
+
+    try {
+      const page = await listReplies(normalizedEndpoint, target, pageTitleValue, commentId, cursor)
+      setReplyBuckets(current => {
+        const existing = current[commentId]
+        const previous = cursor ? existing?.comments ?? [] : []
+        return {
+          ...current,
+          [commentId]: {
+            comments: [...previous, ...page.data],
+            nextCursor: page.pagination.next_cursor,
+            hasMore: page.pagination.has_more,
+            status: 'ready'
+          }
+        }
+      })
+    } catch (err) {
+      setReplyBuckets(current => {
+        const existing = current[commentId]
+        return {
+          ...current,
+          [commentId]: {
+            comments: existing?.comments ?? [],
+            nextCursor: existing?.nextCursor ?? null,
+            hasMore: existing?.hasMore ?? false,
+            status: 'error',
+            error: err instanceof Error ? err.message : copy.errorTitle
+          }
+        }
+      })
+    }
+  }, [copy.errorTitle, normalizedEndpoint, pageTitleValue, target])
+
   const loadInitial = useCallback(async () => {
     setStatus('loading')
     setError('')
@@ -382,10 +576,14 @@ export function CommentBox({
 
     setPage(loaded.page)
     setComments(loaded.comments.data)
+    setReplyBuckets({})
     setNextCursor(loaded.comments.pagination.next_cursor)
     setHasMore(loaded.comments.pagination.has_more)
     setStatus('ready')
-  }, [normalizedEndpoint, pageTitleValue, target])
+    loaded.comments.data.forEach(comment => {
+      void loadRepliesForComment(comment.id)
+    })
+  }, [loadRepliesForComment, normalizedEndpoint, pageTitleValue, target])
 
   useEffect(() => {
     if (!isHydrated) return undefined
@@ -499,14 +697,14 @@ export function CommentBox({
   }, [copy.errorTitle, enabled, loadInitial])
 
   useEffect(() => {
-    if (comments.length === 0) {
+    if (visibleComments.length === 0) {
       setRenderedHtml({})
       return undefined
     }
     let cancelled = false
     ;(async () => {
       const next: Record<number, string> = {}
-      await Promise.all(comments.map(async comment => {
+      await Promise.all(visibleComments.map(async comment => {
         next[comment.id] = await renderMarkdown(comment.body)
       }))
       if (!cancelled) setRenderedHtml(next)
@@ -514,7 +712,7 @@ export function CommentBox({
     return () => {
       cancelled = true
     }
-  }, [comments])
+  }, [visibleComments])
 
   const handleLoadMore = async () => {
     if (!hasMore || busy) return
@@ -528,6 +726,9 @@ export function CommentBox({
       setComments(current => [...current, ...loaded.data])
       setNextCursor(loaded.pagination.next_cursor)
       setHasMore(loaded.pagination.has_more)
+      loaded.data.forEach(comment => {
+        void loadRepliesForComment(comment.id)
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.errorTitle)
     } finally {
@@ -560,6 +761,74 @@ export function CommentBox({
     }
   }
 
+  const submitReply = async (parentId: number) => {
+    const body = (replyDrafts[parentId] ?? '').trim()
+    if (!body || replyBusy[parentId]) return
+
+    setReplyBusy(current => ({ ...current, [parentId]: true }))
+    setError('')
+    try {
+      const freshSession = await ensureFreshSession(session)
+      if (!freshSession) {
+        setError(copy.authError)
+        return
+      }
+
+      const reply = await createComment(normalizedEndpoint, target, pageTitleValue, body, freshSession, parentId)
+      setReplyBuckets(current => {
+        const existing = current[parentId]
+        return {
+          ...current,
+          [parentId]: {
+            comments: [...(existing?.comments ?? []), reply],
+            nextCursor: existing?.nextCursor ?? null,
+            hasMore: existing?.hasMore ?? false,
+            status: 'ready'
+          }
+        }
+      })
+      setReplyDrafts(current => ({ ...current, [parentId]: '' }))
+      setReplyingTo(null)
+      setPage(current => current ? { ...current, comment_count: current.comment_count + 1 } : current)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : copy.errorTitle)
+    } finally {
+      setReplyBusy(current => ({ ...current, [parentId]: false }))
+    }
+  }
+
+  const handleReaction = async (comment: AtriumComment, content: ReactionContent) => {
+    const key = reactionKey(comment.id, content)
+    if (reactionBusy[key]) return
+
+    setReactionBusy(current => ({ ...current, [key]: true }))
+    setError('')
+    try {
+      const freshSession = await ensureFreshSession(session)
+      if (!freshSession) {
+        setError(copy.authError)
+        return
+      }
+
+      if (activeReactions[key]) {
+        await deleteReaction(normalizedEndpoint, target, comment.id, content, freshSession)
+        setActiveReactions(current => ({ ...current, [key]: false }))
+        updateCommentEverywhere(comment.id, current => ({
+          ...current,
+          reactions: adjustReactionCounts(current.reactions, content, -1)
+        }))
+      } else {
+        const reactions = await setReaction(normalizedEndpoint, target, comment.id, content, freshSession)
+        setActiveReactions(current => ({ ...current, [key]: true }))
+        updateCommentEverywhere(comment.id, current => ({ ...current, reactions }))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : copy.errorTitle)
+    } finally {
+      setReactionBusy(current => ({ ...current, [key]: false }))
+    }
+  }
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     void submitDraft()
@@ -589,7 +858,161 @@ export function CommentBox({
 
   const isLoading = status === 'idle' || status === 'loading'
   const canSubmit = !!session && draft.trim().length > 0 && !busy
-  const totalCount = page?.comment_count ?? comments.length
+  const totalCount = page?.comment_count ?? visibleComments.length
+  const renderActions = (comment: AtriumComment, allowReply: boolean) => (
+    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-400 dark:text-stone-600">
+      {reactionOptions.map(option => {
+        const key = reactionKey(comment.id, option.content)
+        const active = activeReactions[key] === true
+        const count = comment.reactions[option.content]
+        return (
+          <button
+            key={option.content}
+            type="button"
+            disabled={!session || reactionBusy[key]}
+            aria-pressed={active}
+            onClick={() => void handleReaction(comment, option.content)}
+            className={cx(
+              'transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
+              active
+                ? 'font-medium text-stone-800 dark:text-stone-200'
+                : 'hover:text-stone-800 dark:hover:text-stone-300'
+            )}
+          >
+            {option.label}{count > 0 ? ` ${count}` : ''}
+          </button>
+        )
+      })}
+      {allowReply && (
+        <button
+          type="button"
+          disabled={!session}
+          onClick={() => setReplyingTo(current => current === comment.id ? null : comment.id)}
+          className={cx(
+            'ml-1 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
+            replyingTo === comment.id
+              ? 'font-medium text-stone-800 dark:text-stone-200'
+              : 'text-stone-500 hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200'
+          )}
+        >
+          {replyingTo === comment.id ? copy.cancelReply : copy.reply}
+        </button>
+      )}
+    </div>
+  )
+
+  const renderReplyComposer = (parentId: number) => {
+    if (replyingTo !== parentId) return null
+    const value = replyDrafts[parentId] ?? ''
+    const isBusy = replyBusy[parentId] === true
+    return (
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          void submitReply(parentId)
+        }}
+        className="mt-4"
+      >
+        <label htmlFor={`comment-reply-${parentId}`} className="sr-only">
+          {copy.replyPlaceholder}
+        </label>
+        <textarea
+          id={`comment-reply-${parentId}`}
+          value={value}
+          disabled={isBusy}
+          onChange={event => setReplyDrafts(current => ({ ...current, [parentId]: event.currentTarget.value }))}
+          onKeyDown={(event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+              event.preventDefault()
+              void submitReply(parentId)
+            }
+          }}
+          placeholder={copy.replyPlaceholder}
+          className="block min-h-20 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:bg-stone-900/60 dark:disabled:text-stone-700"
+        />
+        <div className="mt-2 flex justify-end">
+          <button
+            type="submit"
+            disabled={isBusy || value.trim().length === 0}
+            className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-stone-100 dark:disabled:border-stone-800 dark:disabled:text-stone-700"
+          >
+            {isBusy ? copy.submitting : copy.submitReply}
+          </button>
+        </div>
+      </form>
+    )
+  }
+
+  const renderReplies = (comment: AtriumComment) => {
+    const bucket = replyBuckets[comment.id]
+    if (!bucket || (bucket.status === 'ready' && bucket.comments.length === 0 && !bucket.hasMore && replyingTo !== comment.id)) {
+      return renderReplyComposer(comment.id)
+    }
+
+    return (
+      <div className="mt-4 border-l-2 border-stone-200 pl-5 dark:border-stone-800">
+        {bucket.status === 'loading' && bucket.comments.length === 0 && (
+          <p className="py-2 text-xs text-stone-400 dark:text-stone-600">
+            {copy.loadingReplies}
+          </p>
+        )}
+        {bucket.comments.length > 0 && (
+          <div className="divide-y divide-stone-200/60 dark:divide-stone-800/70">
+            {bucket.comments.map(reply => renderCommentArticle(reply, false))}
+          </div>
+        )}
+        {bucket.status === 'error' && (
+          <button
+            type="button"
+            onClick={() => void loadRepliesForComment(comment.id, bucket.nextCursor)}
+            className="mt-2 text-xs font-medium text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200"
+          >
+            {bucket.error || copy.retry}
+          </button>
+        )}
+        {bucket.hasMore && (
+          <button
+            type="button"
+            onClick={() => void loadRepliesForComment(comment.id, bucket.nextCursor)}
+            className="mt-3 text-xs font-medium text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200"
+          >
+            {copy.loadMoreReplies}
+          </button>
+        )}
+        {renderReplyComposer(comment.id)}
+      </div>
+    )
+  }
+
+  const renderCommentArticle = (comment: AtriumComment, allowReply: boolean) => (
+    <article key={comment.id} className={allowReply ? 'px-5 py-5' : 'py-4'}>
+      <header className="flex items-center gap-3">
+        {comment.author.avatar_url ? (
+          <img
+            src={comment.author.avatar_url}
+            alt=""
+            className="h-8 w-8 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900"
+          />
+        ) : (
+          <div className="h-8 w-8 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">
+            {comment.author.login}
+          </p>
+          <time className="block text-xs text-stone-400 dark:text-stone-600">
+            {formatDate(comment.created_at, locale)}
+          </time>
+        </div>
+      </header>
+      <div
+        className="comment-body mt-4 break-words text-[0.95rem] leading-7 text-stone-700 dark:text-stone-300"
+        dangerouslySetInnerHTML={{ __html: renderedHtml[comment.id] ?? '' }}
+      />
+      {renderActions(comment, allowReply)}
+      {allowReply && renderReplies(comment)}
+    </article>
+  )
 
   return (
     <section
@@ -685,33 +1108,7 @@ export function CommentBox({
                 <p className="px-5 py-6 text-sm text-stone-500 dark:text-stone-500">
                   {copy.empty}
                 </p>
-              ) : comments.map(comment => (
-                <article key={comment.id} className="px-5 py-5">
-                  <header className="flex items-center gap-3">
-                    {comment.author.avatar_url ? (
-                      <img
-                        src={comment.author.avatar_url}
-                        alt=""
-                        className="h-8 w-8 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
-                    )}
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">
-                        {comment.author.login}
-                      </p>
-                      <time className="block text-xs text-stone-400 dark:text-stone-600">
-                        {formatDate(comment.created_at, locale)}
-                      </time>
-                    </div>
-                  </header>
-                  <div
-                    className="comment-body mt-4 break-words text-[0.95rem] leading-7 text-stone-700 dark:text-stone-300"
-                    dangerouslySetInnerHTML={{ __html: renderedHtml[comment.id] ?? '' }}
-                  />
-                </article>
-              ))}
+              ) : comments.map(comment => renderCommentArticle(comment, true))}
             </div>
 
             {hasMore && (
