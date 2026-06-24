@@ -38,10 +38,9 @@ export interface BlogConfig {
   notionApiVersion?: string
   comment: {
     provider: '' | 'atrium'
-    atriumConfig: {
-      owner: string
-      repo: string
+    atriumConfig?: {
       endpoint?: string
+      websiteKey?: string
     }
   }
   isProd: boolean

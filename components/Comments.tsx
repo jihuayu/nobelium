@@ -15,16 +15,14 @@ const Comments = ({ frontMatter, comment }: CommentsProps) => {
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
   const atriumConfig = comment?.atriumConfig
 
-  if (!comment || comment.provider !== 'atrium' || !atriumConfig?.owner || !atriumConfig.repo) return null
+  if (!comment || comment.provider !== 'atrium') return null
 
   return (
     <CommentBox
-      owner={atriumConfig.owner}
-      repo={atriumConfig.repo}
-      threadKey={frontMatter.id}
-      endpoint={atriumConfig.endpoint}
-      documentTitle={frontMatter.title}
-      documentDescription={frontMatter.summary}
+      websiteKey={atriumConfig?.websiteKey}
+      pageKey={frontMatter.id}
+      endpoint={atriumConfig?.endpoint}
+      pageTitle={frontMatter.title}
       locale={config.lang}
       className={cn(
         'px-4',

@@ -1,9 +1,7 @@
 import { marked } from 'marked'
 
-export const DEFAULT_ENDPOINT = 'https://atrium-production.up.railway.app/'
-export const DEFAULT_LEGACY_AUTHORIZE_ENDPOINT = 'https://api.utteranc.es/authorize'
+export const DEFAULT_ENDPOINT = 'https://atrium.jihuayu.com/'
 export const SESSION_STORAGE_KEY = 'somnium-comments-session'
-export const OAUTH_SESSION_STORAGE_KEY = 'utterances-session'
 export const COMMENT_PAGE_SIZE = 20
 
 export interface NativeUser {
@@ -43,13 +41,13 @@ export function normalizeEndpoint(value: string): string {
   }
 }
 
-export function storageKey(owner: string, repo: string): string {
-  return `${SESSION_STORAGE_KEY}:${owner}/${repo}`
+export function storageKey(scope: string): string {
+  return `${SESSION_STORAGE_KEY}:${scope}`
 }
 
-export function readStoredSession(owner: string, repo: string): StoredSession | null {
+export function readStoredSession(scope: string): StoredSession | null {
   try {
-    const raw = localStorage.getItem(storageKey(owner, repo))
+    const raw = localStorage.getItem(storageKey(scope))
     if (!raw) return null
     const session = JSON.parse(raw) as StoredSession
     if (!session.accessToken || !session.refreshToken || !session.user) return null
@@ -59,12 +57,12 @@ export function readStoredSession(owner: string, repo: string): StoredSession | 
   }
 }
 
-export function writeStoredSession(owner: string, repo: string, session: StoredSession): void {
-  localStorage.setItem(storageKey(owner, repo), JSON.stringify(session))
+export function writeStoredSession(scope: string, session: StoredSession): void {
+  localStorage.setItem(storageKey(scope), JSON.stringify(session))
 }
 
-export function clearStoredSession(owner: string, repo: string): void {
-  localStorage.removeItem(storageKey(owner, repo))
+export function clearStoredSession(scope: string): void {
+  localStorage.removeItem(storageKey(scope))
 }
 
 export function buildSession(payload: AuthTokenResponse): StoredSession {
@@ -74,13 +72,6 @@ export function buildSession(payload: AuthTokenResponse): StoredSession {
     expiresAt: Date.now() + Math.max(30, payload.expires_in - 30) * 1000,
     user: payload.user
   }
-}
-
-export function buildThreadBody(title: string, description: string, url: string): string {
-  const parts = [`# ${title || '评论'}`]
-  if (description) parts.push(description)
-  if (url) parts.push(`[${url}](${url})`)
-  return parts.join('\n\n')
 }
 
 export function formatDate(value: string, locale = 'zh-CN'): string {
@@ -106,10 +97,6 @@ export function apiUrl(
     url.searchParams.set(key, String(value))
   })
   return url.toString()
-}
-
-export function authHeaders(session: StoredSession | null): HeadersInit {
-  return session ? { Authorization: `Bearer ${session.accessToken}` } : {}
 }
 
 export async function parseJsonResponse<T>(response: Response): Promise<T> {

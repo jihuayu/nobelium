@@ -10,22 +10,18 @@ import {
   useSyncExternalStore
 } from 'react'
 import {
-  authHeaders,
+  apiUrl,
   buildSession,
-  buildThreadBody,
   clearStoredSession,
+  COMMENT_PAGE_SIZE,
   cx,
   DEFAULT_ENDPOINT,
-  DEFAULT_LEGACY_AUTHORIZE_ENDPOINT,
   formatDate,
   normalizeEndpoint,
   parseJsonResponse,
-  apiUrl,
   readStoredSession,
   renderMarkdown,
   writeStoredSession,
-  COMMENT_PAGE_SIZE,
-  OAUTH_SESSION_STORAGE_KEY,
   type AuthTokenResponse,
   type NativeUser,
   type StoredSession
@@ -53,37 +49,66 @@ export interface CommentBoxLabels {
 }
 
 export interface CommentBoxProps {
-  owner: string
-  repo: string
-  threadKey: string
   endpoint?: string
+  websiteKey?: string
+  pageKey?: string
+  pageTitle?: string
+  pageUrl?: string
   documentTitle?: string
-  documentDescription?: string
   documentUrl?: string
   requestGeoEndpoint?: string
-  /** Legacy utteranc.es authorize endpoint — used as fallback when native OAuth is not configured. */
-  legacyAuthorizeEndpoint?: string
   locale?: string
   className?: string
   labels?: CommentBoxLabels
 }
 
-interface NativeThread {
-  id: number
-  number: number
-  title: string
-  slug?: string
-  body: string
-  comment_count: number
-  author: NativeUser
-  created_at: string
+interface ReactionCounts {
+  like: number
+  dislike: number
+  heart: number
+  laugh: number
+  hooray: number
+  confused: number
+  rocket: number
+  eyes: number
+  total: number
 }
 
-interface NativeComment {
+interface AtriumWebsite {
   id: number
-  body: string
-  author: NativeUser
+  key: string
+  name: string
+  origins?: string[]
   created_at: string
+  updated_at: string
+}
+
+interface AtriumPage {
+  id: number
+  website_key: string
+  key: string
+  title: string
+  url: string
+  normalized_url: string
+  metadata: unknown
+  comment_count: number
+  created_at: string
+  updated_at: string
+}
+
+interface AtriumComment {
+  id: number
+  website_key: string
+  page_key: string
+  parent_id: number | null
+  body: string
+  body_html?: string
+  author: NativeUser
+  reactions: ReactionCounts
+  deleted?: boolean
+  created_at: string
+  updated_at: string
+  deleted_at?: string | null
 }
 
 interface CursorPage<T> {
@@ -94,6 +119,22 @@ interface CursorPage<T> {
   }
 }
 
+interface CurrentCommentsResponse {
+  website: AtriumWebsite
+  page: AtriumPage
+  comments: CursorPage<AtriumComment>
+}
+
+interface AuthMeResponse {
+  user: NativeUser
+  super_admin?: boolean
+}
+
+interface CommentTarget {
+  websiteKey?: string
+  pageKey?: string
+}
+
 const subscribeNoop = () => () => {}
 
 const defaultLabels: Required<Omit<CommentBoxLabels, 'commentsCount'>> = {
@@ -101,7 +142,7 @@ const defaultLabels: Required<Omit<CommentBoxLabels, 'commentsCount'>> = {
   caption: '读完之后，可以在这里继续这段讨论。',
   loading: '正在读取评论',
   empty: '还没有评论。',
-  signIn: '使用 GitHub 登录',
+  signIn: '登录',
   signOut: '退出',
   signedInAs: '已登录为',
   textareaPlaceholder: '写下你的想法',
@@ -124,34 +165,40 @@ function useIsHydrated(): boolean {
   )
 }
 
+function requestHeaders(init?: RequestInit, session?: StoredSession | null): Headers {
+  const headers = new Headers(init?.headers)
+  headers.set('Accept', 'application/json')
+  if (init?.body) headers.set('Content-Type', 'application/json')
+  if (session?.accessToken) headers.set('Authorization', `Bearer ${session.accessToken}`)
+  return headers
+}
+
 async function requestNative<T>(
   endpoint: string,
   path: string,
   init?: RequestInit,
-  session?: StoredSession | null
+  session?: StoredSession | null,
+  authenticated = false
 ): Promise<T> {
-  const headers = new Headers(init?.headers)
-  headers.set('Accept', 'application/json')
-  if (init?.body) headers.set('Content-Type', 'application/json')
-  // If we have a real access token, send it as a Bearer header.
-  // If the session is cookie-only (empty accessToken), rely on credentials: include.
-  const useCookies = session != null && !session.accessToken
-  if (session && session.accessToken) {
-    headers.set('Authorization', `Bearer ${session.accessToken}`)
-  }
-
   const response = await fetch(apiUrl(endpoint, path), {
     ...init,
-    headers,
-    credentials: useCookies ? 'include' : 'same-origin'
+    headers: requestHeaders(init, session),
+    credentials: authenticated && !session?.accessToken ? 'include' : 'same-origin'
   })
   return parseJsonResponse<T>(response)
 }
 
-/**
- * Fetch the current user from /api/v1/auth/me using cookies (credentials: include).
- * Used after returning from native OAuth callback where tokens are in HttpOnly cookies.
- */
+async function authenticateAccount(endpoint: string): Promise<StoredSession> {
+  const response = await fetch(apiUrl(endpoint, '/api/v1/auth/account'), {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json'
+    },
+    credentials: 'include'
+  })
+  return buildSession(await parseJsonResponse<AuthTokenResponse>(response))
+}
+
 async function fetchMeFromCookies(endpoint: string): Promise<NativeUser | null> {
   const response = await fetch(apiUrl(endpoint, '/api/v1/auth/me'), {
     method: 'GET',
@@ -159,30 +206,8 @@ async function fetchMeFromCookies(endpoint: string): Promise<NativeUser | null> 
     headers: { Accept: 'application/json' }
   })
   if (!response.ok) return null
-  const payload = await response.json().catch(() => null)
-  if (!payload || !payload.login) return null
-  return payload as NativeUser
-}
-
-async function exchangeLegacySessionForGithubToken(endpoint: string, legacySession: string): Promise<string> {
-  const response = await fetch(apiUrl(endpoint, '/api/utterances/token'), {
-    method: 'POST',
-    mode: 'cors',
-    body: JSON.stringify(legacySession)
-  })
-  return parseJsonResponse<string>(response)
-}
-
-async function authenticateGithub(endpoint: string, githubToken: string): Promise<StoredSession> {
-  const response = await fetch(apiUrl(endpoint, '/api/v1/auth/github'), {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ token: githubToken })
-  })
-  return buildSession(await parseJsonResponse<AuthTokenResponse>(response))
+  const payload = await response.json().catch(() => null) as AuthMeResponse | null
+  return payload?.user ?? null
 }
 
 async function refreshSession(endpoint: string, session: StoredSession): Promise<StoredSession> {
@@ -190,95 +215,102 @@ async function refreshSession(endpoint: string, session: StoredSession): Promise
     method: 'POST',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json',
-      ...authHeaders(session)
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({ refresh_token: session.refreshToken })
   })
   return buildSession(await parseJsonResponse<AuthTokenResponse>(response))
 }
 
-async function findThread(endpoint: string, owner: string, repo: string, threadKey: string): Promise<NativeThread | null> {
-  // Primary: O(1) slug lookup (new threads created with slug).
-  const slugPath = `/api/v1/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/threads?state=all&slug=${encodeURIComponent(threadKey)}`
-  const slugResult = await requestNative<CursorPage<NativeThread>>(endpoint, slugPath)
-  if (slugResult.data.length > 0) return slugResult.data[0]
-
-  // Fallback: title lookup for legacy threads created before slug support.
-  const titlePath = `/api/v1/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/threads?state=all&title=${encodeURIComponent(threadKey)}`
-  const titleResult = await requestNative<CursorPage<NativeThread>>(endpoint, titlePath)
-  if (titleResult.data.length > 0) return titleResult.data[0]
-
-  return null
+function explicitPageCommentsPath(target: CommentTarget): string | null {
+  if (!target.websiteKey || !target.pageKey) return null
+  return `/api/v1/websites/${encodeURIComponent(target.websiteKey)}/pages/${encodeURIComponent(target.pageKey)}/comments`
 }
 
-async function listComments(
+function pathWithQuery(path: string, query?: Record<string, string | number | null | undefined>): string {
+  const params = new URLSearchParams()
+  Object.entries(query || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return
+    params.set(key, String(value))
+  })
+  const queryString = params.toString()
+  return queryString ? `${path}?${queryString}` : path
+}
+
+async function listExplicitComments(
   endpoint: string,
-  owner: string,
-  repo: string,
-  threadNumber: number,
+  path: string,
   cursor?: string | null
-): Promise<CursorPage<NativeComment>> {
-  return requestNative<CursorPage<NativeComment>>(
+): Promise<CursorPage<AtriumComment>> {
+  return requestNative<CursorPage<AtriumComment>>(
     endpoint,
-    `/api/v1/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/threads/${threadNumber}/comments?order=asc&limit=${COMMENT_PAGE_SIZE}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`
+    pathWithQuery(path, {
+      parent_id: 'root',
+      limit: COMMENT_PAGE_SIZE,
+      order: 'asc',
+      cursor
+    })
   )
 }
 
-async function createThread(
+async function listCurrentComments(
   endpoint: string,
-  owner: string,
-  repo: string,
-  threadKey: string,
-  documentTitle: string,
-  documentDescription: string,
-  documentUrl: string,
-  session: StoredSession
-): Promise<NativeThread> {
-  return requestNative<NativeThread>(
+  pageTitle: string,
+  cursor?: string | null
+): Promise<CurrentCommentsResponse> {
+  return requestNative<CurrentCommentsResponse>(
     endpoint,
-    `/api/v1/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/threads`,
-    {
-      method: 'POST',
-      body: JSON.stringify({
-        title: documentTitle || threadKey,
-        slug: threadKey,
-        body: buildThreadBody(documentTitle, documentDescription, documentUrl)
-      })
-    },
-    session
+    pathWithQuery('/api/v1/comments/current', {
+      page_title: pageTitle,
+      limit: COMMENT_PAGE_SIZE,
+      order: 'asc',
+      cursor
+    })
   )
 }
 
 async function createComment(
   endpoint: string,
-  owner: string,
-  repo: string,
-  threadNumber: number,
+  target: CommentTarget,
+  pageTitle: string,
   body: string,
   session: StoredSession
-): Promise<NativeComment> {
-  return requestNative<NativeComment>(
+): Promise<AtriumComment> {
+  const explicitPath = explicitPageCommentsPath(target)
+  if (explicitPath) {
+    return requestNative<AtriumComment>(
+      endpoint,
+      explicitPath,
+      {
+        method: 'POST',
+        body: JSON.stringify({ body })
+      },
+      session,
+      true
+    )
+  }
+
+  return requestNative<AtriumComment>(
     endpoint,
-    `/api/v1/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/threads/${threadNumber}/comments`,
+    '/api/v1/comments/current',
     {
       method: 'POST',
-      body: JSON.stringify({ body })
+      body: JSON.stringify({ body, page_title: pageTitle })
     },
-    session
+    session,
+    true
   )
 }
 
 export function CommentBox({
-  owner,
-  repo,
-  threadKey,
   endpoint = DEFAULT_ENDPOINT,
+  websiteKey,
+  pageKey,
+  pageTitle,
+  pageUrl,
   documentTitle = '',
-  documentDescription = '',
   documentUrl = '',
   requestGeoEndpoint = '/api/request-geo',
-  legacyAuthorizeEndpoint = DEFAULT_LEGACY_AUTHORIZE_ENDPOINT,
   locale = 'zh-CN',
   className,
   labels
@@ -288,8 +320,8 @@ export function CommentBox({
   const [enabled, setEnabled] = useState(false)
   const [suppressed, setSuppressed] = useState(false)
   const [status, setStatus] = useState<CommentLoadStatus>('idle')
-  const [thread, setThread] = useState<NativeThread | null>(null)
-  const [comments, setComments] = useState<NativeComment[]>([])
+  const [page, setPage] = useState<AtriumPage | null>(null)
+  const [comments, setComments] = useState<AtriumComment[]>([])
   const [renderedHtml, setRenderedHtml] = useState<Record<number, string>>({})
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
@@ -301,102 +333,79 @@ export function CommentBox({
   const copy = { ...defaultLabels, ...labels }
   const commentsCountLabel = labels?.commentsCount ?? defaultCommentsCount
   const normalizedEndpoint = useMemo(() => normalizeEndpoint(endpoint), [endpoint])
+  const target = useMemo<CommentTarget>(() => ({ websiteKey, pageKey }), [pageKey, websiteKey])
+  const pageTitleValue = pageTitle || documentTitle || (pageKey ? String(pageKey) : 'Untitled')
+  const storageScope = normalizedEndpoint
 
   const currentDocumentUrl = useMemo(() => {
+    if (pageUrl) return pageUrl
     if (documentUrl) return documentUrl
     if (!isHydrated || typeof window === 'undefined') return ''
-    const url = new URL(window.location.href)
-    url.searchParams.delete('utterances')
-    return url.href
-  }, [documentUrl, isHydrated])
+    return window.location.href
+  }, [documentUrl, isHydrated, pageUrl])
 
   const signInUrl = useMemo(() => {
     if (!isHydrated || typeof window === 'undefined') return '#'
     const url = new URL(window.location.href)
-    url.searchParams.delete('utterances')
-    // Use native Atrium OAuth if the endpoint supports it; otherwise fall
-    // back to the legacy utteranc.es authorize flow.
-    const nativeAuthorize = apiUrl(normalizedEndpoint, '/api/v1/auth/github/authorize', {
+    return apiUrl(normalizedEndpoint, '/api/v1/auth/account/authorize', {
       redirect_uri: url.href,
-      state: threadKey
+      state: pageKey || currentDocumentUrl || url.href
     })
-    return nativeAuthorize
-  }, [isHydrated, normalizedEndpoint, threadKey])
+  }, [currentDocumentUrl, isHydrated, normalizedEndpoint, pageKey])
 
   const ensureFreshSession = useCallback(async (current: StoredSession | null): Promise<StoredSession | null> => {
     if (!current) return null
-    // Cookie-only session: no token to refresh, auth handled by cookies.
-    if (!current.accessToken) return current
-    if (current.expiresAt > Date.now()) return current
-    const refreshed = await refreshSession(normalizedEndpoint, current)
-    writeStoredSession(owner, repo, refreshed)
-    setSession(refreshed)
-    return refreshed
-  }, [normalizedEndpoint, owner, repo])
+    if (current.accessToken && current.expiresAt > Date.now()) return current
+    if (current.refreshToken) {
+      const refreshed = await refreshSession(normalizedEndpoint, current)
+      writeStoredSession(storageScope, refreshed)
+      setSession(refreshed)
+      return refreshed
+    }
+    return current
+  }, [normalizedEndpoint, storageScope])
 
   const loadInitial = useCallback(async () => {
     setStatus('loading')
     setError('')
-    const matched = await findThread(normalizedEndpoint, owner, repo, threadKey)
-    setThread(matched)
-    if (!matched) {
-      setComments([])
-      setNextCursor(null)
-      setHasMore(false)
-      setStatus('ready')
-      return
-    }
 
-    const page = await listComments(normalizedEndpoint, owner, repo, matched.number)
-    setComments(page.data)
-    setNextCursor(page.pagination.next_cursor)
-    setHasMore(page.pagination.has_more)
+    const explicitPath = explicitPageCommentsPath(target)
+    const loaded = explicitPath
+      ? {
+          page: null,
+          comments: await listExplicitComments(normalizedEndpoint, explicitPath)
+        }
+      : await listCurrentComments(normalizedEndpoint, pageTitleValue).then(payload => ({
+          page: payload.page,
+          comments: payload.comments
+        }))
+
+    setPage(loaded.page)
+    setComments(loaded.comments.data)
+    setNextCursor(loaded.comments.pagination.next_cursor)
+    setHasMore(loaded.comments.pagination.has_more)
     setStatus('ready')
-  }, [normalizedEndpoint, owner, repo, threadKey])
+  }, [normalizedEndpoint, pageTitleValue, target])
 
   useEffect(() => {
     if (!isHydrated) return undefined
-    const stored = readStoredSession(owner, repo)
-    if (stored) setSession(stored)
-
-    const currentUrl = new URL(window.location.href)
-    const legacySession = currentUrl.searchParams.get('utterances')
-
-    let cancelled = false
-
-    // Legacy utteranc.es callback: ?utterances=<session> in the URL.
-    if (legacySession) {
-      localStorage.setItem(OAUTH_SESSION_STORAGE_KEY, legacySession)
-      currentUrl.searchParams.delete('utterances')
-      history.replaceState(undefined, document.title, currentUrl.href)
-
-      ;(async () => {
-        try {
-          const githubToken = await exchangeLegacySessionForGithubToken(normalizedEndpoint, legacySession)
-          const next = await authenticateGithub(normalizedEndpoint, githubToken)
-          if (cancelled) return
-          writeStoredSession(owner, repo, next)
-          setSession(next)
-        } catch {
-          if (!cancelled) setError(copy.authError)
-        }
-      })()
-
-      return () => {
-        cancelled = true
-      }
+    const stored = readStoredSession(storageScope)
+    if (stored) {
+      setSession(stored)
+      return undefined
     }
 
-    // Native OAuth callback: no URL param, but HttpOnly cookies were set by
-    // the server. Try to fetch the current user via cookies. If we get a user
-    // but have no stored session, create a cookie-only session placeholder.
-    if (!stored) {
-      ;(async () => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const next = await authenticateAccount(normalizedEndpoint)
+        if (cancelled) return
+        writeStoredSession(storageScope, next)
+        setSession(next)
+      } catch {
         try {
           const user = await fetchMeFromCookies(normalizedEndpoint)
           if (cancelled || !user) return
-          // Cookie-only session: no access/refresh token in JS, auth relies
-          // on cookies sent automatically with credentials: 'include'.
           setSession({
             accessToken: '',
             refreshToken: '',
@@ -404,15 +413,15 @@ export function CommentBox({
             user
           })
         } catch {
-          // Not logged in via cookies either — that's fine, stay anonymous.
+          // Anonymous reads are valid; auth is only required for writes.
         }
-      })()
-    }
+      }
+    })()
 
     return () => {
       cancelled = true
     }
-  }, [copy.authError, isHydrated, normalizedEndpoint, owner, repo])
+  }, [isHydrated, normalizedEndpoint, storageScope])
 
   useEffect(() => {
     if (enabled || suppressed || !sectionRef.current) return undefined
@@ -489,7 +498,6 @@ export function CommentBox({
     }
   }, [copy.errorTitle, enabled, loadInitial])
 
-  // Render comment bodies (GFM → sanitized HTML) whenever the list changes.
   useEffect(() => {
     if (comments.length === 0) {
       setRenderedHtml({})
@@ -509,14 +517,17 @@ export function CommentBox({
   }, [comments])
 
   const handleLoadMore = async () => {
-    if (!thread || !hasMore || busy) return
+    if (!hasMore || busy) return
     setBusy(true)
     setError('')
     try {
-      const page = await listComments(normalizedEndpoint, owner, repo, thread.number, nextCursor)
-      setComments(current => [...current, ...page.data])
-      setNextCursor(page.pagination.next_cursor)
-      setHasMore(page.pagination.has_more)
+      const explicitPath = explicitPageCommentsPath(target)
+      const loaded = explicitPath
+        ? await listExplicitComments(normalizedEndpoint, explicitPath, nextCursor)
+        : (await listCurrentComments(normalizedEndpoint, pageTitleValue, nextCursor)).comments
+      setComments(current => [...current, ...loaded.data])
+      setNextCursor(loaded.pagination.next_cursor)
+      setHasMore(loaded.pagination.has_more)
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.errorTitle)
     } finally {
@@ -536,20 +547,10 @@ export function CommentBox({
         setError(copy.authError)
         return
       }
-      const targetThread = thread || await createThread(
-        normalizedEndpoint,
-        owner,
-        repo,
-        threadKey,
-        documentTitle || threadKey,
-        documentDescription,
-        currentDocumentUrl,
-        freshSession
-      )
-      if (!thread) setThread(targetThread)
 
-      const comment = await createComment(normalizedEndpoint, owner, repo, targetThread.number, body, freshSession)
+      const comment = await createComment(normalizedEndpoint, target, pageTitleValue, body, freshSession)
       setComments(current => [...current, comment])
+      setPage(current => current ? { ...current, comment_count: current.comment_count + 1 } : current)
       setDraft('')
       setStatus('ready')
     } catch (err) {
@@ -572,17 +573,14 @@ export function CommentBox({
   }
 
   const handleSignOut = async () => {
-    clearStoredSession(owner, repo)
-    // If using cookie-based auth, tell the server to clear the cookies too.
-    if (session && !session.accessToken) {
-      try {
-        await fetch(apiUrl(normalizedEndpoint, '/api/v1/auth/session'), {
-          method: 'DELETE',
-          credentials: 'include'
-        })
-      } catch {
-        // Best effort — clear local state regardless.
-      }
+    clearStoredSession(storageScope)
+    try {
+      await fetch(apiUrl(normalizedEndpoint, '/api/v1/auth/session'), {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+    } catch {
+      // Best effort; local state is cleared either way.
     }
     setSession(null)
   }
@@ -591,7 +589,7 @@ export function CommentBox({
 
   const isLoading = status === 'idle' || status === 'loading'
   const canSubmit = !!session && draft.trim().length > 0 && !busy
-  const totalCount = thread?.comment_count ?? comments.length
+  const totalCount = page?.comment_count ?? comments.length
 
   return (
     <section
@@ -701,14 +699,7 @@ export function CommentBox({
                     )}
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">
-                        <a
-                          href={`https://github.com/${encodeURIComponent(comment.author.login)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="transition-colors duration-150 hover:text-stone-600 dark:hover:text-stone-300"
-                        >
-                          {comment.author.login}
-                        </a>
+                        {comment.author.login}
                       </p>
                       <time className="block text-xs text-stone-400 dark:text-stone-600">
                         {formatDate(comment.created_at, locale)}

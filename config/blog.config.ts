@@ -39,9 +39,7 @@ const BLOG = {
   comment: {
     provider: 'atrium',
     atriumConfig: {
-      owner: 'jihuayu',
-      repo: 'blog-gitalk',
-      endpoint: 'https://atrium-production.up.railway.app/'
+      endpoint: 'https://atrium.jihuayu.com/'
     }
   },
   isProd: process.env.NODE_ENV === 'production'

@@ -3,7 +3,6 @@ import assert from 'node:assert/strict'
 import {
   apiUrl,
   buildSession,
-  buildThreadBody,
   cx,
   formatDate,
   normalizeEndpoint,
@@ -27,8 +26,8 @@ test('normalizeEndpoint falls back to default for invalid input', () => {
   assert.match(normalizeEndpoint(''), /^https:\/\//)
 })
 
-test('storageKey is namespaced by owner/repo', () => {
-  assert.equal(storageKey('jihuayu', 'blog'), 'somnium-comments-session:jihuayu/blog')
+test('storageKey is namespaced by scope', () => {
+  assert.equal(storageKey('https://atrium.jihuayu.com'), 'somnium-comments-session:https://atrium.jihuayu.com')
 })
 
 test('buildSession subtracts a 30s skew margin and floors at 30s', () => {
@@ -48,15 +47,6 @@ test('buildSession subtracts a 30s skew margin and floors at 30s', () => {
   const tinySession = buildSession(tiny)
   // Math.max(30, 10 - 30) === 30, so at least 30s lifetime.
   assert.ok(tinySession.expiresAt >= now + 29 * 1000)
-})
-
-test('buildThreadBody always starts with a heading and joins non-empty parts', () => {
-  assert.equal(buildThreadBody('Title', '', ''), '# Title')
-  assert.equal(
-    buildThreadBody('Title', 'Desc', 'https://x'),
-    '# Title\n\nDesc\n\n[https://x](https://x)'
-  )
-  assert.equal(buildThreadBody('', 'Desc', 'https://x'), '# 评论\n\nDesc\n\n[https://x](https://x)')
 })
 
 test('formatDate formats valid dates and returns input for invalid ones', () => {
