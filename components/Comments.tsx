@@ -4,10 +4,22 @@ import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS }
 import { config } from '@/lib/server/config'
 import type { BlogConfig } from '@/lib/config'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
+import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
 
 interface CommentsProps {
   frontMatter: PostData
   comment: BlogConfig['comment']
+}
+
+function buildCommentPageUrl(slug: string): string | undefined {
+  const siteUrl = `${config.link || ''}`.trim()
+  if (!siteUrl) return undefined
+
+  try {
+    return new URL(buildInternalSlugHref(config.path || '', slug), siteUrl).toString()
+  } catch {
+    return undefined
+  }
 }
 
 const Comments = ({ frontMatter, comment }: CommentsProps) => {
@@ -23,6 +35,7 @@ const Comments = ({ frontMatter, comment }: CommentsProps) => {
       pageKey={frontMatter.id}
       endpoint={atriumConfig?.endpoint}
       pageTitle={frontMatter.title}
+      pageUrl={buildCommentPageUrl(frontMatter.slug)}
       locale={config.lang}
       className={cn(
         'px-4',

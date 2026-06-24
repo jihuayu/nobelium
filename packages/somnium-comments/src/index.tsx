@@ -210,18 +210,36 @@ function requestHeaders(init?: RequestInit, session?: StoredSession | null): Hea
   return headers
 }
 
+function normalizeRequestReferrer(value?: string): string | undefined {
+  const trimmed = `${value || ''}`.trim()
+  if (!trimmed) return undefined
+  try {
+    return new URL(trimmed).toString()
+  } catch {
+    return undefined
+  }
+}
+
 async function requestNative<T>(
   endpoint: string,
   path: string,
   init?: RequestInit,
   session?: StoredSession | null,
-  authenticated = false
+  authenticated = false,
+  referrerUrl?: string
 ): Promise<T> {
-  const response = await fetch(apiUrl(endpoint, path), {
+  const requestInit: RequestInit = {
     ...init,
     headers: requestHeaders(init, session),
     credentials: authenticated && !session?.accessToken ? 'include' : 'same-origin'
-  })
+  }
+  const referrer = normalizeRequestReferrer(referrerUrl)
+  if (referrer) {
+    requestInit.referrer = referrer
+    requestInit.referrerPolicy = 'unsafe-url'
+  }
+
+  const response = await fetch(apiUrl(endpoint, path), requestInit)
   return parseJsonResponse<T>(response)
 }
 
@@ -293,6 +311,7 @@ async function listExplicitComments(
 async function listCurrentComments(
   endpoint: string,
   pageTitle: string,
+  referrerUrl?: string,
   cursor?: string | null
 ): Promise<CurrentCommentsResponse> {
   return requestNative<CurrentCommentsResponse>(
@@ -302,7 +321,11 @@ async function listCurrentComments(
       limit: COMMENT_PAGE_SIZE,
       order: 'asc',
       cursor
-    })
+    }),
+    undefined,
+    undefined,
+    false,
+    referrerUrl
   )
 }
 
@@ -311,6 +334,7 @@ async function listReplies(
   target: CommentTarget,
   pageTitle: string,
   commentId: number,
+  referrerUrl?: string,
   cursor?: string | null
 ): Promise<CursorPage<AtriumComment>> {
   const explicitPath = explicitPageCommentsPath(target)
@@ -334,8 +358,17 @@ async function listReplies(
       limit: COMMENT_PAGE_SIZE,
       order: 'asc',
       cursor
-    })
+    }),
+    undefined,
+    undefined,
+    false,
+    referrerUrl
   )
+}
+
+interface CreateCommentOptions {
+  parentId?: number | null
+  referrerUrl?: string
 }
 
 async function createComment(
@@ -344,8 +377,9 @@ async function createComment(
   pageTitle: string,
   body: string,
   session: StoredSession,
-  parentId?: number | null
+  options: CreateCommentOptions = {}
 ): Promise<AtriumComment> {
+  const { parentId, referrerUrl } = options
   const payload = parentId == null ? { body } : { body, parent_id: parentId }
   const explicitPath = explicitPageCommentsPath(target)
   if (explicitPath) {
@@ -369,7 +403,8 @@ async function createComment(
       body: JSON.stringify({ ...payload, page_title: pageTitle })
     },
     session,
-    true
+    true,
+    referrerUrl
   )
 }
 
@@ -378,7 +413,8 @@ async function setReaction(
   target: CommentTarget,
   commentId: number,
   content: ReactionContent,
-  session: StoredSession
+  session: StoredSession,
+  referrerUrl?: string
 ): Promise<ReactionCounts> {
   const path = target.websiteKey
     ? `/api/v1/websites/${encodeURIComponent(target.websiteKey)}/comments/${commentId}/reactions/${content}`
@@ -388,7 +424,8 @@ async function setReaction(
     path,
     { method: 'PUT' },
     session,
-    true
+    true,
+    target.websiteKey ? undefined : referrerUrl
   )
 }
 
@@ -397,7 +434,8 @@ async function deleteReaction(
   target: CommentTarget,
   commentId: number,
   content: ReactionContent,
-  session: StoredSession
+  session: StoredSession,
+  referrerUrl?: string
 ): Promise<void> {
   const path = target.websiteKey
     ? `/api/v1/websites/${encodeURIComponent(target.websiteKey)}/comments/${commentId}/reactions/${content}`
@@ -407,7 +445,8 @@ async function deleteReaction(
     path,
     { method: 'DELETE' },
     session,
-    true
+    true,
+    target.websiteKey ? undefined : referrerUrl
   )
 }
 
@@ -467,10 +506,20 @@ export function CommentBox({
   }, [comments, replyBuckets])
 
   const currentDocumentUrl = useMemo(() => {
+    if (isHydrated && typeof window !== 'undefined') {
+      if (pageUrl) {
+        try {
+          const configured = new URL(pageUrl)
+          if (configured.origin === window.location.origin) return configured.toString()
+        } catch {
+          // Fall back to the browser location below.
+        }
+      }
+      return window.location.href
+    }
     if (pageUrl) return pageUrl
     if (documentUrl) return documentUrl
-    if (!isHydrated || typeof window === 'undefined') return ''
-    return window.location.href
+    return ''
   }, [documentUrl, isHydrated, pageUrl])
 
   const signInUrl = useMemo(() => {
@@ -528,7 +577,7 @@ export function CommentBox({
     })
 
     try {
-      const page = await listReplies(normalizedEndpoint, target, pageTitleValue, commentId, cursor)
+      const page = await listReplies(normalizedEndpoint, target, pageTitleValue, commentId, currentDocumentUrl, cursor)
       setReplyBuckets(current => {
         const existing = current[commentId]
         const previous = cursor ? existing?.comments ?? [] : []
@@ -557,7 +606,7 @@ export function CommentBox({
         }
       })
     }
-  }, [copy.errorTitle, normalizedEndpoint, pageTitleValue, target])
+  }, [copy.errorTitle, currentDocumentUrl, normalizedEndpoint, pageTitleValue, target])
 
   const loadInitial = useCallback(async () => {
     setStatus('loading')
@@ -569,7 +618,7 @@ export function CommentBox({
           page: null,
           comments: await listExplicitComments(normalizedEndpoint, explicitPath)
         }
-      : await listCurrentComments(normalizedEndpoint, pageTitleValue).then(payload => ({
+      : await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl).then(payload => ({
           page: payload.page,
           comments: payload.comments
         }))
@@ -583,7 +632,7 @@ export function CommentBox({
     loaded.comments.data.forEach(comment => {
       void loadRepliesForComment(comment.id)
     })
-  }, [loadRepliesForComment, normalizedEndpoint, pageTitleValue, target])
+  }, [currentDocumentUrl, loadRepliesForComment, normalizedEndpoint, pageTitleValue, target])
 
   useEffect(() => {
     if (!isHydrated) return undefined
@@ -722,7 +771,7 @@ export function CommentBox({
       const explicitPath = explicitPageCommentsPath(target)
       const loaded = explicitPath
         ? await listExplicitComments(normalizedEndpoint, explicitPath, nextCursor)
-        : (await listCurrentComments(normalizedEndpoint, pageTitleValue, nextCursor)).comments
+        : (await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl, nextCursor)).comments
       setComments(current => [...current, ...loaded.data])
       setNextCursor(loaded.pagination.next_cursor)
       setHasMore(loaded.pagination.has_more)
@@ -749,7 +798,9 @@ export function CommentBox({
         return
       }
 
-      const comment = await createComment(normalizedEndpoint, target, pageTitleValue, body, freshSession)
+      const comment = await createComment(normalizedEndpoint, target, pageTitleValue, body, freshSession, {
+        referrerUrl: currentDocumentUrl
+      })
       setComments(current => [...current, comment])
       setPage(current => current ? { ...current, comment_count: current.comment_count + 1 } : current)
       setDraft('')
@@ -774,7 +825,10 @@ export function CommentBox({
         return
       }
 
-      const reply = await createComment(normalizedEndpoint, target, pageTitleValue, body, freshSession, parentId)
+      const reply = await createComment(normalizedEndpoint, target, pageTitleValue, body, freshSession, {
+        parentId,
+        referrerUrl: currentDocumentUrl
+      })
       setReplyBuckets(current => {
         const existing = current[parentId]
         return {
@@ -811,14 +865,14 @@ export function CommentBox({
       }
 
       if (activeReactions[key]) {
-        await deleteReaction(normalizedEndpoint, target, comment.id, content, freshSession)
+        await deleteReaction(normalizedEndpoint, target, comment.id, content, freshSession, currentDocumentUrl)
         setActiveReactions(current => ({ ...current, [key]: false }))
         updateCommentEverywhere(comment.id, current => ({
           ...current,
           reactions: adjustReactionCounts(current.reactions, content, -1)
         }))
       } else {
-        const reactions = await setReaction(normalizedEndpoint, target, comment.id, content, freshSession)
+        const reactions = await setReaction(normalizedEndpoint, target, comment.id, content, freshSession, currentDocumentUrl)
         setActiveReactions(current => ({ ...current, [key]: true }))
         updateCommentEverywhere(comment.id, current => ({ ...current, reactions }))
       }
