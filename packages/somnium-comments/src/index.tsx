@@ -54,6 +54,7 @@ export interface CommentBoxLabels {
   deleteComment?: string
   banUser?: string
   bannedUser?: string
+  deletedComment?: string
   confirmDelete?: (author: string) => string
   confirmBan?: (author: string) => string
   commentsCount?: (count: number) => string
@@ -190,6 +191,7 @@ const defaultLabels: Required<Omit<CommentBoxLabels, 'commentsCount'>> = {
   deleteComment: '删除',
   banUser: '禁言',
   bannedUser: '已禁言',
+  deletedComment: '该评论已被删除',
   confirmDelete: (author: string) => `确定删除 @${author} 的这条评论吗？`,
   confirmBan: (author: string) => `确定禁止 @${author} 继续在本站评论吗？`
 }
@@ -205,6 +207,18 @@ const reactionOptions: ReactionOption[] = [
   { content: 'rocket', label: '推荐', icon: '🚀' },
   { content: 'eyes', label: '围观', icon: '👀' }
 ]
+
+const emptyReactions: ReactionCounts = {
+  like: 0,
+  dislike: 0,
+  heart: 0,
+  laugh: 0,
+  hooray: 0,
+  confused: 0,
+  rocket: 0,
+  eyes: 0,
+  total: 0
+}
 
 function useIsHydrated(): boolean {
   return useSyncExternalStore(
@@ -355,6 +369,7 @@ async function listReplies(
       endpoint,
       pathWithQuery(explicitPath, {
         parent_id: commentId,
+        thread: 'flat',
         limit: COMMENT_PAGE_SIZE,
         order: 'asc',
         cursor
@@ -366,6 +381,7 @@ async function listReplies(
     endpoint,
     pathWithQuery('/api/v1/comments/current/replies', {
       comment_id: commentId,
+      thread: 'flat',
       page_title: pageTitle,
       limit: COMMENT_PAGE_SIZE,
       order: 'asc',
@@ -520,6 +536,18 @@ function adjustReactionCounts(reactions: ReactionCounts, content: ReactionConten
   return { ...reactions, [content]: nextValue, total: nextTotal }
 }
 
+function findThreadRootId(
+  parentId: number,
+  rootComments: AtriumComment[],
+  buckets: Record<number, ReplyBucket>
+): number {
+  if (rootComments.some(comment => comment.id === parentId)) return parentId
+  for (const [rootId, bucket] of Object.entries(buckets)) {
+    if (bucket.comments.some(comment => comment.id === parentId)) return Number(rootId)
+  }
+  return parentId
+}
+
 function withCommentSectionHash(value: string): string {
   try {
     const url = new URL(value)
@@ -591,6 +619,13 @@ export function CommentBox({
     if (session) set.add(session.user.login)
     return set
   }, [visibleComments, session])
+  const mentionSuggestions = useMemo(() => {
+    if (!mentionQuery) return []
+    const q = mentionQuery.query.toLowerCase()
+    return Array.from(participants)
+      .filter(login => login.toLowerCase().startsWith(q))
+      .slice(0, 5)
+  }, [mentionQuery, participants])
 
   const currentDocumentUrl = useMemo(() => {
     if (isHydrated && typeof window !== 'undefined') {
@@ -650,20 +685,45 @@ export function CommentBox({
     })
   }, [])
 
-  const removeCommentEverywhere = useCallback((commentId: number) => {
-    setComments(current => current.filter(comment => comment.id !== commentId))
+  const markCommentDeletedEverywhere = useCallback((commentId: number) => {
+    const deletedAt = new Date().toISOString()
+    const markDeleted = (comment: AtriumComment): AtriumComment => {
+      if (comment.id !== commentId) return comment
+      return {
+        ...comment,
+        body: '',
+        body_html: '',
+        reactions: { ...emptyReactions },
+        deleted: true,
+        deleted_at: comment.deleted_at ?? deletedAt
+      }
+    }
+
+    setComments(current => current.map(markDeleted))
     setReplyBuckets(current => {
       let changed = false
       const next: Record<number, ReplyBucket> = {}
       Object.entries(current).forEach(([key, bucket]) => {
         const parentId = Number(key)
-        if (parentId === commentId) {
-          changed = true
-          return
-        }
-        const comments = bucket.comments.filter(comment => comment.id !== commentId)
-        if (comments.length !== bucket.comments.length) changed = true
-        next[parentId] = comments.length === bucket.comments.length ? bucket : { ...bucket, comments }
+        let bucketChanged = false
+        const comments = bucket.comments.map(comment => {
+          if (comment.id !== commentId) return comment
+          bucketChanged = true
+          return markDeleted(comment)
+        })
+        if (bucketChanged) changed = true
+        next[parentId] = bucketChanged ? { ...bucket, comments } : bucket
+      })
+      return changed ? next : current
+    })
+    setReactionPickerFor(current => current === commentId ? null : current)
+    setActiveReactions(current => {
+      let changed = false
+      const next = { ...current }
+      reactionOptions.forEach(option => {
+        const key = reactionKey(commentId, option.content)
+        if (next[key]) changed = true
+        next[key] = false
       })
       return changed ? next : current
     })
@@ -938,6 +998,7 @@ export function CommentBox({
     setBusy(true)
     setError('')
     const parentId = replyingTo
+    const threadRootId = parentId == null ? null : findThreadRootId(parentId, comments, replyBuckets)
     try {
       const freshSession = await ensureFreshSession(session)
       if (!freshSession) {
@@ -953,10 +1014,11 @@ export function CommentBox({
         setComments(current => [...current, comment])
       } else {
         setReplyBuckets(current => {
-          const existing = current[parentId]
+          const bucketId = threadRootId ?? parentId
+          const existing = current[bucketId]
           return {
             ...current,
-            [parentId]: {
+            [bucketId]: {
               comments: [...(existing?.comments ?? []), comment],
               nextCursor: existing?.nextCursor ?? null,
               hasMore: existing?.hasMore ?? false,
@@ -978,6 +1040,7 @@ export function CommentBox({
   }
 
   const handleReaction = async (comment: AtriumComment, content: ReactionContent) => {
+    if (comment.deleted) return
     const key = reactionKey(comment.id, content)
     if (reactionBusy[key]) return
 
@@ -1012,7 +1075,7 @@ export function CommentBox({
 
   const handleDeleteComment = async (comment: AtriumComment) => {
     const key = `delete:${comment.id}`
-    if (!resolvedWebsiteKey || commentActionBusy[key]) return
+    if (!resolvedWebsiteKey || comment.deleted || commentActionBusy[key]) return
     if (typeof window !== 'undefined' && !window.confirm(copy.confirmDelete(comment.author.login))) return
 
     setCommentActionBusy(current => ({ ...current, [key]: true }))
@@ -1025,7 +1088,7 @@ export function CommentBox({
       }
 
       await deleteComment(normalizedEndpoint, resolvedWebsiteKey, comment.id, freshSession)
-      removeCommentEverywhere(comment.id)
+      markCommentDeletedEverywhere(comment.id)
       setReplyingTo(current => current === comment.id ? null : current)
       setPage(current => current ? { ...current, comment_count: Math.max(0, current.comment_count - 1) } : current)
     } catch (err) {
@@ -1083,15 +1146,6 @@ export function CommentBox({
   const totalCount = page?.comment_count ?? visibleComments.length
   const replyTarget = visibleComments.find(comment => comment.id === replyingTo) ?? null
   const isReplying = replyingTo !== null
-
-  // --- @mention autocomplete ---
-  const mentionSuggestions = useMemo(() => {
-    if (!mentionQuery) return []
-    const q = mentionQuery.query.toLowerCase()
-    return Array.from(participants)
-      .filter(login => login.toLowerCase().startsWith(q))
-      .slice(0, 5)
-  }, [mentionQuery, participants])
 
   const handleComposerChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.currentTarget.value
@@ -1202,6 +1256,8 @@ export function CommentBox({
   }
 
   const renderActions = (comment: AtriumComment, allowReply: boolean) => {
+    if (comment.deleted) return null
+
     const deleteKey = `delete:${comment.id}`
     const banKey = `ban:${comment.author.id}`
     const canDeleteComment = !!session && !!resolvedWebsiteKey && (session.user.id === comment.author.id || canModerate)
@@ -1365,11 +1421,17 @@ export function CommentBox({
                 {formatDate(comment.created_at, locale)}
               </time>
             </div>
-            <div
-              className="comment-body mt-2 break-words text-[0.95rem] leading-7 text-stone-700 dark:text-stone-300"
-              dangerouslySetInnerHTML={{ __html: renderedHtml[comment.id] ?? '' }}
-            />
-            {renderActions(comment, allowReply)}
+            {comment.deleted ? (
+              <div className="comment-body mt-2 break-words text-[0.95rem] leading-7 text-stone-700 dark:text-stone-300">
+                {copy.deletedComment}
+              </div>
+            ) : (
+              <div
+                className="comment-body mt-2 break-words text-[0.95rem] leading-7 text-stone-700 dark:text-stone-300"
+                dangerouslySetInnerHTML={{ __html: renderedHtml[comment.id] ?? '' }}
+              />
+            )}
+            {renderActions(comment, true)}
             {allowReply && renderReplies(comment)}
           </div>
         </div>
