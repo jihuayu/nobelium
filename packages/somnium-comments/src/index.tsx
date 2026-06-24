@@ -566,6 +566,7 @@ export function CommentBox({
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [composing, setComposing] = useState(false)
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
 
   const copy = { ...defaultLabels, ...labels }
@@ -956,6 +957,7 @@ export function CommentBox({
       }
       setPage(current => current ? { ...current, comment_count: current.comment_count + 1 } : current)
       setDraft('')
+      setComposing(false)
       setStatus('ready')
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.errorTitle)
@@ -1084,6 +1086,7 @@ export function CommentBox({
       return
     }
     setReplyingTo(commentId)
+    setComposing(true)
     if (typeof window !== 'undefined') {
       window.requestAnimationFrame(() => {
         composerRef.current?.scrollIntoView({ block: 'center' })
@@ -1297,43 +1300,18 @@ export function CommentBox({
         className
       )}
     >
-      <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h2 id="comments-title" className="font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-            <span>{copy.title}</span>
-            {status === 'ready' && (
-              <span className="ml-2 align-middle text-sm font-normal text-stone-400 dark:text-stone-500">
-                {commentsCountLabel(totalCount)}
-              </span>
-            )}
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-stone-500 dark:text-stone-500">
-            {copy.caption}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2 text-sm">
-          {session ? (
-            <>
-              <span className="max-w-[12rem] truncate text-stone-500 dark:text-stone-500">
-                {copy.signedInAs} {session.user.login}
-              </span>
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="rounded-md border border-stone-300 px-2.5 py-1 text-stone-600 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-500 dark:hover:text-stone-100"
-              >
-                {copy.signOut}
-              </button>
-            </>
-          ) : (
-            <a
-              href={signInUrl}
-              className="rounded-md border border-stone-300 px-3 py-1.5 font-medium text-stone-700 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-stone-100"
-            >
-              {copy.signIn}
-            </a>
+      <header className="mb-5">
+        <h2 id="comments-title" className="font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+          <span>{copy.title}</span>
+          {status === 'ready' && (
+            <span className="ml-2 align-middle text-sm font-normal text-stone-400 dark:text-stone-500">
+              {commentsCountLabel(totalCount)}
+            </span>
           )}
-        </div>
+        </h2>
+        <p className="mt-1 text-sm leading-6 text-stone-500 dark:text-stone-500">
+          {copy.caption}
+        </p>
       </header>
 
       <div
@@ -1397,49 +1375,141 @@ export function CommentBox({
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="border-t border-stone-200/70 p-5 dark:border-stone-800/80">
-              {isReplying && (
-                <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-950/45 dark:text-stone-400">
-                  <span className="min-w-0 truncate">
-                    正在回复 {replyTarget ? `@${replyTarget.author.login}` : `#${replyingTo}`}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setReplyingTo(null)}
-                    className="shrink-0 text-xs font-medium text-stone-500 transition-colors hover:text-stone-950 dark:text-stone-500 dark:hover:text-stone-100"
-                  >
-                    {copy.cancelReply}
-                  </button>
+            {/* Composer: collapsed by default, expands on click or reply */}
+            <div className="border-t border-stone-200/70 dark:border-stone-800/80">
+              {!composing ? (
+                <div className="flex items-center gap-3 px-5 py-4">
+                  {session ? (
+                    <>
+                      {session.user.avatar_url ? (
+                        <img
+                          src={session.user.avatar_url}
+                          alt=""
+                          className="h-7 w-7 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900"
+                        />
+                      ) : (
+                        <div className="h-7 w-7 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setComposing(true)
+                          if (typeof window !== 'undefined') {
+                            window.requestAnimationFrame(() => composerRef.current?.focus())
+                          }
+                        }}
+                        className="min-w-0 flex-1 truncate rounded-md border border-stone-200 bg-white px-3 py-2 text-left text-sm text-stone-400 transition-colors duration-150 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-600 dark:hover:border-stone-700"
+                      >
+                        {copy.textareaPlaceholder}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="shrink-0 text-xs text-stone-400 transition-colors duration-150 hover:text-stone-700 dark:text-stone-600 dark:hover:text-stone-300"
+                      >
+                        {copy.signOut}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="h-7 w-7 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
+                      <span className="min-w-0 flex-1 truncate text-sm text-stone-400 dark:text-stone-600">
+                        {copy.textareaDisabledPlaceholder}
+                      </span>
+                      <a
+                        href={signInUrl}
+                        className="shrink-0 text-xs font-medium text-stone-500 transition-colors duration-150 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
+                      >
+                        {copy.signIn}
+                      </a>
+                    </>
+                  )}
                 </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="p-5">
+                  {session && (
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="flex min-w-0 items-center gap-2">
+                        {session.user.avatar_url ? (
+                          <img
+                            src={session.user.avatar_url}
+                            alt=""
+                            className="h-6 w-6 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900"
+                          />
+                        ) : (
+                          <div className="h-6 w-6 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
+                        )}
+                        <span className="truncate text-xs text-stone-500 dark:text-stone-500">
+                          {session.user.login}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="shrink-0 text-xs text-stone-400 transition-colors duration-150 hover:text-stone-700 dark:text-stone-600 dark:hover:text-stone-300"
+                      >
+                        {copy.signOut}
+                      </button>
+                    </div>
+                  )}
+                  {isReplying && (
+                    <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-950/45 dark:text-stone-400">
+                      <span className="min-w-0 truncate">
+                        正在回复 {replyTarget ? `@${replyTarget.author.login}` : `#${replyingTo}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setReplyingTo(null)}
+                        className="shrink-0 text-xs font-medium text-stone-500 transition-colors hover:text-stone-950 dark:text-stone-500 dark:hover:text-stone-100"
+                      >
+                        {copy.cancelReply}
+                      </button>
+                    </div>
+                  )}
+                  <label htmlFor="comment-draft" className="sr-only">
+                    {isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
+                  </label>
+                  <textarea
+                    ref={composerRef}
+                    id="comment-draft"
+                    value={draft}
+                    disabled={!session || busy}
+                    onChange={event => setDraft(event.currentTarget.value)}
+                    onKeyDown={handleTextareaKeyDown}
+                    placeholder={isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
+                    className="block min-h-28 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:bg-stone-900/60 dark:disabled:text-stone-700"
+                  />
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    {error ? (
+                      <p className="text-sm text-stone-500 dark:text-stone-500">
+                        {error}
+                      </p>
+                    ) : <span />}
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setComposing(false)
+                          setDraft('')
+                          setReplyingTo(null)
+                          setError('')
+                        }}
+                        className="text-sm text-stone-500 transition-colors duration-150 hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200"
+                      >
+                        {copy.cancelReply}
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={!canSubmit}
+                        className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-stone-100 dark:disabled:border-stone-800 dark:disabled:text-stone-700"
+                      >
+                        {busy ? copy.submitting : isReplying ? copy.submitReply : copy.submit}
+                      </button>
+                    </div>
+                  </div>
+                </form>
               )}
-              <label htmlFor="comment-draft" className="sr-only">
-                {isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
-              </label>
-              <textarea
-                ref={composerRef}
-                id="comment-draft"
-                value={draft}
-                disabled={!session || busy}
-                onChange={event => setDraft(event.currentTarget.value)}
-                onKeyDown={handleTextareaKeyDown}
-                placeholder={session ? (isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder) : copy.textareaDisabledPlaceholder}
-                className="block min-h-28 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:bg-stone-900/60 dark:disabled:text-stone-700"
-              />
-              <div className="mt-3 flex items-center justify-between gap-3">
-                {error ? (
-                  <p className="text-sm text-stone-500 dark:text-stone-500">
-                    {error}
-                  </p>
-                ) : <span />}
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-stone-100 dark:disabled:border-stone-800 dark:disabled:text-stone-700"
-                >
-                  {busy ? copy.submitting : isReplying ? copy.submitReply : copy.submit}
-                </button>
-              </div>
-            </form>
+            </div>
           </>
         )}
       </div>
