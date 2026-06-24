@@ -61,6 +61,7 @@ export interface CommentBoxProps {
   documentDescription?: string
   documentUrl?: string
   requestGeoEndpoint?: string
+  /** Legacy utteranc.es authorize endpoint — used as fallback when native OAuth is not configured. */
   legacyAuthorizeEndpoint?: string
   locale?: string
   className?: string
@@ -132,13 +133,35 @@ async function requestNative<T>(
   const headers = new Headers(init?.headers)
   headers.set('Accept', 'application/json')
   if (init?.body) headers.set('Content-Type', 'application/json')
-  if (session) headers.set('Authorization', `Bearer ${session.accessToken}`)
+  // If we have a real access token, send it as a Bearer header.
+  // If the session is cookie-only (empty accessToken), rely on credentials: include.
+  const useCookies = session != null && !session.accessToken
+  if (session && session.accessToken) {
+    headers.set('Authorization', `Bearer ${session.accessToken}`)
+  }
 
   const response = await fetch(apiUrl(endpoint, path), {
     ...init,
-    headers
+    headers,
+    credentials: useCookies ? 'include' : 'same-origin'
   })
   return parseJsonResponse<T>(response)
+}
+
+/**
+ * Fetch the current user from /api/v1/auth/me using cookies (credentials: include).
+ * Used after returning from native OAuth callback where tokens are in HttpOnly cookies.
+ */
+async function fetchMeFromCookies(endpoint: string): Promise<NativeUser | null> {
+  const response = await fetch(apiUrl(endpoint, '/api/v1/auth/me'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: { Accept: 'application/json' }
+  })
+  if (!response.ok) return null
+  const payload = await response.json().catch(() => null)
+  if (!payload || !payload.login) return null
+  return payload as NativeUser
 }
 
 async function exchangeLegacySessionForGithubToken(endpoint: string, legacySession: string): Promise<string> {
@@ -291,11 +314,19 @@ export function CommentBox({
     if (!isHydrated || typeof window === 'undefined') return '#'
     const url = new URL(window.location.href)
     url.searchParams.delete('utterances')
-    return `${legacyAuthorizeEndpoint}?${new URLSearchParams({ redirect_uri: url.href })}`
-  }, [isHydrated, legacyAuthorizeEndpoint])
+    // Use native Atrium OAuth if the endpoint supports it; otherwise fall
+    // back to the legacy utteranc.es authorize flow.
+    const nativeAuthorize = apiUrl(normalizedEndpoint, '/api/v1/auth/github/authorize', {
+      redirect_uri: url.href,
+      state: threadKey
+    })
+    return nativeAuthorize
+  }, [isHydrated, normalizedEndpoint, threadKey])
 
   const ensureFreshSession = useCallback(async (current: StoredSession | null): Promise<StoredSession | null> => {
     if (!current) return null
+    // Cookie-only session: no token to refresh, auth handled by cookies.
+    if (!current.accessToken) return current
     if (current.expiresAt > Date.now()) return current
     const refreshed = await refreshSession(normalizedEndpoint, current)
     writeStoredSession(owner, repo, refreshed)
@@ -330,24 +361,53 @@ export function CommentBox({
 
     const currentUrl = new URL(window.location.href)
     const legacySession = currentUrl.searchParams.get('utterances')
-    if (!legacySession) return undefined
-
-    localStorage.setItem(OAUTH_SESSION_STORAGE_KEY, legacySession)
-    currentUrl.searchParams.delete('utterances')
-    history.replaceState(undefined, document.title, currentUrl.href)
 
     let cancelled = false
-    ;(async () => {
-      try {
-        const githubToken = await exchangeLegacySessionForGithubToken(normalizedEndpoint, legacySession)
-        const next = await authenticateGithub(normalizedEndpoint, githubToken)
-        if (cancelled) return
-        writeStoredSession(owner, repo, next)
-        setSession(next)
-      } catch {
-        if (!cancelled) setError(copy.authError)
+
+    // Legacy utteranc.es callback: ?utterances=<session> in the URL.
+    if (legacySession) {
+      localStorage.setItem(OAUTH_SESSION_STORAGE_KEY, legacySession)
+      currentUrl.searchParams.delete('utterances')
+      history.replaceState(undefined, document.title, currentUrl.href)
+
+      ;(async () => {
+        try {
+          const githubToken = await exchangeLegacySessionForGithubToken(normalizedEndpoint, legacySession)
+          const next = await authenticateGithub(normalizedEndpoint, githubToken)
+          if (cancelled) return
+          writeStoredSession(owner, repo, next)
+          setSession(next)
+        } catch {
+          if (!cancelled) setError(copy.authError)
+        }
+      })()
+
+      return () => {
+        cancelled = true
       }
-    })()
+    }
+
+    // Native OAuth callback: no URL param, but HttpOnly cookies were set by
+    // the server. Try to fetch the current user via cookies. If we get a user
+    // but have no stored session, create a cookie-only session placeholder.
+    if (!stored) {
+      ;(async () => {
+        try {
+          const user = await fetchMeFromCookies(normalizedEndpoint)
+          if (cancelled || !user) return
+          // Cookie-only session: no access/refresh token in JS, auth relies
+          // on cookies sent automatically with credentials: 'include'.
+          setSession({
+            accessToken: '',
+            refreshToken: '',
+            expiresAt: Number.MAX_SAFE_INTEGER,
+            user
+          })
+        } catch {
+          // Not logged in via cookies either — that's fine, stay anonymous.
+        }
+      })()
+    }
 
     return () => {
       cancelled = true
@@ -511,8 +571,19 @@ export function CommentBox({
     }
   }
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     clearStoredSession(owner, repo)
+    // If using cookie-based auth, tell the server to clear the cookies too.
+    if (session && !session.accessToken) {
+      try {
+        await fetch(apiUrl(normalizedEndpoint, '/api/v1/auth/session'), {
+          method: 'DELETE',
+          credentials: 'include'
+        })
+      } catch {
+        // Best effort — clear local state regardless.
+      }
+    }
     setSession(null)
   }
 
