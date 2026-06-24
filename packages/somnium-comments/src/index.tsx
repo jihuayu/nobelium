@@ -51,6 +51,11 @@ export interface CommentBoxLabels {
   submitReply?: string
   loadMoreReplies?: string
   loadingReplies?: string
+  deleteComment?: string
+  banUser?: string
+  bannedUser?: string
+  confirmDelete?: (author: string) => string
+  confirmBan?: (author: string) => string
   commentsCount?: (count: number) => string
 }
 
@@ -146,6 +151,7 @@ type ReactionContent = 'like' | 'dislike' | 'heart' | 'laugh' | 'hooray' | 'conf
 interface ReactionOption {
   content: ReactionContent
   label: string
+  icon: string
 }
 
 interface ReplyBucket {
@@ -156,6 +162,7 @@ interface ReplyBucket {
   error?: string
 }
 
+const COMMENT_SECTION_ID = 'comments'
 const subscribeNoop = () => () => {}
 
 const defaultLabels: Required<Omit<CommentBoxLabels, 'commentsCount'>> = {
@@ -179,19 +186,24 @@ const defaultLabels: Required<Omit<CommentBoxLabels, 'commentsCount'>> = {
   replyPlaceholder: '写下你的回复',
   submitReply: '发布回复',
   loadMoreReplies: '加载更多回复',
-  loadingReplies: '正在读取回复'
+  loadingReplies: '正在读取回复',
+  deleteComment: '删除',
+  banUser: '禁言',
+  bannedUser: '已禁言',
+  confirmDelete: (author: string) => `确定删除 @${author} 的这条评论吗？`,
+  confirmBan: (author: string) => `确定禁止 @${author} 继续在本站评论吗？`
 }
 
 const defaultCommentsCount = (count: number): string => `${count} 条评论`
 const reactionOptions: ReactionOption[] = [
-  { content: 'like', label: '赞' },
-  { content: 'dislike', label: '踩' },
-  { content: 'heart', label: '喜欢' },
-  { content: 'laugh', label: '会心' },
-  { content: 'hooray', label: '庆祝' },
-  { content: 'confused', label: '困惑' },
-  { content: 'rocket', label: '推荐' },
-  { content: 'eyes', label: '围观' }
+  { content: 'like', label: '赞', icon: '👍' },
+  { content: 'dislike', label: '踩', icon: '👎' },
+  { content: 'heart', label: '喜欢', icon: '❤️' },
+  { content: 'laugh', label: '会心', icon: '😄' },
+  { content: 'hooray', label: '庆祝', icon: '🎉' },
+  { content: 'confused', label: '困惑', icon: '😕' },
+  { content: 'rocket', label: '推荐', icon: '🚀' },
+  { content: 'eyes', label: '围观', icon: '👀' }
 ]
 
 function useIsHydrated(): boolean {
@@ -450,6 +462,54 @@ async function deleteReaction(
   )
 }
 
+async function canModerateWebsite(endpoint: string, websiteKey: string, session: StoredSession): Promise<boolean> {
+  try {
+    await requestNative<{ data: unknown[] }>(
+      endpoint,
+      `/api/v1/websites/${encodeURIComponent(websiteKey)}/admins`,
+      undefined,
+      session,
+      true
+    )
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function deleteComment(
+  endpoint: string,
+  websiteKey: string,
+  commentId: number,
+  session: StoredSession
+): Promise<void> {
+  await requestNative<void>(
+    endpoint,
+    `/api/v1/websites/${encodeURIComponent(websiteKey)}/comments/${commentId}`,
+    { method: 'DELETE' },
+    session,
+    true
+  )
+}
+
+async function banWebsiteUser(
+  endpoint: string,
+  websiteKey: string,
+  userId: number,
+  session: StoredSession
+): Promise<void> {
+  await requestNative<void>(
+    endpoint,
+    `/api/v1/websites/${encodeURIComponent(websiteKey)}/bans`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId })
+    },
+    session,
+    true
+  )
+}
+
 function reactionKey(commentId: number, content: ReactionContent): string {
   return `${commentId}:${content}`
 }
@@ -458,6 +518,16 @@ function adjustReactionCounts(reactions: ReactionCounts, content: ReactionConten
   const nextValue = Math.max(0, reactions[content] + delta)
   const nextTotal = Math.max(0, reactions.total + delta)
   return { ...reactions, [content]: nextValue, total: nextTotal }
+}
+
+function withCommentSectionHash(value: string): string {
+  try {
+    const url = new URL(value)
+    url.hash = COMMENT_SECTION_ID
+    return url.toString()
+  } catch {
+    return value
+  }
 }
 
 export function CommentBox({
@@ -479,13 +549,16 @@ export function CommentBox({
   const [suppressed, setSuppressed] = useState(false)
   const [status, setStatus] = useState<CommentLoadStatus>('idle')
   const [page, setPage] = useState<AtriumPage | null>(null)
+  const [website, setWebsite] = useState<AtriumWebsite | null>(null)
   const [comments, setComments] = useState<AtriumComment[]>([])
   const [replyBuckets, setReplyBuckets] = useState<Record<number, ReplyBucket>>({})
-  const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({})
   const [replyingTo, setReplyingTo] = useState<number | null>(null)
-  const [replyBusy, setReplyBusy] = useState<Record<number, boolean>>({})
   const [reactionBusy, setReactionBusy] = useState<Record<string, boolean>>({})
   const [activeReactions, setActiveReactions] = useState<Record<string, boolean>>({})
+  const [reactionPickerFor, setReactionPickerFor] = useState<number | null>(null)
+  const [commentActionBusy, setCommentActionBusy] = useState<Record<string, boolean>>({})
+  const [canModerate, setCanModerate] = useState(false)
+  const [bannedAuthors, setBannedAuthors] = useState<Record<number, boolean>>({})
   const [renderedHtml, setRenderedHtml] = useState<Record<number, string>>({})
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
@@ -493,6 +566,7 @@ export function CommentBox({
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const composerRef = useRef<HTMLTextAreaElement | null>(null)
 
   const copy = { ...defaultLabels, ...labels }
   const commentsCountLabel = labels?.commentsCount ?? defaultCommentsCount
@@ -500,6 +574,7 @@ export function CommentBox({
   const target = useMemo<CommentTarget>(() => ({ websiteKey, pageKey }), [pageKey, websiteKey])
   const pageTitleValue = pageTitle || documentTitle || (pageKey ? String(pageKey) : 'Untitled')
   const storageScope = normalizedEndpoint
+  const resolvedWebsiteKey = target.websiteKey || page?.website_key || website?.key || ''
   const visibleComments = useMemo(() => {
     const replies = Object.values(replyBuckets).flatMap(bucket => bucket.comments)
     return [...comments, ...replies]
@@ -525,9 +600,10 @@ export function CommentBox({
   const signInUrl = useMemo(() => {
     if (!isHydrated || typeof window === 'undefined') return '#'
     const url = new URL(window.location.href)
+    const returnUrl = withCommentSectionHash(url.href)
     return apiUrl(normalizedEndpoint, '/api/v1/auth/account/authorize', {
-      redirect_uri: url.href,
-      state: pageKey || currentDocumentUrl || url.href
+      redirect_uri: returnUrl,
+      state: pageKey || currentDocumentUrl || returnUrl
     })
   }, [currentDocumentUrl, isHydrated, normalizedEndpoint, pageKey])
 
@@ -557,6 +633,25 @@ export function CommentBox({
         })
         if (bucketChanged) changed = true
         next[Number(key)] = bucketChanged ? { ...bucket, comments } : bucket
+      })
+      return changed ? next : current
+    })
+  }, [])
+
+  const removeCommentEverywhere = useCallback((commentId: number) => {
+    setComments(current => current.filter(comment => comment.id !== commentId))
+    setReplyBuckets(current => {
+      let changed = false
+      const next: Record<number, ReplyBucket> = {}
+      Object.entries(current).forEach(([key, bucket]) => {
+        const parentId = Number(key)
+        if (parentId === commentId) {
+          changed = true
+          return
+        }
+        const comments = bucket.comments.filter(comment => comment.id !== commentId)
+        if (comments.length !== bucket.comments.length) changed = true
+        next[parentId] = comments.length === bucket.comments.length ? bucket : { ...bucket, comments }
       })
       return changed ? next : current
     })
@@ -615,14 +710,17 @@ export function CommentBox({
     const explicitPath = explicitPageCommentsPath(target)
     const loaded = explicitPath
       ? {
+          website: null,
           page: null,
           comments: await listExplicitComments(normalizedEndpoint, explicitPath)
         }
       : await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl).then(payload => ({
+          website: payload.website,
           page: payload.page,
           comments: payload.comments
         }))
 
+    setWebsite(loaded.website)
     setPage(loaded.page)
     setComments(loaded.comments.data)
     setReplyBuckets({})
@@ -669,6 +767,42 @@ export function CommentBox({
       cancelled = true
     }
   }, [isHydrated, normalizedEndpoint, storageScope])
+
+  useEffect(() => {
+    if (!isHydrated || typeof window === 'undefined') return undefined
+    if (window.location.hash !== `#${COMMENT_SECTION_ID}`) return undefined
+
+    const frame = window.requestAnimationFrame(() => {
+      sectionRef.current?.scrollIntoView({ block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [isHydrated, session])
+
+  useEffect(() => {
+    if (!session || !resolvedWebsiteKey) {
+      setCanModerate(false)
+      return undefined
+    }
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const freshSession = await ensureFreshSession(session)
+        if (!freshSession) {
+          if (!cancelled) setCanModerate(false)
+          return
+        }
+        const allowed = await canModerateWebsite(normalizedEndpoint, resolvedWebsiteKey, freshSession)
+        if (!cancelled) setCanModerate(allowed)
+      } catch {
+        if (!cancelled) setCanModerate(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [ensureFreshSession, normalizedEndpoint, resolvedWebsiteKey, session])
 
   useEffect(() => {
     if (enabled || suppressed || !sectionRef.current) return undefined
@@ -791,6 +925,7 @@ export function CommentBox({
 
     setBusy(true)
     setError('')
+    const parentId = replyingTo
     try {
       const freshSession = await ensureFreshSession(session)
       if (!freshSession) {
@@ -799,9 +934,26 @@ export function CommentBox({
       }
 
       const comment = await createComment(normalizedEndpoint, target, pageTitleValue, body, freshSession, {
+        parentId,
         referrerUrl: currentDocumentUrl
       })
-      setComments(current => [...current, comment])
+      if (parentId == null) {
+        setComments(current => [...current, comment])
+      } else {
+        setReplyBuckets(current => {
+          const existing = current[parentId]
+          return {
+            ...current,
+            [parentId]: {
+              comments: [...(existing?.comments ?? []), comment],
+              nextCursor: existing?.nextCursor ?? null,
+              hasMore: existing?.hasMore ?? false,
+              status: 'ready'
+            }
+          }
+        })
+        setReplyingTo(null)
+      }
       setPage(current => current ? { ...current, comment_count: current.comment_count + 1 } : current)
       setDraft('')
       setStatus('ready')
@@ -809,45 +961,6 @@ export function CommentBox({
       setError(err instanceof Error ? err.message : copy.errorTitle)
     } finally {
       setBusy(false)
-    }
-  }
-
-  const submitReply = async (parentId: number) => {
-    const body = (replyDrafts[parentId] ?? '').trim()
-    if (!body || replyBusy[parentId]) return
-
-    setReplyBusy(current => ({ ...current, [parentId]: true }))
-    setError('')
-    try {
-      const freshSession = await ensureFreshSession(session)
-      if (!freshSession) {
-        setError(copy.authError)
-        return
-      }
-
-      const reply = await createComment(normalizedEndpoint, target, pageTitleValue, body, freshSession, {
-        parentId,
-        referrerUrl: currentDocumentUrl
-      })
-      setReplyBuckets(current => {
-        const existing = current[parentId]
-        return {
-          ...current,
-          [parentId]: {
-            comments: [...(existing?.comments ?? []), reply],
-            nextCursor: existing?.nextCursor ?? null,
-            hasMore: existing?.hasMore ?? false,
-            status: 'ready'
-          }
-        }
-      })
-      setReplyDrafts(current => ({ ...current, [parentId]: '' }))
-      setReplyingTo(null)
-      setPage(current => current ? { ...current, comment_count: current.comment_count + 1 } : current)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : copy.errorTitle)
-    } finally {
-      setReplyBusy(current => ({ ...current, [parentId]: false }))
     }
   }
 
@@ -876,10 +989,59 @@ export function CommentBox({
         setActiveReactions(current => ({ ...current, [key]: true }))
         updateCommentEverywhere(comment.id, current => ({ ...current, reactions }))
       }
+      setReactionPickerFor(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.errorTitle)
     } finally {
       setReactionBusy(current => ({ ...current, [key]: false }))
+    }
+  }
+
+  const handleDeleteComment = async (comment: AtriumComment) => {
+    const key = `delete:${comment.id}`
+    if (!resolvedWebsiteKey || commentActionBusy[key]) return
+    if (typeof window !== 'undefined' && !window.confirm(copy.confirmDelete(comment.author.login))) return
+
+    setCommentActionBusy(current => ({ ...current, [key]: true }))
+    setError('')
+    try {
+      const freshSession = await ensureFreshSession(session)
+      if (!freshSession) {
+        setError(copy.authError)
+        return
+      }
+
+      await deleteComment(normalizedEndpoint, resolvedWebsiteKey, comment.id, freshSession)
+      removeCommentEverywhere(comment.id)
+      setReplyingTo(current => current === comment.id ? null : current)
+      setPage(current => current ? { ...current, comment_count: Math.max(0, current.comment_count - 1) } : current)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : copy.errorTitle)
+    } finally {
+      setCommentActionBusy(current => ({ ...current, [key]: false }))
+    }
+  }
+
+  const handleBanUser = async (comment: AtriumComment) => {
+    const key = `ban:${comment.author.id}`
+    if (!resolvedWebsiteKey || !canModerate || commentActionBusy[key]) return
+    if (typeof window !== 'undefined' && !window.confirm(copy.confirmBan(comment.author.login))) return
+
+    setCommentActionBusy(current => ({ ...current, [key]: true }))
+    setError('')
+    try {
+      const freshSession = await ensureFreshSession(session)
+      if (!freshSession) {
+        setError(copy.authError)
+        return
+      }
+
+      await banWebsiteUser(normalizedEndpoint, resolvedWebsiteKey, comment.author.id, freshSession)
+      setBannedAuthors(current => ({ ...current, [comment.author.id]: true }))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : copy.errorTitle)
+    } finally {
+      setCommentActionBusy(current => ({ ...current, [key]: false }))
     }
   }
 
@@ -913,94 +1075,152 @@ export function CommentBox({
   const isLoading = status === 'idle' || status === 'loading'
   const canSubmit = !!session && draft.trim().length > 0 && !busy
   const totalCount = page?.comment_count ?? visibleComments.length
-  const renderActions = (comment: AtriumComment, allowReply: boolean) => (
-    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-400 dark:text-stone-600">
-      {reactionOptions.map(option => {
-        const key = reactionKey(comment.id, option.content)
-        const active = activeReactions[key] === true
-        const count = comment.reactions[option.content]
-        return (
-          <button
-            key={option.content}
-            type="button"
-            disabled={!session || reactionBusy[key]}
-            aria-pressed={active}
-            onClick={() => void handleReaction(comment, option.content)}
-            className={cx(
-              'transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
-              active
-                ? 'font-medium text-stone-800 dark:text-stone-200'
-                : 'hover:text-stone-800 dark:hover:text-stone-300'
-            )}
-          >
-            {option.label}{count > 0 ? ` ${count}` : ''}
-          </button>
-        )
-      })}
-      {allowReply && (
+  const replyTarget = visibleComments.find(comment => comment.id === replyingTo) ?? null
+  const isReplying = replyingTo !== null
+  const focusComposerForReply = (commentId: number) => {
+    setReactionPickerFor(null)
+    if (replyingTo === commentId) {
+      setReplyingTo(null)
+      return
+    }
+    setReplyingTo(commentId)
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        composerRef.current?.scrollIntoView({ block: 'center' })
+        composerRef.current?.focus()
+      })
+    }
+  }
+  const renderReactionPicker = (comment: AtriumComment) => {
+    if (reactionPickerFor !== comment.id) return null
+
+    return (
+      <div className="absolute left-0 top-full z-10 mt-2 flex items-center gap-1 rounded-md border border-stone-200 bg-white p-1 shadow-sm dark:border-stone-800 dark:bg-stone-950">
+        {reactionOptions.map(option => {
+          const key = reactionKey(comment.id, option.content)
+          const active = activeReactions[key] === true
+          return (
+            <button
+              key={option.content}
+              type="button"
+              disabled={!session || reactionBusy[key]}
+              aria-label={option.label}
+              aria-pressed={active}
+              title={option.label}
+              onClick={() => void handleReaction(comment, option.content)}
+              className={cx(
+                'flex h-8 w-8 items-center justify-center rounded-md text-base leading-none transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
+                active
+                  ? 'bg-stone-200 text-stone-950 dark:bg-stone-800 dark:text-stone-100'
+                  : 'hover:bg-stone-100 dark:hover:bg-stone-900'
+              )}
+            >
+              <span aria-hidden="true">{option.icon}</span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
+  const renderActions = (comment: AtriumComment, allowReply: boolean) => {
+    const deleteKey = `delete:${comment.id}`
+    const banKey = `ban:${comment.author.id}`
+    const canDeleteComment = !!session && !!resolvedWebsiteKey && (session.user.id === comment.author.id || canModerate)
+    const canBanAuthor = !!session && !!resolvedWebsiteKey && canModerate && session.user.id !== comment.author.id
+    const authorBanned = bannedAuthors[comment.author.id] === true
+
+    return (
+      <div className="relative mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-400 dark:text-stone-600">
+        {reactionOptions.map(option => {
+          const key = reactionKey(comment.id, option.content)
+          const active = activeReactions[key] === true
+          const count = comment.reactions[option.content]
+          const visibleCount = active ? Math.max(1, count) : count
+          if (visibleCount <= 0) return null
+
+          return (
+            <button
+              key={option.content}
+              type="button"
+              disabled={!session || reactionBusy[key]}
+              aria-label={`${option.label} ${visibleCount}`}
+              aria-pressed={active}
+              title={option.label}
+              onClick={() => void handleReaction(comment, option.content)}
+              className={cx(
+                'inline-flex h-7 items-center gap-1 rounded-full border px-2 text-sm leading-none transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
+                active
+                  ? 'border-stone-400 bg-stone-200/70 text-stone-950 dark:border-stone-600 dark:bg-stone-800/80 dark:text-stone-100'
+                  : 'border-stone-200 bg-white/55 text-stone-700 hover:border-stone-300 hover:bg-white dark:border-stone-800 dark:bg-stone-950/30 dark:text-stone-300 dark:hover:border-stone-700 dark:hover:bg-stone-950/70'
+              )}
+            >
+              <span aria-hidden="true">{option.icon}</span>
+              <span>{visibleCount}</span>
+            </button>
+          )
+        })}
         <button
           type="button"
           disabled={!session}
-          onClick={() => setReplyingTo(current => current === comment.id ? null : comment.id)}
+          aria-label="添加表情"
+          aria-expanded={reactionPickerFor === comment.id}
+          title="添加表情"
+          onClick={() => setReactionPickerFor(current => current === comment.id ? null : comment.id)}
           className={cx(
-            'ml-1 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
-            replyingTo === comment.id
-              ? 'font-medium text-stone-800 dark:text-stone-200'
-              : 'text-stone-500 hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200'
+            'inline-flex h-7 w-7 items-center justify-center rounded-full border border-stone-200 bg-white/55 text-sm leading-none text-stone-500 transition-colors duration-150 hover:border-stone-300 hover:bg-white hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-800 dark:bg-stone-950/30 dark:text-stone-500 dark:hover:border-stone-700 dark:hover:bg-stone-950/70 dark:hover:text-stone-200',
+            reactionPickerFor === comment.id && 'border-stone-400 text-stone-900 dark:border-stone-600 dark:text-stone-100'
           )}
         >
-          {replyingTo === comment.id ? copy.cancelReply : copy.reply}
+          <span aria-hidden="true" className="relative inline-flex h-4 w-4 items-center justify-center">
+            <span className="text-[15px]">☺</span>
+            <span className="absolute -right-1 -top-1 text-[10px] font-semibold leading-none">+</span>
+          </span>
         </button>
-      )}
-    </div>
-  )
-
-  const renderReplyComposer = (parentId: number) => {
-    if (replyingTo !== parentId) return null
-    const value = replyDrafts[parentId] ?? ''
-    const isBusy = replyBusy[parentId] === true
-    return (
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          void submitReply(parentId)
-        }}
-        className="mt-4"
-      >
-        <label htmlFor={`comment-reply-${parentId}`} className="sr-only">
-          {copy.replyPlaceholder}
-        </label>
-        <textarea
-          id={`comment-reply-${parentId}`}
-          value={value}
-          disabled={isBusy}
-          onChange={event => setReplyDrafts(current => ({ ...current, [parentId]: event.currentTarget.value }))}
-          onKeyDown={(event) => {
-            if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-              event.preventDefault()
-              void submitReply(parentId)
-            }
-          }}
-          placeholder={copy.replyPlaceholder}
-          className="block min-h-20 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:bg-stone-900/60 dark:disabled:text-stone-700"
-        />
-        <div className="mt-2 flex justify-end">
+        {renderReactionPicker(comment)}
+        {allowReply && (
           <button
-            type="submit"
-            disabled={isBusy || value.trim().length === 0}
-            className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-stone-100 dark:disabled:border-stone-800 dark:disabled:text-stone-700"
+            type="button"
+            disabled={!session}
+            onClick={() => focusComposerForReply(comment.id)}
+            className={cx(
+              'ml-1 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
+              replyingTo === comment.id
+                ? 'font-medium text-stone-800 dark:text-stone-200'
+                : 'text-stone-500 hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200'
+            )}
           >
-            {isBusy ? copy.submitting : copy.submitReply}
+            {replyingTo === comment.id ? copy.cancelReply : copy.reply}
           </button>
-        </div>
-      </form>
+        )}
+        {canDeleteComment && (
+          <button
+            type="button"
+            disabled={commentActionBusy[deleteKey]}
+            onClick={() => void handleDeleteComment(comment)}
+            className="ml-1 text-stone-500 transition-colors duration-150 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-500 dark:hover:text-red-400"
+          >
+            {copy.deleteComment}
+          </button>
+        )}
+        {canBanAuthor && (
+          <button
+            type="button"
+            disabled={authorBanned || commentActionBusy[banKey]}
+            onClick={() => void handleBanUser(comment)}
+            className="text-stone-500 transition-colors duration-150 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-500 dark:hover:text-red-400"
+          >
+            {authorBanned ? copy.bannedUser : copy.banUser}
+          </button>
+        )}
+      </div>
     )
   }
 
   const renderReplies = (comment: AtriumComment) => {
     const bucket = replyBuckets[comment.id]
-    if (!bucket || (bucket.status === 'ready' && bucket.comments.length === 0 && !bucket.hasMore && replyingTo !== comment.id)) {
-      return renderReplyComposer(comment.id)
+    if (!bucket || (bucket.status === 'ready' && bucket.comments.length === 0 && !bucket.hasMore)) {
+      return null
     }
 
     return (
@@ -1033,7 +1253,6 @@ export function CommentBox({
             {copy.loadMoreReplies}
           </button>
         )}
-        {renderReplyComposer(comment.id)}
       </div>
     )
   }
@@ -1071,7 +1290,7 @@ export function CommentBox({
   return (
     <section
       ref={sectionRef}
-      id="comments"
+      id={COMMENT_SECTION_ID}
       aria-labelledby="comments-title"
       className={cx(
         'my-10 border-t border-stone-200/80 pt-6 text-stone-700 dark:border-stone-800/90 dark:text-stone-300',
@@ -1179,16 +1398,31 @@ export function CommentBox({
             )}
 
             <form onSubmit={handleSubmit} className="border-t border-stone-200/70 p-5 dark:border-stone-800/80">
+              {isReplying && (
+                <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-950/45 dark:text-stone-400">
+                  <span className="min-w-0 truncate">
+                    正在回复 {replyTarget ? `@${replyTarget.author.login}` : `#${replyingTo}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReplyingTo(null)}
+                    className="shrink-0 text-xs font-medium text-stone-500 transition-colors hover:text-stone-950 dark:text-stone-500 dark:hover:text-stone-100"
+                  >
+                    {copy.cancelReply}
+                  </button>
+                </div>
+              )}
               <label htmlFor="comment-draft" className="sr-only">
-                {copy.textareaPlaceholder}
+                {isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
               </label>
               <textarea
+                ref={composerRef}
                 id="comment-draft"
                 value={draft}
                 disabled={!session || busy}
                 onChange={event => setDraft(event.currentTarget.value)}
                 onKeyDown={handleTextareaKeyDown}
-                placeholder={session ? copy.textareaPlaceholder : copy.textareaDisabledPlaceholder}
+                placeholder={session ? (isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder) : copy.textareaDisabledPlaceholder}
                 className="block min-h-28 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:bg-stone-900/60 dark:disabled:text-stone-700"
               />
               <div className="mt-3 flex items-center justify-between gap-3">
@@ -1202,7 +1436,7 @@ export function CommentBox({
                   disabled={!canSubmit}
                   className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-stone-100 dark:disabled:border-stone-800 dark:disabled:text-stone-700"
                 >
-                  {busy ? copy.submitting : copy.submit}
+                  {busy ? copy.submitting : isReplying ? copy.submitReply : copy.submit}
                 </button>
               </div>
             </form>
