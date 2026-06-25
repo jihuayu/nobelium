@@ -7,8 +7,9 @@ export const COMMENT_PAGE_SIZE = 20
 export interface NativeUser {
   id: number
   login: string
+  display_name?: string
   avatar_url: string
-  email: string
+  email?: string
 }
 
 export interface AuthTokenResponse {

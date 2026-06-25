@@ -548,6 +548,10 @@ function findThreadRootId(
   return parentId
 }
 
+function displayName(user: NativeUser): string {
+  return user.display_name || user.login
+}
+
 function withCommentSectionHash(value: string): string {
   try {
     const url = new URL(value)
@@ -615,8 +619,8 @@ export function CommentBox({
   // plus the current user (so they can mention themselves if they want).
   const participants = useMemo(() => {
     const set = new Set<string>()
-    for (const c of visibleComments) set.add(c.author.login)
-    if (session) set.add(session.user.login)
+    for (const c of visibleComments) set.add(displayName(c.author))
+    if (session) set.add(displayName(session.user))
     return set
   }, [visibleComments, session])
   const mentionSuggestions = useMemo(() => {
@@ -877,7 +881,7 @@ export function CommentBox({
   }, [ensureFreshSession, normalizedEndpoint, resolvedWebsiteKey, session])
 
   useEffect(() => {
-    if (enabled || suppressed || !sectionRef.current) return undefined
+    if (enabled || suppressed) return undefined
 
     let idleTimer: ReturnType<typeof setTimeout> | null = null
     let idleId: number | null = null
@@ -906,27 +910,17 @@ export function CommentBox({
 
     const scheduleActivate = () => {
       if (typeof window !== 'undefined' && window.requestIdleCallback) {
-        idleId = window.requestIdleCallback(activate, { timeout: 1200 })
+        idleId = window.requestIdleCallback(activate, { timeout: 2500 })
       } else {
-        idleTimer = globalThis.setTimeout(activate, 160)
+        idleTimer = globalThis.setTimeout(activate, 1200)
       }
     }
 
-    const observer = new IntersectionObserver((entries) => {
-      if (!entries.some(entry => entry.isIntersecting)) return
-      observer.disconnect()
-      scheduleActivate()
-    }, {
-      root: null,
-      rootMargin: '240px 0px',
-      threshold: 0.01
-    })
-    observer.observe(sectionRef.current)
+    scheduleActivate()
 
     return () => {
       cancelled = true
       controller?.abort()
-      observer.disconnect()
       if (idleId !== null && typeof window !== 'undefined' && window.cancelIdleCallback) {
         window.cancelIdleCallback(idleId)
       }
@@ -1076,7 +1070,7 @@ export function CommentBox({
   const handleDeleteComment = async (comment: AtriumComment) => {
     const key = `delete:${comment.id}`
     if (!resolvedWebsiteKey || comment.deleted || commentActionBusy[key]) return
-    if (typeof window !== 'undefined' && !window.confirm(copy.confirmDelete(comment.author.login))) return
+    if (typeof window !== 'undefined' && !window.confirm(copy.confirmDelete(displayName(comment.author)))) return
 
     setCommentActionBusy(current => ({ ...current, [key]: true }))
     setError('')
@@ -1101,7 +1095,7 @@ export function CommentBox({
   const handleBanUser = async (comment: AtriumComment) => {
     const key = `ban:${comment.author.id}`
     if (!resolvedWebsiteKey || !canModerate || commentActionBusy[key]) return
-    if (typeof window !== 'undefined' && !window.confirm(copy.confirmBan(comment.author.login))) return
+    if (typeof window !== 'undefined' && !window.confirm(copy.confirmBan(displayName(comment.author)))) return
 
     setCommentActionBusy(current => ({ ...current, [key]: true }))
     setError('')
@@ -1415,7 +1409,7 @@ export function CommentBox({
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-2">
               <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">
-                {comment.author.login}
+                {displayName(comment.author)}
               </p>
               <time className="shrink-0 text-xs text-stone-400 dark:text-stone-600">
                 {formatDate(comment.created_at, locale)}
@@ -1589,7 +1583,7 @@ export function CommentBox({
                           <div className="h-6 w-6 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
                         )}
                         <span className="truncate text-xs text-stone-500 dark:text-stone-500">
-                          {session.user.login}
+                          {displayName(session.user)}
                         </span>
                       </div>
                       <button
@@ -1604,7 +1598,7 @@ export function CommentBox({
                   {isReplying && (
                     <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-950/45 dark:text-stone-400">
                       <span className="min-w-0 truncate">
-                        正在回复 {replyTarget ? `@${replyTarget.author.login}` : `#${replyingTo}`}
+                        正在回复 {replyTarget ? `@${displayName(replyTarget.author)}` : `#${replyingTo}`}
                       </span>
                       <button
                         type="button"
