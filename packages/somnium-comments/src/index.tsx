@@ -110,8 +110,8 @@ interface AtriumPage {
 
 interface AtriumComment {
   id: number
-  website_key: string
-  page_key: string
+  website_key?: string
+  page_key?: string
   parent_id: number | null
   body: string
   body_html?: string
@@ -129,12 +129,6 @@ interface CursorPage<T> {
     next_cursor: string | null
     has_more: boolean
   }
-}
-
-interface CurrentCommentsResponse {
-  website: AtriumWebsite
-  page: AtriumPage
-  comments: CursorPage<AtriumComment>
 }
 
 interface AuthMeResponse {
@@ -395,8 +389,8 @@ async function listCurrentComments(
   pageTitle: string,
   referrerUrl?: string,
   cursor?: string | null
-): Promise<CurrentCommentsResponse> {
-  return requestNative<CurrentCommentsResponse>(
+): Promise<CursorPage<AtriumComment>> {
+  return requestNative<CursorPage<AtriumComment>>(
     endpoint,
     pathWithQuery('/api/v1/comments/current', {
       page_title: pageTitle,
@@ -534,21 +528,6 @@ async function deleteReaction(
   )
 }
 
-async function canModerateWebsite(endpoint: string, websiteKey: string, session: StoredSession): Promise<boolean> {
-  try {
-    await requestNative<{ data: unknown[] }>(
-      endpoint,
-      `/api/v1/websites/${encodeURIComponent(websiteKey)}/admins`,
-      undefined,
-      session,
-      true
-    )
-    return true
-  } catch {
-    return false
-  }
-}
-
 async function deleteComment(
   endpoint: string,
   websiteKey: string,
@@ -559,24 +538,6 @@ async function deleteComment(
     endpoint,
     `/api/v1/websites/${encodeURIComponent(websiteKey)}/comments/${commentId}`,
     { method: 'DELETE' },
-    session,
-    true
-  )
-}
-
-async function banWebsiteUser(
-  endpoint: string,
-  websiteKey: string,
-  userId: number,
-  session: StoredSession
-): Promise<void> {
-  await requestNative<void>(
-    endpoint,
-    `/api/v1/websites/${encodeURIComponent(websiteKey)}/bans`,
-    {
-      method: 'POST',
-      body: JSON.stringify({ user_id: userId })
-    },
     session,
     true
   )
@@ -647,8 +608,6 @@ export function CommentBox({
   const [activeReactions, setActiveReactions] = useState<Record<string, boolean>>({})
   const [reactionPickerFor, setReactionPickerFor] = useState<number | null>(null)
   const [commentActionBusy, setCommentActionBusy] = useState<Record<string, boolean>>({})
-  const [canModerate, setCanModerate] = useState(false)
-  const [bannedAuthors, setBannedAuthors] = useState<Record<number, boolean>>({})
   const [renderedHtml, setRenderedHtml] = useState<Record<number, string>>({})
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
@@ -867,7 +826,6 @@ export function CommentBox({
     setReactionBusy({})
     setActiveReactions({})
     setCommentActionBusy({})
-    setBannedAuthors({})
     setComposing(false)
     setMentionQuery(null)
     setMentionIndex(0)
@@ -879,10 +837,10 @@ export function CommentBox({
           page: null,
           comments: await listExplicitComments(normalizedEndpoint, explicitPath)
         }
-      : await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl).then(payload => ({
-          website: payload.website,
-          page: payload.page,
-          comments: payload.comments
+      : await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl).then(comments => ({
+          website: null,
+          page: null,
+          comments
         }))
 
     if (requestId !== loadRequestRef.current) return
@@ -943,32 +901,6 @@ export function CommentBox({
     })
     return () => window.cancelAnimationFrame(frame)
   }, [isHydrated, session])
-
-  useEffect(() => {
-    if (!session || !resolvedWebsiteKey) {
-      setCanModerate(false)
-      return undefined
-    }
-
-    let cancelled = false
-    ;(async () => {
-      try {
-        const freshSession = await ensureFreshSession(session)
-        if (!freshSession) {
-          if (!cancelled) setCanModerate(false)
-          return
-        }
-        const allowed = await canModerateWebsite(normalizedEndpoint, resolvedWebsiteKey, freshSession)
-        if (!cancelled) setCanModerate(allowed)
-      } catch {
-        if (!cancelled) setCanModerate(false)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [ensureFreshSession, normalizedEndpoint, resolvedWebsiteKey, session])
 
   useEffect(() => {
     if (enabled || suppressed) return undefined
@@ -1061,7 +993,7 @@ export function CommentBox({
       const explicitPath = explicitPageCommentsPath(target)
       const loaded = explicitPath
         ? await listExplicitComments(normalizedEndpoint, explicitPath, nextCursor)
-        : (await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl, nextCursor)).comments
+        : await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl, nextCursor)
       setComments(current => [...current, ...loaded.data])
       setNextCursor(loaded.pagination.next_cursor)
       setHasMore(loaded.pagination.has_more)
@@ -1175,29 +1107,6 @@ export function CommentBox({
       markCommentDeletedEverywhere(comment.id)
       setReplyingTo(current => current === comment.id ? null : current)
       setPage(current => current ? { ...current, comment_count: Math.max(0, current.comment_count - 1) } : current)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : copy.errorTitle)
-    } finally {
-      setCommentActionBusy(current => ({ ...current, [key]: false }))
-    }
-  }
-
-  const handleBanUser = async (comment: AtriumComment) => {
-    const key = `ban:${comment.author.id}`
-    if (!resolvedWebsiteKey || !canModerate || commentActionBusy[key]) return
-    if (typeof window !== 'undefined' && !window.confirm(copy.confirmBan(displayName(comment.author)))) return
-
-    setCommentActionBusy(current => ({ ...current, [key]: true }))
-    setError('')
-    try {
-      const freshSession = await ensureFreshSession(session)
-      if (!freshSession) {
-        setError(copy.authError)
-        return
-      }
-
-      await banWebsiteUser(normalizedEndpoint, resolvedWebsiteKey, comment.author.id, freshSession)
-      setBannedAuthors(current => ({ ...current, [comment.author.id]: true }))
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.errorTitle)
     } finally {
@@ -1343,10 +1252,7 @@ export function CommentBox({
     if (comment.deleted) return null
 
     const deleteKey = `delete:${comment.id}`
-    const banKey = `ban:${comment.author.id}`
-    const canDeleteComment = !!session && !!resolvedWebsiteKey && (session.user.id === comment.author.id || canModerate)
-    const canBanAuthor = !!session && !!resolvedWebsiteKey && canModerate && session.user.id !== comment.author.id
-    const authorBanned = bannedAuthors[comment.author.id] === true
+    const canDeleteComment = !!session && !!resolvedWebsiteKey && session.user.id === comment.author.id
 
     return (
       <div className="relative mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-400 dark:text-stone-600">
@@ -1419,16 +1325,6 @@ export function CommentBox({
             className="ml-1 text-stone-500 transition-colors duration-150 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-500 dark:hover:text-red-400"
           >
             {copy.deleteComment}
-          </button>
-        )}
-        {canBanAuthor && (
-          <button
-            type="button"
-            disabled={authorBanned || commentActionBusy[banKey]}
-            onClick={() => void handleBanUser(comment)}
-            className="text-stone-500 transition-colors duration-150 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-500 dark:hover:text-red-400"
-          >
-            {authorBanned ? copy.bannedUser : copy.banUser}
           </button>
         )}
       </div>
