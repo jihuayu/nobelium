@@ -26,16 +26,18 @@ const Comments = ({ frontMatter, comment }: CommentsProps) => {
   const fullWidth = frontMatter.fullWidth ?? false
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
   const atriumConfig = comment?.atriumConfig
+  const commentPageUrl = buildCommentPageUrl(frontMatter.slug)
 
   if (!comment || comment.provider !== 'atrium') return null
 
   return (
     <CommentBox
+      key={frontMatter.id}
       websiteKey={atriumConfig?.websiteKey}
       pageKey={frontMatter.id}
       endpoint={atriumConfig?.endpoint}
       pageTitle={frontMatter.title}
-      pageUrl={buildCommentPageUrl(frontMatter.slug)}
+      pageUrl={commentPageUrl}
       locale={config.lang}
       className={cn(
         'px-4',

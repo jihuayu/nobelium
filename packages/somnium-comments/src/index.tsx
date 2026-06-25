@@ -165,6 +165,8 @@ interface ReplyBucket {
 
 const COMMENT_SECTION_ID = 'comments'
 const subscribeNoop = () => () => {}
+const browserLocationListeners = new Set<() => void>()
+let browserLocationPatched = false
 
 const defaultLabels: Required<Omit<CommentBoxLabels, 'commentsCount'>> = {
   title: '评论',
@@ -225,6 +227,60 @@ function useIsHydrated(): boolean {
     subscribeNoop,
     () => true,
     () => false
+  )
+}
+
+function emitBrowserLocationChange(): void {
+  browserLocationListeners.forEach(listener => listener())
+}
+
+function ensureBrowserLocationPatch(): void {
+  if (browserLocationPatched || typeof window === 'undefined') return
+  browserLocationPatched = true
+
+  const originalPushState = window.history.pushState
+  const originalReplaceState = window.history.replaceState
+  const notify = () => {
+    window.setTimeout(emitBrowserLocationChange, 0)
+  }
+
+  window.history.pushState = function pushState(this: History, ...args: Parameters<History['pushState']>) {
+    const result = originalPushState.apply(this, args)
+    notify()
+    return result
+  } as History['pushState']
+  window.history.replaceState = function replaceState(this: History, ...args: Parameters<History['replaceState']>) {
+    const result = originalReplaceState.apply(this, args)
+    notify()
+    return result
+  } as History['replaceState']
+
+  window.addEventListener('popstate', emitBrowserLocationChange)
+  window.addEventListener('hashchange', emitBrowserLocationChange)
+}
+
+function subscribeBrowserLocation(listener: () => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+  ensureBrowserLocationPatch()
+  browserLocationListeners.add(listener)
+  return () => {
+    browserLocationListeners.delete(listener)
+  }
+}
+
+function getBrowserLocationSnapshot(): string {
+  return typeof window === 'undefined' ? '' : window.location.href
+}
+
+function getServerBrowserLocationSnapshot(): string {
+  return ''
+}
+
+function useBrowserLocationHref(): string {
+  return useSyncExternalStore(
+    subscribeBrowserLocation,
+    getBrowserLocationSnapshot,
+    getServerBrowserLocationSnapshot
   )
 }
 
@@ -576,7 +632,9 @@ export function CommentBox({
   labels
 }: CommentBoxProps) {
   const isHydrated = useIsHydrated()
+  const browserLocationHref = useBrowserLocationHref()
   const sectionRef = useRef<HTMLElement | null>(null)
+  const loadRequestRef = useRef(0)
   const [enabled, setEnabled] = useState(false)
   const [suppressed, setSuppressed] = useState(false)
   const [status, setStatus] = useState<CommentLoadStatus>('idle')
@@ -632,21 +690,23 @@ export function CommentBox({
   }, [mentionQuery, participants])
 
   const currentDocumentUrl = useMemo(() => {
-    if (isHydrated && typeof window !== 'undefined') {
+    if (isHydrated) {
       if (pageUrl) {
         try {
           const configured = new URL(pageUrl)
-          if (configured.origin === window.location.origin) return configured.toString()
+          const browserLocation = browserLocationHref ? new URL(browserLocationHref) : null
+          if (!browserLocation || configured.origin === browserLocation.origin) return configured.toString()
         } catch {
           // Fall back to the browser location below.
         }
       }
-      return window.location.href
+      if (browserLocationHref) return browserLocationHref
+      if (typeof window !== 'undefined') return window.location.href
     }
     if (pageUrl) return pageUrl
     if (documentUrl) return documentUrl
     return ''
-  }, [documentUrl, isHydrated, pageUrl])
+  }, [browserLocationHref, documentUrl, isHydrated, pageUrl])
 
   const signInUrl = useMemo(() => {
     if (!isHydrated || typeof window === 'undefined') return '#'
@@ -733,8 +793,15 @@ export function CommentBox({
     })
   }, [])
 
-  const loadRepliesForComment = useCallback(async (commentId: number, cursor?: string | null) => {
+  const loadRepliesForComment = useCallback(async (
+    commentId: number,
+    cursor?: string | null,
+    requestId = loadRequestRef.current
+  ) => {
+    if (requestId !== loadRequestRef.current) return
+
     setReplyBuckets(current => {
+      if (requestId !== loadRequestRef.current) return current
       const existing = current[commentId]
       return {
         ...current,
@@ -749,7 +816,9 @@ export function CommentBox({
 
     try {
       const page = await listReplies(normalizedEndpoint, target, pageTitleValue, commentId, currentDocumentUrl, cursor)
+      if (requestId !== loadRequestRef.current) return
       setReplyBuckets(current => {
+        if (requestId !== loadRequestRef.current) return current
         const existing = current[commentId]
         const previous = cursor ? existing?.comments ?? [] : []
         return {
@@ -763,7 +832,9 @@ export function CommentBox({
         }
       })
     } catch (err) {
+      if (requestId !== loadRequestRef.current) return
       setReplyBuckets(current => {
+        if (requestId !== loadRequestRef.current) return current
         const existing = current[commentId]
         return {
           ...current,
@@ -780,8 +851,26 @@ export function CommentBox({
   }, [copy.errorTitle, currentDocumentUrl, normalizedEndpoint, pageTitleValue, target])
 
   const loadInitial = useCallback(async () => {
+    const requestId = loadRequestRef.current + 1
+    loadRequestRef.current = requestId
     setStatus('loading')
     setError('')
+    setWebsite(null)
+    setPage(null)
+    setComments([])
+    setReplyBuckets({})
+    setRenderedHtml({})
+    setNextCursor(null)
+    setHasMore(false)
+    setReplyingTo(null)
+    setReactionPickerFor(null)
+    setReactionBusy({})
+    setActiveReactions({})
+    setCommentActionBusy({})
+    setBannedAuthors({})
+    setComposing(false)
+    setMentionQuery(null)
+    setMentionIndex(0)
 
     const explicitPath = explicitPageCommentsPath(target)
     const loaded = explicitPath
@@ -796,6 +885,7 @@ export function CommentBox({
           comments: payload.comments
         }))
 
+    if (requestId !== loadRequestRef.current) return
     setWebsite(loaded.website)
     setPage(loaded.page)
     setComments(loaded.comments.data)
@@ -804,7 +894,7 @@ export function CommentBox({
     setHasMore(loaded.comments.pagination.has_more)
     setStatus('ready')
     loaded.comments.data.forEach(comment => {
-      void loadRepliesForComment(comment.id)
+      void loadRepliesForComment(comment.id, undefined, requestId)
     })
   }, [currentDocumentUrl, loadRepliesForComment, normalizedEndpoint, pageTitleValue, target])
 
