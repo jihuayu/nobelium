@@ -243,3 +243,75 @@ nav {
 .notion-header-anim-normal {
   animation: header-width-normal 300ms ease-out;
 }
+
+/* somnium-comments: minimal prose styling for rendered comment Markdown.
+   Kept monochrome to match the site's stone-based palette. */
+.comment-body > :first-child { margin-top: 0; }
+.comment-body > :last-child { margin-bottom: 0; }
+.comment-body p { margin: 0.75em 0; }
+.comment-body a {
+  color: rgb(120 113 108);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease-out;
+}
+.comment-body a:hover { color: rgb(28 25 23); }
+.dark .comment-body a { color: rgb(168 162 158); }
+.dark .comment-body a:hover { color: rgb(245 245 244); }
+.comment-body code {
+  padding: 0.1em 0.35em;
+  border-radius: 0.25em;
+  background: rgb(231 229 228 / 0.6);
+  font-size: 0.875em;
+}
+.dark .comment-body code { background: rgb(41 37 36 / 0.7); }
+.comment-body pre {
+  margin: 0.75em 0;
+  padding: 0.75em 1em;
+  border-radius: 0.375em;
+  background: rgb(231 229 228 / 0.5);
+  overflow-x: auto;
+  font-size: 0.85em;
+  line-height: 1.6;
+}
+.dark .comment-body pre { background: rgb(28 25 23 / 0.6); }
+.comment-body pre code { padding: 0; background: transparent; font-size: inherit; }
+.comment-body ul, .comment-body ol { margin: 0.75em 0; padding-left: 1.5em; }
+.comment-body li { margin: 0.25em 0; }
+.comment-body blockquote {
+  margin: 0.75em 0;
+  padding-left: 1em;
+  border-left: 2px solid rgb(231 229 228 / 0.8);
+  color: rgb(120 113 108);
+}
+.dark .comment-body blockquote {
+  border-left-color: rgb(68 64 60);
+  color: rgb(168 162 158);
+}
+.comment-body img { max-width: 100%; border-radius: 0.375em; }
+.comment-body hr { margin: 1em 0; border: 0; border-top: 1px solid rgb(231 229 228 / 0.8); }
+.dark .comment-body hr { border-top-color: rgb(68 64 60); }
+
+/* @mention links: monochrome pill, quiet like GitHub but stone-tinted */
+.comment-body a.mention {
+  padding: 0.05em 0.4em;
+  border-radius: 0.3125em;
+  background: rgb(231 229 228 / 0.55);
+  color: rgb(87 83 78);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease-out, color 0.15s ease-out;
+}
+.comment-body a.mention:hover {
+  background: rgb(214 211 209 / 0.7);
+  color: rgb(28 25 23);
+}
+.dark .comment-body a.mention {
+  background: rgb(68 64 60 / 0.5);
+  color: rgb(168 162 158);
+}
+.dark .comment-body a.mention:hover {
+  background: rgb(87 83 78 / 0.6);
+  color: rgb(245 245 244);
+}

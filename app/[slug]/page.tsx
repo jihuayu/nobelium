@@ -131,7 +131,6 @@ export default async function SlugPage({ params }: SlugPageProps) {
       <Comments
         frontMatter={post}
         comment={config.comment}
-        appearance={config.appearance}
       />
     </ContainerServer>
   )

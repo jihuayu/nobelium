@@ -37,9 +37,10 @@ export interface BlogConfig {
   notionDataSourceId?: string
   notionApiVersion?: string
   comment: {
-    provider: '' | 'utterances'
-    utterancesConfig: {
-      repo: string
+    provider: '' | 'atrium'
+    atriumConfig?: {
+      endpoint?: string
+      websiteKey?: string
     }
   }
   isProd: boolean

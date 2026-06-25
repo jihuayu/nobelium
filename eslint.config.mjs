@@ -11,6 +11,12 @@ export default defineConfig([
     }
   },
   {
+    files: ['packages/somnium-comments/**/*.{js,jsx,ts,tsx}'],
+    rules: {
+      '@next/next/no-img-element': 'off'
+    }
+  },
+  {
     files: ['packages/notion-vue/**/*.{js,jsx,ts,tsx}'],
     rules: {
       'react-hooks/rules-of-hooks': 'off'

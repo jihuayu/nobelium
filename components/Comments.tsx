@@ -1,31 +1,49 @@
 import cn from 'classnames'
+import { CommentBox } from '@jihuayu/somnium-comments'
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
-import DeferredComments from '@/components/DeferredComments'
+import { config } from '@/lib/server/config'
 import type { BlogConfig } from '@/lib/config'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
+import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
 
 interface CommentsProps {
   frontMatter: PostData
   comment: BlogConfig['comment']
-  appearance: BlogConfig['appearance']
 }
 
-const Comments = ({ frontMatter, comment, appearance }: CommentsProps) => {
+function buildCommentPageUrl(slug: string): string | undefined {
+  const siteUrl = `${config.link || ''}`.trim()
+  if (!siteUrl) return undefined
+
+  try {
+    return new URL(buildInternalSlugHref(config.path || '', slug), siteUrl).toString()
+  } catch {
+    return undefined
+  }
+}
+
+const Comments = ({ frontMatter, comment }: CommentsProps) => {
   const fullWidth = frontMatter.fullWidth ?? false
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
-  const utterancesRepo = comment?.utterancesConfig?.repo
+  const atriumConfig = comment?.atriumConfig
+  const commentPageUrl = buildCommentPageUrl(frontMatter.slug)
 
-  if (!comment || comment.provider !== 'utterances' || !utterancesRepo) return null
+  if (!comment || comment.provider !== 'atrium') return null
 
   return (
-    <section
+    <CommentBox
+      key={frontMatter.id}
+      websiteKey={atriumConfig?.websiteKey}
+      pageKey={frontMatter.id}
+      endpoint={atriumConfig?.endpoint}
+      pageTitle={frontMatter.title}
+      pageUrl={commentPageUrl}
+      locale={config.lang}
       className={cn(
-        'px-4 font-medium text-stone-500 dark:text-stone-400 my-5',
+        'px-4',
         `mx-auto ${contentWidthClass}`
       )}
-    >
-      <DeferredComments issueTerm={frontMatter.id} repo={utterancesRepo} appearance={appearance} />
-    </section>
+    />
   )
 }
 
