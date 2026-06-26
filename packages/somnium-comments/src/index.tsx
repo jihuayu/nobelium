@@ -118,6 +118,8 @@ interface AtriumComment {
   author: NativeUser
   reactions: ReactionCounts
   deleted?: boolean
+  can_delete?: boolean
+  can_ban?: boolean
   created_at: string
   updated_at: string
   deleted_at?: string | null
@@ -371,7 +373,8 @@ function pathWithQuery(path: string, query?: Record<string, string | number | nu
 async function listExplicitComments(
   endpoint: string,
   path: string,
-  cursor?: string | null
+  cursor?: string | null,
+  session?: StoredSession | null
 ): Promise<CursorPage<AtriumComment>> {
   return requestNative<CursorPage<AtriumComment>>(
     endpoint,
@@ -380,7 +383,10 @@ async function listExplicitComments(
       limit: COMMENT_PAGE_SIZE,
       order: 'asc',
       cursor
-    })
+    }),
+    undefined,
+    session,
+    !!session
   )
 }
 
@@ -388,7 +394,8 @@ async function listCurrentComments(
   endpoint: string,
   pageTitle: string,
   referrerUrl?: string,
-  cursor?: string | null
+  cursor?: string | null,
+  session?: StoredSession | null
 ): Promise<CursorPage<AtriumComment>> {
   return requestNative<CursorPage<AtriumComment>>(
     endpoint,
@@ -399,8 +406,8 @@ async function listCurrentComments(
       cursor
     }),
     undefined,
-    undefined,
-    false,
+    session,
+    !!session,
     referrerUrl
   )
 }
@@ -411,7 +418,8 @@ async function listReplies(
   pageTitle: string,
   commentId: number,
   referrerUrl?: string,
-  cursor?: string | null
+  cursor?: string | null,
+  session?: StoredSession | null
 ): Promise<CursorPage<AtriumComment>> {
   const explicitPath = explicitPageCommentsPath(target)
   if (explicitPath) {
@@ -423,7 +431,10 @@ async function listReplies(
         limit: COMMENT_PAGE_SIZE,
         order: 'asc',
         cursor
-      })
+      }),
+      undefined,
+      session,
+      !!session
     )
   }
 
@@ -438,8 +449,8 @@ async function listReplies(
       cursor
     }),
     undefined,
-    undefined,
-    false,
+    session,
+    !!session,
     referrerUrl
   )
 }
@@ -543,6 +554,24 @@ async function deleteComment(
   )
 }
 
+async function banWebsiteUser(
+  endpoint: string,
+  websiteKey: string,
+  userId: number,
+  session: StoredSession
+): Promise<void> {
+  await requestNative<void>(
+    endpoint,
+    `/api/v1/websites/${encodeURIComponent(websiteKey)}/bans`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId })
+    },
+    session,
+    true
+  )
+}
+
 function reactionKey(commentId: number, content: ReactionContent): string {
   return `${commentId}:${content}`
 }
@@ -608,6 +637,7 @@ export function CommentBox({
   const [activeReactions, setActiveReactions] = useState<Record<string, boolean>>({})
   const [reactionPickerFor, setReactionPickerFor] = useState<number | null>(null)
   const [commentActionBusy, setCommentActionBusy] = useState<Record<string, boolean>>({})
+  const [bannedAuthors, setBannedAuthors] = useState<Record<number, boolean>>({})
   const [renderedHtml, setRenderedHtml] = useState<Record<number, string>>({})
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
@@ -688,6 +718,15 @@ export function CommentBox({
     }
     return current
   }, [normalizedEndpoint, storageScope])
+
+  const sessionForRead = useCallback(async (): Promise<StoredSession | null> => {
+    if (!session) return null
+    try {
+      return await ensureFreshSession(session)
+    } catch {
+      return null
+    }
+  }, [ensureFreshSession, session])
 
   const updateCommentEverywhere = useCallback((commentId: number, updater: (comment: AtriumComment) => AtriumComment) => {
     setComments(current => current.map(comment => comment.id === commentId ? updater(comment) : comment))
@@ -774,7 +813,8 @@ export function CommentBox({
     })
 
     try {
-      const page = await listReplies(normalizedEndpoint, target, pageTitleValue, commentId, currentDocumentUrl, cursor)
+      const readSession = await sessionForRead()
+      const page = await listReplies(normalizedEndpoint, target, pageTitleValue, commentId, currentDocumentUrl, cursor, readSession)
       if (requestId !== loadRequestRef.current) return
       setReplyBuckets(current => {
         if (requestId !== loadRequestRef.current) return current
@@ -807,7 +847,7 @@ export function CommentBox({
         }
       })
     }
-  }, [copy.errorTitle, currentDocumentUrl, normalizedEndpoint, pageTitleValue, target])
+  }, [copy.errorTitle, currentDocumentUrl, normalizedEndpoint, pageTitleValue, sessionForRead, target])
 
   const loadInitial = useCallback(async () => {
     const requestId = loadRequestRef.current + 1
@@ -826,18 +866,20 @@ export function CommentBox({
     setReactionBusy({})
     setActiveReactions({})
     setCommentActionBusy({})
+    setBannedAuthors({})
     setComposing(false)
     setMentionQuery(null)
     setMentionIndex(0)
 
+    const readSession = await sessionForRead()
     const explicitPath = explicitPageCommentsPath(target)
     const loaded = explicitPath
       ? {
           website: null,
           page: null,
-          comments: await listExplicitComments(normalizedEndpoint, explicitPath)
+          comments: await listExplicitComments(normalizedEndpoint, explicitPath, undefined, readSession)
         }
-      : await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl).then(comments => ({
+      : await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl, undefined, readSession).then(comments => ({
           website: null,
           page: null,
           comments
@@ -854,7 +896,7 @@ export function CommentBox({
     loaded.comments.data.forEach(comment => {
       void loadRepliesForComment(comment.id, undefined, requestId)
     })
-  }, [currentDocumentUrl, loadRepliesForComment, normalizedEndpoint, pageTitleValue, target])
+  }, [currentDocumentUrl, loadRepliesForComment, normalizedEndpoint, pageTitleValue, sessionForRead, target])
 
   useEffect(() => {
     if (!isHydrated) return undefined
@@ -990,10 +1032,11 @@ export function CommentBox({
     setBusy(true)
     setError('')
     try {
+      const readSession = await sessionForRead()
       const explicitPath = explicitPageCommentsPath(target)
       const loaded = explicitPath
-        ? await listExplicitComments(normalizedEndpoint, explicitPath, nextCursor)
-        : await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl, nextCursor)
+        ? await listExplicitComments(normalizedEndpoint, explicitPath, nextCursor, readSession)
+        : await listCurrentComments(normalizedEndpoint, pageTitleValue, currentDocumentUrl, nextCursor, readSession)
       setComments(current => [...current, ...loaded.data])
       setNextCursor(loaded.pagination.next_cursor)
       setHasMore(loaded.pagination.has_more)
@@ -1091,7 +1134,8 @@ export function CommentBox({
 
   const handleDeleteComment = async (comment: AtriumComment) => {
     const key = `delete:${comment.id}`
-    if (!resolvedWebsiteKey || comment.deleted || commentActionBusy[key]) return
+    const websiteKey = comment.website_key || resolvedWebsiteKey
+    if (!websiteKey || comment.deleted || comment.can_delete !== true || commentActionBusy[key]) return
     if (typeof window !== 'undefined' && !window.confirm(copy.confirmDelete(displayName(comment.author)))) return
 
     setCommentActionBusy(current => ({ ...current, [key]: true }))
@@ -1103,10 +1147,35 @@ export function CommentBox({
         return
       }
 
-      await deleteComment(normalizedEndpoint, resolvedWebsiteKey, comment.id, freshSession)
+      await deleteComment(normalizedEndpoint, websiteKey, comment.id, freshSession)
       markCommentDeletedEverywhere(comment.id)
       setReplyingTo(current => current === comment.id ? null : current)
       setPage(current => current ? { ...current, comment_count: Math.max(0, current.comment_count - 1) } : current)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : copy.errorTitle)
+    } finally {
+      setCommentActionBusy(current => ({ ...current, [key]: false }))
+    }
+  }
+
+  const handleBanUser = async (comment: AtriumComment) => {
+    const key = `ban:${comment.author.id}`
+    const websiteKey = comment.website_key || resolvedWebsiteKey
+    if (!websiteKey || comment.deleted || comment.can_ban !== true || commentActionBusy[key]) return
+    if (typeof window !== 'undefined' && !window.confirm(copy.confirmBan(displayName(comment.author)))) return
+
+    setCommentActionBusy(current => ({ ...current, [key]: true }))
+    setError('')
+    try {
+      const freshSession = await ensureFreshSession(session)
+      if (!freshSession) {
+        setError(copy.authError)
+        return
+      }
+
+      await banWebsiteUser(normalizedEndpoint, websiteKey, comment.author.id, freshSession)
+      setBannedAuthors(current => ({ ...current, [comment.author.id]: true }))
+      updateCommentEverywhere(comment.id, current => ({ ...current, can_ban: false }))
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.errorTitle)
     } finally {
@@ -1252,7 +1321,11 @@ export function CommentBox({
     if (comment.deleted) return null
 
     const deleteKey = `delete:${comment.id}`
-    const canDeleteComment = !!session && !!resolvedWebsiteKey && session.user.id === comment.author.id
+    const banKey = `ban:${comment.author.id}`
+    const actionWebsiteKey = comment.website_key || resolvedWebsiteKey
+    const authorBanned = bannedAuthors[comment.author.id] === true
+    const canDeleteComment = !!session && !!actionWebsiteKey && comment.can_delete === true
+    const canBanAuthor = !!session && !!actionWebsiteKey && comment.can_ban === true
 
     return (
       <div className="relative mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-400 dark:text-stone-600">
@@ -1325,6 +1398,16 @@ export function CommentBox({
             className="ml-1 text-stone-500 transition-colors duration-150 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-500 dark:hover:text-red-400"
           >
             {copy.deleteComment}
+          </button>
+        )}
+        {canBanAuthor && (
+          <button
+            type="button"
+            disabled={authorBanned || commentActionBusy[banKey]}
+            onClick={() => void handleBanUser(comment)}
+            className="text-stone-500 transition-colors duration-150 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-500 dark:hover:text-red-400"
+          >
+            {authorBanned ? copy.bannedUser : copy.banUser}
           </button>
         )}
       </div>

@@ -24,9 +24,11 @@ component sends the current page URL as the fetch referrer in quick mode so
 cross-origin requests can still resolve per-page comments. The component sends
 the article title as `page_title`; read endpoints return comment pagination
 directly, and posting a comment uses the title when Atrium has to create the
-page record. Page identity stays URL-based. If the origin is not registered yet,
-Atrium can discover it from `/.well-known/atrium.json` or the equivalent
-`_atrium.<host>` TXT record.
+page record. When a session is available, list requests include it so comment
+objects can carry Atrium-computed `website_key`, `can_delete`, and `can_ban`
+fields, which drive delete and ban actions. Page identity stays URL-based. If
+the origin is not registered yet, Atrium can discover it from
+`/.well-known/atrium.json` or the equivalent `_atrium.<host>` TXT record.
 
 If a `websiteKey` prop is provided, the component uses explicit page endpoints:
 
