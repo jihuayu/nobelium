@@ -1,16 +1,11 @@
 import type { LinkPreviewData } from '@/lib/link-preview/types'
 import { getHostnameFromUrl } from '@/lib/server/url'
-import { isLinkPreviewImageWhitelisted } from '@/lib/server/linkPreviewImageProxy'
+import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 
 const CHARSET_ALIASES: Record<string, string> = {
   utf8: 'utf-8',
   gb2312: 'gbk'
 }
-
-const OG_PROXY_IMAGE_HOSTNAME = 'og-proxy.raw2.cc'
-const OG_PROXY_IMAGE_PATHNAME = '/proxy/image'
-const OG_PROXY_IMAGE_BASE_URL = `https://${OG_PROXY_IMAGE_HOSTNAME}${OG_PROXY_IMAGE_PATHNAME}`
-const OG_PROXY_IMAGE_TRANSFORM_PARAMS = ['q', 'f', 'fit']
 
 interface OgProxyMediaField {
   url?: string | null
@@ -66,46 +61,12 @@ export function buildOgProxyApiUrl(baseUrl: string, normalizedUrl: string): stri
   }
 }
 
-function normalizeOgProxyImageUrl(rawUrl: string): string {
-  if (!rawUrl) return ''
+function getOgProxyMediaUrl(field: OgProxyMediaField | null | undefined): string {
+  const sourceUrl = decodeEntities(`${field?.url || ''}`.trim())
+  const localProxyUrl = toLinkPreviewImageProxyUrl(sourceUrl)
+  if (localProxyUrl && localProxyUrl !== sourceUrl) return localProxyUrl
 
-  try {
-    const parsed = new URL(rawUrl)
-    if (parsed.hostname !== OG_PROXY_IMAGE_HOSTNAME || parsed.pathname !== OG_PROXY_IMAGE_PATHNAME) {
-      return rawUrl
-    }
-
-    let changed = false
-    for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) {
-      if (parsed.searchParams.has(param)) {
-        parsed.searchParams.delete(param)
-        changed = true
-      }
-    }
-    return changed ? parsed.toString() : rawUrl
-  } catch {
-    return rawUrl
-  }
-}
-
-function buildOgProxyImageUrl(sourceUrl: string, referer: string): string {
-  if (!sourceUrl) return ''
-
-  try {
-    const proxyUrl = new URL(OG_PROXY_IMAGE_BASE_URL)
-    proxyUrl.searchParams.set('url', sourceUrl)
-    if (referer) proxyUrl.searchParams.set('referer', referer)
-    return proxyUrl.toString()
-  } catch {
-    return sourceUrl
-  }
-}
-
-function getOgProxyMediaUrl(field: OgProxyMediaField | null | undefined, referer: string): string {
-  const sourceUrl = normalizeOgProxyImageUrl(decodeEntities(`${field?.url || ''}`.trim()))
-  if (isLinkPreviewImageWhitelisted(sourceUrl)) return buildOgProxyImageUrl(sourceUrl, referer)
-
-  const proxyUrl = normalizeOgProxyImageUrl(decodeEntities(`${field?.proxy || ''}`.trim()))
+  const proxyUrl = decodeEntities(`${field?.proxy || ''}`.trim())
   if (proxyUrl) return proxyUrl
   return sourceUrl
 }
@@ -122,16 +83,16 @@ export function mapOgProxyPayloadToPreview(
   const hostname = getHostnameFromUrl(resolvedUrl) || fallback.hostname
   const title = `${parsed.data.title || ''}`.trim() || fallback.title
   const description = `${parsed.data.description || ''}`.trim()
-  const image = getOgProxyMediaUrl(parsed.data.image, resolvedUrl)
-  const icon = getOgProxyMediaUrl(parsed.data.logo, resolvedUrl) || fallback.icon
+  const image = getOgProxyMediaUrl(parsed.data.image)
+  const icon = getOgProxyMediaUrl(parsed.data.logo) || fallback.icon
 
   return {
     url: resolvedUrl,
     hostname,
     title,
     description,
-    image,
-    icon
+    image: toLinkPreviewImageProxyUrl(image),
+    icon: toLinkPreviewImageProxyUrl(icon)
   }
 }
 
