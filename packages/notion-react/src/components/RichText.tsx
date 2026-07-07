@@ -104,6 +104,11 @@ function getUrlMentionIconUrl(item: NotionRichText): string {
     : ''
 }
 
+function getResolvedLinkPreview(href: string, linkPreviewMap: LinkPreviewMap) {
+  const normalized = normalizeRichTextUrl(href)
+  return normalized ? linkPreviewMap[normalized] : null
+}
+
 function getUrlMentionProvider(provider: string, href: string): string {
   const trimmed = `${provider || ''}`.trim()
   if (trimmed) return trimmed
@@ -119,6 +124,19 @@ function getUrlMentionPreviewData(
 ): UrlMentionPreviewData | null {
   if (!href) return null
 
+  const preview = getResolvedLinkPreview(href, linkPreviewMap)
+  if (preview) {
+    const previewHref = `${preview.url || href}`.trim() || href
+    return {
+      href: previewHref,
+      title: `${preview.title || ''}`.trim() || label,
+      description: `${preview.description || ''}`.trim(),
+      icon: `${preview.icon || ''}`.trim(),
+      image: `${preview.image || ''}`.trim(),
+      provider: getUrlMentionProvider(`${preview.hostname || ''}`, previewHref)
+    }
+  }
+
   if (isLinkMention(item)) {
     const payload = item.mention?.link_mention || {}
     return {
@@ -131,19 +149,7 @@ function getUrlMentionPreviewData(
     }
   }
 
-  const normalized = normalizeRichTextUrl(href)
-  const preview = normalized ? linkPreviewMap[normalized] : null
-  if (!preview) return null
-
-  const previewHref = `${preview.url || href}`.trim() || href
-  return {
-    href: previewHref,
-    title: `${preview.title || ''}`.trim() || label,
-    description: `${preview.description || ''}`.trim(),
-    icon: `${preview.icon || ''}`.trim(),
-    image: `${preview.image || ''}`.trim(),
-    provider: getUrlMentionProvider(`${preview.hostname || ''}`, previewHref)
-  }
+  return null
 }
 
 function getInternalPagePreviewData(
@@ -231,9 +237,10 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
         if (!href) return <Fragment key={`${index}-${textContent}`}>{content}</Fragment>
 
         if (isLinkPreviewMention(item) || isLinkMention(item)) {
-          const mentionTitle = getUrlMentionTitle(item)
-          const iconUrl = getUrlMentionIconUrl(item)
-          const label = mentionTitle || getUrlMentionLabel(href, textContent)
+          const preview = getResolvedLinkPreview(href, linkPreviewMap)
+          const fallbackLabel = getUrlMentionTitle(item) || getUrlMentionLabel(href, textContent)
+          const label = `${preview?.title || fallbackLabel}`.trim() || fallbackLabel
+          const iconUrl = preview ? `${preview.icon || ''}`.trim() : getUrlMentionIconUrl(item)
           return (
             <UrlMentionComponent
               key={`${index}-${href}`}
