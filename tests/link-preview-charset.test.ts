@@ -60,7 +60,37 @@ test('mapOgProxyPayloadToPreview prefers proxy media fields from og proxy payloa
   })
 })
 
-test('mapOgProxyPayloadToPreview prefers local proxy for whitelisted douban media source urls', () => {
+test('mapOgProxyPayloadToPreview keeps og proxy image defaults by removing explicit transform params', () => {
+  const preview = mapOgProxyPayloadToPreview(
+    'https://github.com/jihuayu/Somnium',
+    {
+      url: 'https://github.com/jihuayu/Somnium',
+      hostname: 'github.com',
+      title: 'github.com',
+      description: '',
+      image: '',
+      icon: ''
+    },
+    {
+      status: 'success',
+      data: {
+        title: 'GitHub - jihuayu/Somnium',
+        url: 'https://github.com/jihuayu/Somnium',
+        logo: {
+          url: 'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fgithub.com%2Ffluidicon.png&referer=https%3A%2F%2Fgithub.com%2Fjihuayu%2FSomnium&q=80&f=jpeg&fit=scale-down',
+          proxy: 'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fgithub.com%2Ffluidicon.png&referer=https%3A%2F%2Fgithub.com%2Fjihuayu%2FSomnium&q=80&f=jpeg&fit=scale-down'
+        }
+      }
+    }
+  )
+
+  assert.equal(
+    preview?.icon,
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fgithub.com%2Ffluidicon.png&referer=https%3A%2F%2Fgithub.com%2Fjihuayu%2FSomnium'
+  )
+})
+
+test('mapOgProxyPayloadToPreview proxies whitelisted douban media through og proxy with referer', () => {
   const preview = mapOgProxyPayloadToPreview(
     'https://book.douban.com/subject/1007305/',
     {
@@ -91,11 +121,11 @@ test('mapOgProxyPayloadToPreview prefers local proxy for whitelisted douban medi
 
   assert.equal(
     preview?.image,
-    '/api/link-preview/image?url=https%3A%2F%2Fimg1.doubanio.com%2Fview%2Fsubject%2Fl%2Fpublic%2Fs1070959.jpg'
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fimg1.doubanio.com%2Fview%2Fsubject%2Fl%2Fpublic%2Fs1070959.jpg&referer=https%3A%2F%2Fbook.douban.com%2Fsubject%2F1007305%2F'
   )
   assert.equal(
     preview?.icon,
-    '/api/link-preview/image?url=https%3A%2F%2Fimg1.doubanio.com%2Ffavicon.ico'
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fimg1.doubanio.com%2Ffavicon.ico&referer=https%3A%2F%2Fbook.douban.com%2Fsubject%2F1007305%2F'
   )
 })
 
