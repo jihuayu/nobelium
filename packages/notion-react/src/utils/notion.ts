@@ -23,6 +23,11 @@ export {
 } from '@jihuayu/notion-type'
 import type { LinkPreviewData, NotionTextAnnotations } from '../types'
 
+const OG_PROXY_IMAGE_URL = 'https://og-proxy.raw2.cc/proxy/image'
+const OG_PROXY_IMAGE_HOSTNAME = 'og-proxy.raw2.cc'
+const OG_PROXY_IMAGE_PATHNAME = '/proxy/image'
+const OG_PROXY_IMAGE_TRANSFORM_PARAMS = ['q', 'f', 'fit']
+
 export function getBlockClassName(blockId: string): string {
   return `notion-block-${blockId.replaceAll('-', '')}`
 }
@@ -38,9 +43,32 @@ export function getCalloutIconUrl(icon: unknown): string {
     external: { url?: string }
     file: { url?: string }
   }>
-  if (value.type === 'external') return value.external?.url || ''
-  if (value.type === 'file') return value.file?.url || ''
+  if (value.type === 'external') return toOgProxyImageUrl(value.external?.url || '')
+  if (value.type === 'file') return toOgProxyImageUrl(value.file?.url || '')
   return ''
+}
+
+export function toOgProxyImageUrl(rawImageUrl: string, referer = ''): string {
+  if (!rawImageUrl) return ''
+
+  try {
+    const parsed = new URL(rawImageUrl)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return rawImageUrl
+
+    if (parsed.hostname === OG_PROXY_IMAGE_HOSTNAME && parsed.pathname === OG_PROXY_IMAGE_PATHNAME) {
+      for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) {
+        parsed.searchParams.delete(param)
+      }
+      return parsed.toString()
+    }
+
+    const proxyUrl = new URL(OG_PROXY_IMAGE_URL)
+    proxyUrl.searchParams.set('url', parsed.toString())
+    if (referer) proxyUrl.searchParams.set('referer', referer)
+    return proxyUrl.toString()
+  } catch {
+    return rawImageUrl
+  }
 }
 
 export function renderFallbackHighlightedCodeHtml(source: string): string {
@@ -118,13 +146,14 @@ export function buildFallbackLinkPreview(url: string): LinkPreviewData {
   try {
     const parsed = new URL(url)
     const hostname = parsed.hostname
+    const icon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
     return {
       url: parsed.toString(),
       hostname,
       title: hostname,
       description: '',
       image: '',
-      icon: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
+      icon: toOgProxyImageUrl(icon, parsed.toString())
     }
   } catch {
     return { url, hostname: '', title: url, description: '', image: '', icon: '' }

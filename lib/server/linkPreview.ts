@@ -153,7 +153,7 @@ function createFallback(url: string): LinkPreviewData {
     title: hostname || url,
     description: '',
     image: '',
-    icon: toLinkPreviewImageProxyUrl(defaultIcon)
+    icon: toLinkPreviewImageProxyUrl(defaultIcon, url)
   }
 }
 
@@ -242,8 +242,8 @@ async function fetchLinkPreviewDirect(normalizedUrl: string, fallback: LinkPrevi
       hostname: finalHostname,
       title: finalTitle,
       description: finalDescription,
-      image: toLinkPreviewImageProxyUrl(finalImage),
-      icon: toLinkPreviewImageProxyUrl(finalIcon)
+      image: toLinkPreviewImageProxyUrl(finalImage, finalUrl),
+      icon: toLinkPreviewImageProxyUrl(finalIcon, finalUrl)
     }
 
     return data

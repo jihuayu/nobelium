@@ -6,7 +6,8 @@ import {
   getBlockClassName,
   getCalloutIconUrl,
   getHeadingAnchorId,
-  renderFallbackHighlightedCodeHtml
+  renderFallbackHighlightedCodeHtml,
+  toOgProxyImageUrl
 } from '../src/utils/notion'
 
 test('block and heading helper build stable class/id values', () => {
@@ -15,10 +16,22 @@ test('block and heading helper build stable class/id values', () => {
 })
 
 test('getCalloutIconUrl resolves external and file icon urls', () => {
-  assert.equal(getCalloutIconUrl({ type: 'external', external: { url: 'https://img.test/icon.png' } }), 'https://img.test/icon.png')
-  assert.equal(getCalloutIconUrl({ type: 'file', file: { url: 'https://file.test/icon.png' } }), 'https://file.test/icon.png')
+  assert.equal(getCalloutIconUrl({ type: 'external', external: { url: 'https://img.test/icon.png' } }), 'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fimg.test%2Ficon.png')
+  assert.equal(getCalloutIconUrl({ type: 'file', file: { url: 'https://file.test/icon.png' } }), 'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Ffile.test%2Ficon.png')
   assert.equal(getCalloutIconUrl({ type: 'emoji', emoji: '✅' }), '')
   assert.equal(getCalloutIconUrl(null), '')
+})
+
+test('toOgProxyImageUrl routes external images through og proxy', () => {
+  assert.equal(
+    toOgProxyImageUrl('https://example.com/image.png', 'https://example.com/page'),
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fexample.com%2Fimage.png&referer=https%3A%2F%2Fexample.com%2Fpage'
+  )
+  assert.equal(
+    toOgProxyImageUrl('https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fgithub.com%2Ffluidicon.png&q=80&f=jpeg&fit=scale-down'),
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fgithub.com%2Ffluidicon.png'
+  )
+  assert.equal(toOgProxyImageUrl('/local.png'), '/local.png')
 })
 
 test('renderFallbackHighlightedCodeHtml escapes html source', () => {
@@ -48,7 +61,10 @@ test('getAnnotationColorClasses maps normalized text and background colors', () 
 test('buildFallbackLinkPreview handles valid and invalid urls', () => {
   const valid = buildFallbackLinkPreview('https://example.com/path')
   assert.equal(valid.hostname, 'example.com')
-  assert.match(valid.icon || '', /google\.com\/s2\/favicons/)
+  assert.equal(
+    valid.icon,
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fwww.google.com%2Fs2%2Ffavicons%3Fdomain%3Dexample.com%26sz%3D32&referer=https%3A%2F%2Fexample.com%2Fpath'
+  )
 
   const invalid = buildFallbackLinkPreview('not-a-url')
   assert.equal(invalid.url, 'not-a-url')

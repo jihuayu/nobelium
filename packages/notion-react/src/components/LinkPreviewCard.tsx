@@ -1,6 +1,6 @@
 import cn from 'classnames'
 import type { LinkPreviewCardProps } from '../types'
-import { buildFallbackLinkPreview, normalizePreviewUrl } from '../utils/notion'
+import { buildFallbackLinkPreview, normalizePreviewUrl, toOgProxyImageUrl } from '../utils/notion'
 
 export default function LinkPreviewCard({ url, className, preview }: LinkPreviewCardProps) {
   const normalizedUrl = normalizePreviewUrl(url) || ''
@@ -12,7 +12,8 @@ export default function LinkPreviewCard({ url, className, preview }: LinkPreview
   }
 
   const displayUrl = resolvedPreview.url || normalizedUrl
-  const generatedImageUrl = displayUrl ? `${resolvedPreview.image || ''}`.trim() : ''
+  const generatedImageUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.image || ''}`.trim(), displayUrl) : ''
+  const iconUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.icon || ''}`.trim(), displayUrl) : ''
   if (!displayUrl) return null
 
   return (
@@ -42,10 +43,10 @@ export default function LinkPreviewCard({ url, className, preview }: LinkPreview
             </p>
           )}
           <div className="mt-auto pt-1.5 flex items-center gap-2 text-stone-800 dark:text-stone-200 text-xs">
-            {resolvedPreview.icon
+            {iconUrl
               ? (
                 <span className="relative h-4 w-4 rounded-sm flex-none overflow-hidden bg-transparent">
-                  <img src={resolvedPreview.icon} alt="" className="h-4 w-4 rounded-sm bg-transparent object-contain" loading="lazy" />
+                  <img src={iconUrl} alt="" className="h-4 w-4 rounded-sm bg-transparent object-contain" loading="lazy" />
                 </span>
               )
               : <span className="h-4 w-4 rounded-sm bg-stone-300 dark:bg-stone-700 flex-none" />}

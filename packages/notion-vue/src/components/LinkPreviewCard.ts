@@ -1,7 +1,7 @@
 import { defineComponent, h } from 'vue'
 import cn from 'classnames'
 import type { LinkPreviewCardProps } from '../types'
-import { buildFallbackLinkPreview, normalizePreviewUrl } from '../utils/notion'
+import { buildFallbackLinkPreview, normalizePreviewUrl, toOgProxyImageUrl } from '../utils/notion'
 
 export default defineComponent({
   name: 'LinkPreviewCard',
@@ -21,7 +21,8 @@ export default defineComponent({
       }
 
       const displayUrl = resolvedPreview.url || normalizedUrl
-      const generatedImageUrl = displayUrl ? `${resolvedPreview.image || ''}`.trim() : ''
+      const generatedImageUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.image || ''}`.trim(), displayUrl) : ''
+      const iconUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.icon || ''}`.trim(), displayUrl) : ''
       if (!displayUrl) return null
 
       return h('a', {
@@ -53,10 +54,10 @@ export default defineComponent({
                 }, resolvedPreview.description)
               : null,
             h('div', { class: 'mt-auto pt-1.5 flex items-center gap-2 text-stone-800 dark:text-stone-200 text-xs' }, [
-              resolvedPreview.icon
+              iconUrl
                 ? h('span', { class: 'relative h-4 w-4 rounded-sm flex-none overflow-hidden bg-transparent' }, [
                     h('img', {
-                      src: resolvedPreview.icon,
+                      src: iconUrl,
                       alt: '',
                       class: 'h-4 w-4 rounded-sm bg-transparent object-contain',
                       loading: 'lazy'

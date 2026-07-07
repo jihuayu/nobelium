@@ -55,7 +55,8 @@ import {
   normalizeNotionEntityId,
   normalizeRichTextUrl,
   renderFallbackHighlightedCodeHtml,
-  resolveEmbedIframeUrl
+  resolveEmbedIframeUrl,
+  toOgProxyImageUrl
 } from '../utils/notion'
 import DefaultLinkPreviewCard from './LinkPreviewCard'
 import DefaultMermaidBlock from './MermaidBlock'
@@ -387,7 +388,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           }
           return (
             <figure key={block.id} className={cn(baseClassName, 'my-6')}>
-              <img src={source} alt={captionText || 'Notion image'} loading="lazy" className="w-full rounded-md border border-stone-200 dark:border-stone-800" />
+              <img src={toOgProxyImageUrl(source)} alt={captionText || 'Notion image'} loading="lazy" className="w-full rounded-md border border-stone-200 dark:border-stone-800" />
               {caption.length > 0 && <figcaption className="mt-2 notion-asset-caption whitespace-pre-wrap">{renderRichText(caption)}</figcaption>}
               {renderChildren(block.id)}
             </figure>

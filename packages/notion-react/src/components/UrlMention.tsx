@@ -4,12 +4,13 @@ import cn from 'classnames'
 import { useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import type { UrlMentionPreviewData, UrlMentionProps } from '../types'
-import { isInternalHref } from '../utils/notion'
+import { isInternalHref, toOgProxyImageUrl } from '../utils/notion'
 import { useFloatingHoverCard } from './useFloatingHoverCard'
 
 function renderUrlMentionIcon(href: string, iconUrl: string, isGithub: boolean) {
-  if (iconUrl) {
-    return <img src={iconUrl} alt="" className="h-full w-full object-contain" loading="lazy" />
+  const resolvedIconUrl = toOgProxyImageUrl(iconUrl, href)
+  if (resolvedIconUrl) {
+    return <img src={resolvedIconUrl} alt="" className="h-full w-full object-contain" loading="lazy" />
   }
 
   if (isGithub || /^https?:\/\/(?:www\.)?github\.com\/?/i.test(href)) {
@@ -95,7 +96,7 @@ export default function UrlMention({
       >
         {resolvedPreview.image && (
           <span className="notion-url-mention-hover-cover">
-            <img src={resolvedPreview.image} alt={resolvedPreview.title} loading="lazy" />
+            <img src={toOgProxyImageUrl(resolvedPreview.image, resolvedPreview.href)} alt={resolvedPreview.title} loading="lazy" />
           </span>
         )}
         <span className="notion-url-mention-hover-body">

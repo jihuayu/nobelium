@@ -6,7 +6,8 @@ import {
   getBlockClassName,
   getCalloutIconUrl,
   getHeadingAnchorId,
-  renderFallbackHighlightedCodeHtml
+  renderFallbackHighlightedCodeHtml,
+  toOgProxyImageUrl
 } from '../src/utils/notion'
 
 test('react utils build stable identifiers', () => {
@@ -15,9 +16,21 @@ test('react utils build stable identifiers', () => {
 })
 
 test('react utils resolve callout icon url', () => {
-  assert.equal(getCalloutIconUrl({ type: 'external', external: { url: 'https://img.test/icon.png' } }), 'https://img.test/icon.png')
-  assert.equal(getCalloutIconUrl({ type: 'file', file: { url: 'https://file.test/icon.png' } }), 'https://file.test/icon.png')
+  assert.equal(getCalloutIconUrl({ type: 'external', external: { url: 'https://img.test/icon.png' } }), 'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fimg.test%2Ficon.png')
+  assert.equal(getCalloutIconUrl({ type: 'file', file: { url: 'https://file.test/icon.png' } }), 'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Ffile.test%2Ficon.png')
   assert.equal(getCalloutIconUrl({ type: 'emoji', emoji: 'ok' }), '')
+})
+
+test('react utils route external images through og proxy', () => {
+  assert.equal(
+    toOgProxyImageUrl('https://example.com/image.png', 'https://example.com/page'),
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fexample.com%2Fimage.png&referer=https%3A%2F%2Fexample.com%2Fpage'
+  )
+  assert.equal(
+    toOgProxyImageUrl('https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fgithub.com%2Ffluidicon.png&q=80&f=jpeg&fit=scale-down'),
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fgithub.com%2Ffluidicon.png'
+  )
+  assert.equal(toOgProxyImageUrl('/local.png'), '/local.png')
 })
 
 test('react utils renderFallbackHighlightedCodeHtml escapes text', () => {
@@ -47,6 +60,10 @@ test('react utils map annotation colors', () => {
 test('react utils build fallback preview', () => {
   const valid = buildFallbackLinkPreview('https://example.com/path')
   assert.equal(valid.hostname, 'example.com')
+  assert.equal(
+    valid.icon,
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fwww.google.com%2Fs2%2Ffavicons%3Fdomain%3Dexample.com%26sz%3D32&referer=https%3A%2F%2Fexample.com%2Fpath'
+  )
 
   const invalid = buildFallbackLinkPreview('invalid-url')
   assert.equal(invalid.title, 'invalid-url')

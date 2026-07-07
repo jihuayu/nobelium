@@ -1,6 +1,11 @@
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { normalizeHttpUrl } from '@/lib/server/url'
 
+const OG_PROXY_IMAGE_HOSTNAME = 'og-proxy.raw2.cc'
+const OG_PROXY_IMAGE_PATHNAME = '/proxy/image'
+const OG_PROXY_IMAGE_BASE_URL = `https://${OG_PROXY_IMAGE_HOSTNAME}${OG_PROXY_IMAGE_PATHNAME}`
+const OG_PROXY_IMAGE_TRANSFORM_PARAMS = ['q', 'f', 'fit']
+
 interface LinkPreviewImageProxyRule {
   id: string
   match: (url: URL) => boolean
@@ -61,8 +66,19 @@ export function isLinkPreviewImageWhitelisted(rawUrl: string): boolean {
   return IMAGE_PROXY_RULES.some(rule => rule.match(parsed))
 }
 
-export function toLinkPreviewImageProxyUrl(rawImageUrl: string): string {
-  const resolved = resolveLinkPreviewImageProxy(rawImageUrl)
-  if (!resolved) return rawImageUrl
-  return `/api/link-preview/image?url=${encodeURIComponent(resolved.normalizedUrl)}`
+export function toLinkPreviewImageProxyUrl(rawImageUrl: string, referer = ''): string {
+  const parsed = normalizeHttpUrl(rawImageUrl)
+  if (!parsed) return rawImageUrl
+
+  if (parsed.hostname === OG_PROXY_IMAGE_HOSTNAME && parsed.pathname === OG_PROXY_IMAGE_PATHNAME) {
+    for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) {
+      parsed.searchParams.delete(param)
+    }
+    return parsed.toString()
+  }
+
+  const proxyUrl = new URL(OG_PROXY_IMAGE_BASE_URL)
+  proxyUrl.searchParams.set('url', parsed.toString())
+  if (referer) proxyUrl.searchParams.set('referer', referer)
+  return proxyUrl.toString()
 }

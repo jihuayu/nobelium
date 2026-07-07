@@ -1,12 +1,13 @@
 import { defineComponent, h, computed, Teleport } from 'vue'
 import cn from 'classnames'
 import type { UrlMentionPreviewData, UrlMentionProps } from '../types'
-import { isInternalHref } from '../utils/notion'
+import { isInternalHref, toOgProxyImageUrl } from '../utils/notion'
 import { useFloatingHoverCard } from './useFloatingHoverCard'
 
 function renderUrlMentionIcon(href: string, iconUrl: string, isGithub: boolean) {
-  if (iconUrl) {
-    return h('img', { src: iconUrl, alt: '', class: 'h-full w-full object-contain', loading: 'lazy' })
+  const resolvedIconUrl = toOgProxyImageUrl(iconUrl, href)
+  if (resolvedIconUrl) {
+    return h('img', { src: resolvedIconUrl, alt: '', class: 'h-full w-full object-contain', loading: 'lazy' })
   }
 
   if (isGithub || /^https?:\/\/(?:www\.)?github\.com\/?/i.test(href)) {
@@ -93,7 +94,7 @@ export default defineComponent({
             }, [
               preview.image
                 ? h('span', { class: 'notion-url-mention-hover-cover' }, [
-                    h('img', { src: preview.image, alt: preview.title, loading: 'lazy' })
+                    h('img', { src: toOgProxyImageUrl(preview.image, preview.href), alt: preview.title, loading: 'lazy' })
                   ])
                 : null,
               h('span', { class: 'notion-url-mention-hover-body' }, [

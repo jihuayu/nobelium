@@ -55,7 +55,8 @@ import {
   normalizeNotionEntityId,
   normalizeRichTextUrl,
   renderFallbackHighlightedCodeHtml,
-  resolveEmbedIframeUrl
+  resolveEmbedIframeUrl,
+  toOgProxyImageUrl
 } from '../utils/notion'
 import DefaultLinkPreviewCard from './LinkPreviewCard'
 import DefaultMermaidBlock from './MermaidBlock'
@@ -402,7 +403,7 @@ export default defineComponent({
                 return h(Unsupported, { key: block.id, block, class: baseClassName, message: 'Unsupported image source' })
               }
               return h('figure', { key: block.id, class: cn(baseClassName, 'my-6') }, [
-                h('img', { src: source, alt: captionText || 'Notion image', loading: 'lazy', class: 'w-full rounded-md border border-stone-200 dark:border-stone-800' }),
+                h('img', { src: toOgProxyImageUrl(source), alt: captionText || 'Notion image', loading: 'lazy', class: 'w-full rounded-md border border-stone-200 dark:border-stone-800' }),
                 caption.length > 0
                   ? h('figcaption', { class: 'mt-2 notion-asset-caption whitespace-pre-wrap' }, [renderRichText(caption)])
                   : null,

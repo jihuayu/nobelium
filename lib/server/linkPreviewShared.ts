@@ -87,8 +87,8 @@ export function mapOgProxyPayloadToPreview(
     hostname,
     title,
     description,
-    image: toLinkPreviewImageProxyUrl(image),
-    icon: toLinkPreviewImageProxyUrl(icon)
+    image: toLinkPreviewImageProxyUrl(image, resolvedUrl),
+    icon: toLinkPreviewImageProxyUrl(icon, resolvedUrl)
   }
 }
 

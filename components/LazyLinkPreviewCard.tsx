@@ -8,6 +8,10 @@ import type { LinkPreviewCardProps, LinkPreviewData } from '@jihuayu/notion-reac
 import { normalizePreviewUrl } from '@/lib/link-preview/normalize'
 
 const previewRequestCache = new Map<string, Promise<LinkPreviewData | null>>()
+const OG_PROXY_IMAGE_URL = 'https://og-proxy.raw2.cc/proxy/image'
+const OG_PROXY_IMAGE_HOSTNAME = 'og-proxy.raw2.cc'
+const OG_PROXY_IMAGE_PATHNAME = '/proxy/image'
+const OG_PROXY_IMAGE_TRANSFORM_PARAMS = ['q', 'f', 'fit']
 
 function getHostname(url: string): string {
   try {
@@ -17,17 +21,36 @@ function getHostname(url: string): string {
   }
 }
 
+function toOgProxyImageUrl(rawImageUrl: string, referer = ''): string {
+  if (!rawImageUrl) return ''
+  try {
+    const parsed = new URL(rawImageUrl)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return rawImageUrl
+    if (parsed.hostname === OG_PROXY_IMAGE_HOSTNAME && parsed.pathname === OG_PROXY_IMAGE_PATHNAME) {
+      for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) parsed.searchParams.delete(param)
+      return parsed.toString()
+    }
+    const proxyUrl = new URL(OG_PROXY_IMAGE_URL)
+    proxyUrl.searchParams.set('url', parsed.toString())
+    if (referer) proxyUrl.searchParams.set('referer', referer)
+    return proxyUrl.toString()
+  } catch {
+    return rawImageUrl
+  }
+}
+
 function buildFallbackPreview(url: string): LinkPreviewData {
   const hostname = getHostname(url)
+  const defaultIcon = hostname
+    ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
+    : ''
   return {
     url,
     hostname,
     title: hostname || url,
     description: '',
     image: '',
-    icon: hostname
-      ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
-      : ''
+    icon: toOgProxyImageUrl(defaultIcon, url)
   }
 }
 
@@ -67,7 +90,8 @@ export default function LazyLinkPreviewCard({ url, className, preview }: LinkPre
   }
 
   const displayUrl = resolvedPreview.url || normalizedUrl
-  const generatedImageUrl = displayUrl ? `${resolvedPreview.image || ''}`.trim() : ''
+  const generatedImageUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.image || ''}`.trim(), displayUrl) : ''
+  const iconUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.icon || ''}`.trim(), displayUrl) : ''
   const showImage = generatedImageUrl && !imageFailed
 
   useEffect(() => {
@@ -140,10 +164,10 @@ export default function LazyLinkPreviewCard({ url, className, preview }: LinkPre
             </p>
           )}
           <div className="mt-auto pt-1.5 flex items-center gap-2 text-stone-800 dark:text-stone-200 text-xs">
-            {resolvedPreview.icon
+            {iconUrl
               ? (
                 <span className="relative h-4 w-4 rounded-sm flex-none overflow-hidden bg-transparent">
-                  <img src={resolvedPreview.icon} alt="" className="h-4 w-4 rounded-sm bg-transparent object-contain" loading="lazy" />
+                  <img src={iconUrl} alt="" className="h-4 w-4 rounded-sm bg-transparent object-contain" loading="lazy" />
                 </span>
                 )
               : <span className="h-4 w-4 rounded-sm bg-stone-300 dark:bg-stone-700 flex-none" />}

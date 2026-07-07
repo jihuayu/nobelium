@@ -20,7 +20,8 @@ import {
   isInternalHref,
   normalizeRichTextUrl,
   parseUrl,
-  rewriteNotionPageHref
+  rewriteNotionPageHref,
+  toOgProxyImageUrl
 } from '../utils/notion'
 import DefaultDateMention from './DateMention'
 import DefaultUrlMention from './UrlMention'
@@ -100,7 +101,7 @@ function getUrlMentionTitle(item: NotionRichText): string {
 
 function getUrlMentionIconUrl(item: NotionRichText): string {
   return isLinkMention(item)
-    ? `${item.mention?.link_mention?.icon_url || ''}`.trim()
+    ? toOgProxyImageUrl(`${item.mention?.link_mention?.icon_url || ''}`.trim(), getRichTextLink(item) || '')
     : ''
 }
 
@@ -125,8 +126,8 @@ function getUrlMentionPreviewData(
       href: `${payload.href || href}`.trim() || href,
       title: `${payload.title || ''}`.trim() || label,
       description: `${payload.description || ''}`.trim(),
-      icon: `${payload.icon_url || ''}`.trim(),
-      image: `${payload.thumbnail_url || ''}`.trim(),
+      icon: toOgProxyImageUrl(`${payload.icon_url || ''}`.trim(), href),
+      image: toOgProxyImageUrl(`${payload.thumbnail_url || ''}`.trim(), href),
       provider: getUrlMentionProvider(`${payload.link_provider || ''}`, href)
     }
   }
@@ -140,8 +141,8 @@ function getUrlMentionPreviewData(
     href: previewHref,
     title: `${preview.title || ''}`.trim() || label,
     description: `${preview.description || ''}`.trim(),
-    icon: `${preview.icon || ''}`.trim(),
-    image: `${preview.image || ''}`.trim(),
+    icon: toOgProxyImageUrl(`${preview.icon || ''}`.trim(), previewHref),
+    image: toOgProxyImageUrl(`${preview.image || ''}`.trim(), previewHref),
     provider: getUrlMentionProvider(`${preview.hostname || ''}`, previewHref)
   }
 }
@@ -163,8 +164,8 @@ function getInternalPagePreviewData(
     href: previewHref,
     title: `${preview.title || ''}`.trim() || label,
     description: `${preview.description || ''}`.trim(),
-    icon: `${preview.icon || ''}`.trim(),
-    image: `${preview.image || ''}`.trim(),
+    icon: toOgProxyImageUrl(`${preview.icon || ''}`.trim(), previewHref),
+    image: toOgProxyImageUrl(`${preview.image || ''}`.trim(), previewHref),
     provider: getUrlMentionProvider(`${preview.hostname || ''}`, previewHref)
   }
 }
