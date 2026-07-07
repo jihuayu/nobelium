@@ -48,7 +48,7 @@ test('getAnnotationColorClasses maps normalized text and background colors', () 
 test('buildFallbackLinkPreview handles valid and invalid urls', () => {
   const valid = buildFallbackLinkPreview('https://example.com/path')
   assert.equal(valid.hostname, 'example.com')
-  assert.equal(valid.icon, '')
+  assert.match(valid.icon || '', /google\.com\/s2\/favicons/)
 
   const invalid = buildFallbackLinkPreview('not-a-url')
   assert.equal(invalid.url, 'not-a-url')

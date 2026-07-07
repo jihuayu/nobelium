@@ -25,7 +25,9 @@ function buildFallbackPreview(url: string): LinkPreviewData {
     title: hostname || url,
     description: '',
     image: '',
-    icon: ''
+    icon: hostname
+      ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
+      : ''
   }
 }
 

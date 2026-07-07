@@ -61,14 +61,10 @@ export function buildOgProxyApiUrl(baseUrl: string, normalizedUrl: string): stri
   }
 }
 
-function getOgProxyMediaUrl(field: OgProxyMediaField | null | undefined): string {
-  const sourceUrl = decodeEntities(`${field?.url || ''}`.trim())
-  const localProxyUrl = toLinkPreviewImageProxyUrl(sourceUrl)
-  if (localProxyUrl && localProxyUrl !== sourceUrl) return localProxyUrl
-
+function getProxyMediaUrl(field: OgProxyMediaField | null | undefined): string {
   const proxyUrl = decodeEntities(`${field?.proxy || ''}`.trim())
   if (proxyUrl) return proxyUrl
-  return sourceUrl
+  return decodeEntities(`${field?.url || ''}`.trim())
 }
 
 export function mapOgProxyPayloadToPreview(
@@ -83,8 +79,8 @@ export function mapOgProxyPayloadToPreview(
   const hostname = getHostnameFromUrl(resolvedUrl) || fallback.hostname
   const title = `${parsed.data.title || ''}`.trim() || fallback.title
   const description = `${parsed.data.description || ''}`.trim()
-  const image = getOgProxyMediaUrl(parsed.data.image)
-  const icon = getOgProxyMediaUrl(parsed.data.logo) || fallback.icon
+  const image = getProxyMediaUrl(parsed.data.image)
+  const icon = getProxyMediaUrl(parsed.data.logo) || fallback.icon
 
   return {
     url: resolvedUrl,
