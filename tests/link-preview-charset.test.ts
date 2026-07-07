@@ -30,7 +30,7 @@ test('mapOgProxyPayloadToPreview prefers proxy media fields from og proxy payloa
       title: 'blog.jihuayu.com',
       description: '',
       image: '',
-      icon: 'https://www.google.com/s2/favicons?domain=blog.jihuayu.com&sz=32'
+      icon: ''
     },
     {
       status: 'success',
@@ -57,5 +57,74 @@ test('mapOgProxyPayloadToPreview prefers proxy media fields from og proxy payloa
     description: '大梦一场，浮生今歇',
     image: 'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fexample.com%2Fog.png',
     icon: 'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fexample.com%2Ffavicon.png'
+  })
+})
+
+test('mapOgProxyPayloadToPreview prefers local proxy for whitelisted douban media source urls', () => {
+  const preview = mapOgProxyPayloadToPreview(
+    'https://book.douban.com/subject/1007305/',
+    {
+      url: 'https://book.douban.com/subject/1007305/',
+      hostname: 'book.douban.com',
+      title: 'book.douban.com',
+      description: '',
+      image: '',
+      icon: ''
+    },
+    {
+      status: 'success',
+      data: {
+        title: '红楼梦',
+        description: '豆瓣图书',
+        url: 'https://book.douban.com/subject/1007305/',
+        image: {
+          url: 'https://img1.doubanio.com/view/subject/l/public/s1070959.jpg',
+          proxy: 'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fimg1.doubanio.com%2Fview%2Fsubject%2Fl%2Fpublic%2Fs1070959.jpg'
+        },
+        logo: {
+          url: 'https://img1.doubanio.com/favicon.ico',
+          proxy: 'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fimg1.doubanio.com%2Ffavicon.ico'
+        }
+      }
+    }
+  )
+
+  assert.equal(
+    preview?.image,
+    '/api/link-preview/image?url=https%3A%2F%2Fimg1.doubanio.com%2Fview%2Fsubject%2Fl%2Fpublic%2Fs1070959.jpg'
+  )
+  assert.equal(
+    preview?.icon,
+    '/api/link-preview/image?url=https%3A%2F%2Fimg1.doubanio.com%2Ffavicon.ico'
+  )
+})
+
+test('mapOgProxyPayloadToPreview keeps media empty when og proxy payload has no media', () => {
+  const preview = mapOgProxyPayloadToPreview(
+    'https://example.com/',
+    {
+      url: 'https://example.com/',
+      hostname: 'example.com',
+      title: 'example.com',
+      description: '',
+      image: '',
+      icon: ''
+    },
+    {
+      status: 'success',
+      data: {
+        title: 'Example',
+        url: 'https://example.com/'
+      }
+    }
+  )
+
+  assert.deepEqual(preview, {
+    url: 'https://example.com/',
+    hostname: 'example.com',
+    title: 'Example',
+    description: '',
+    image: '',
+    icon: ''
   })
 })

@@ -124,7 +124,7 @@ export function buildFallbackLinkPreview(url: string): LinkPreviewData {
       title: hostname,
       description: '',
       image: '',
-      icon: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
+      icon: ''
     }
   } catch {
     return { url, hostname: '', title: url, description: '', image: '', icon: '' }

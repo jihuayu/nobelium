@@ -47,6 +47,7 @@ test('react utils map annotation colors', () => {
 test('react utils build fallback preview', () => {
   const valid = buildFallbackLinkPreview('https://example.com/path')
   assert.equal(valid.hostname, 'example.com')
+  assert.equal(valid.icon, '')
 
   const invalid = buildFallbackLinkPreview('invalid-url')
   assert.equal(invalid.title, 'invalid-url')
