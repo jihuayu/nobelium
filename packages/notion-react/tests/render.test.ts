@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { NotionRenderer, type NotionRenderModel } from '../src/index'
+import { NotionRenderer, type NotionRenderModel, type UrlMentionProps } from '../src/index'
 
 const model: NotionRenderModel = {
   document: {
@@ -217,7 +217,7 @@ function buildLinkMentionModel(linkPreviewMap: NotionRenderModel['linkPreviewMap
   }
 }
 
-test('NotionRenderer prefers resolved link preview data for link mentions', () => {
+test('NotionRenderer prefers Notion payload text and proxies Notion media for link mentions', () => {
   const href = 'https://book.douban.com/subject/1007305/'
   const html = renderToStaticMarkup(React.createElement(NotionRenderer, {
     model: buildLinkMentionModel({
@@ -229,13 +229,27 @@ test('NotionRenderer prefers resolved link preview data for link mentions', () =
         image: '/api/link-preview/image?url=https%3A%2F%2Fimg1.doubanio.com%2Fcover.jpg',
         icon: '/api/link-preview/image?url=https%3A%2F%2Fimg1.doubanio.com%2Ffavicon.ico'
       }
-    })
+    }),
+    components: {
+      leaves: {
+        UrlMention: (props: UrlMentionProps) => React.createElement('a', {
+          href: props.href,
+          'data-label': props.label,
+          'data-icon': props.iconUrl,
+          'data-preview-title': props.preview?.title || '',
+          'data-preview-description': props.preview?.description || '',
+          'data-preview-image': props.preview?.image || ''
+        }, props.label)
+      }
+    }
   }))
 
-  assert.match(html, /OG title/)
-  assert.match(html, /img1\.doubanio\.com%2Ffavicon\.ico/)
-  assert.doesNotMatch(html, /Notion title/)
-  assert.doesNotMatch(html, /notion\.example\/icon\.png/)
+  assert.match(html, /Notion title/)
+  assert.match(html, /Notion description/)
+  assert.match(html, /og-proxy\.raw2\.cc\/proxy\/image\?url=https%3A%2F%2Fnotion\.example%2Ficon\.png/)
+  assert.match(html, /og-proxy\.raw2\.cc\/proxy\/image\?url=https%3A%2F%2Fnotion\.example%2Fthumb\.png/)
+  assert.doesNotMatch(html, /OG title/)
+  assert.doesNotMatch(html, /src="https:\/\/notion\.example\/icon\.png"/)
 })
 
 test('NotionRenderer falls back to Notion payload when link preview data is missing', () => {
@@ -244,5 +258,5 @@ test('NotionRenderer falls back to Notion payload when link preview data is miss
   }))
 
   assert.match(html, /Notion title/)
-  assert.match(html, /https:\/\/notion\.example\/icon\.png/)
+  assert.match(html, /og-proxy\.raw2\.cc\/proxy\/image\?url=https%3A%2F%2Fnotion\.example%2Ficon\.png/)
 })

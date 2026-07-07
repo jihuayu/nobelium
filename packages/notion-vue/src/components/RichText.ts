@@ -25,6 +25,9 @@ import {
 import DefaultDateMention from './DateMention'
 import DefaultUrlMention from './UrlMention'
 
+const OG_PROXY_IMAGE_URL = 'https://og-proxy.raw2.cc/proxy/image'
+const OG_PROXY_IMAGE_TRANSFORM_PARAMS = ['q', 'f', 'fit']
+
 function isGithubUrl(url: string | null): boolean {
   const parsed = parseUrl(url)
   if (!parsed) return false
@@ -98,9 +101,50 @@ function getUrlMentionTitle(item: NotionRichText): string {
     : ''
 }
 
-function getUrlMentionIconUrl(item: NotionRichText): string {
+function normalizeOgProxyImageUrl(rawUrl: string): string {
+  if (!rawUrl) return ''
+
+  try {
+    const parsed = new URL(rawUrl)
+    if (parsed.hostname !== 'og-proxy.raw2.cc' || parsed.pathname !== '/proxy/image') {
+      return rawUrl
+    }
+
+    let changed = false
+    for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) {
+      if (parsed.searchParams.has(param)) {
+        parsed.searchParams.delete(param)
+        changed = true
+      }
+    }
+    return changed ? parsed.toString() : rawUrl
+  } catch {
+    return rawUrl
+  }
+}
+
+function toUrlMentionImageProxyUrl(rawUrl: string, referer: string): string {
+  const normalizedUrl = normalizeOgProxyImageUrl(`${rawUrl || ''}`.trim())
+  if (!normalizedUrl) return ''
+
+  try {
+    const parsed = new URL(normalizedUrl)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return normalizedUrl
+    if (parsed.hostname === 'og-proxy.raw2.cc' && parsed.pathname === '/proxy/image') return normalizedUrl
+
+    const proxyUrl = new URL(OG_PROXY_IMAGE_URL)
+    proxyUrl.searchParams.set('url', normalizedUrl)
+    const normalizedReferer = normalizeRichTextUrl(referer)
+    if (normalizedReferer) proxyUrl.searchParams.set('referer', normalizedReferer)
+    return proxyUrl.toString()
+  } catch {
+    return normalizedUrl
+  }
+}
+
+function getUrlMentionIconUrl(item: NotionRichText, href: string): string {
   return isLinkMention(item)
-    ? `${item.mention?.link_mention?.icon_url || ''}`.trim()
+    ? toUrlMentionImageProxyUrl(`${item.mention?.link_mention?.icon_url || ''}`.trim(), href)
     : ''
 }
 
@@ -125,6 +169,19 @@ function getUrlMentionPreviewData(
   if (!href) return null
 
   const preview = getResolvedLinkPreview(href, linkPreviewMap)
+  if (isLinkMention(item)) {
+    const payload = item.mention?.link_mention || {}
+    const previewHref = `${preview?.url || href}`.trim() || href
+    return {
+      href: `${payload.href || href}`.trim() || href,
+      title: `${payload.title || preview?.title || ''}`.trim() || label,
+      description: `${payload.description || preview?.description || ''}`.trim(),
+      icon: toUrlMentionImageProxyUrl(`${payload.icon_url || ''}`.trim(), href) || `${preview?.icon || ''}`.trim(),
+      image: toUrlMentionImageProxyUrl(`${payload.thumbnail_url || ''}`.trim(), href) || `${preview?.image || ''}`.trim(),
+      provider: getUrlMentionProvider(`${payload.link_provider || preview?.hostname || ''}`, previewHref)
+    }
+  }
+
   if (preview) {
     const previewHref = `${preview.url || href}`.trim() || href
     return {
@@ -134,18 +191,6 @@ function getUrlMentionPreviewData(
       icon: `${preview.icon || ''}`.trim(),
       image: `${preview.image || ''}`.trim(),
       provider: getUrlMentionProvider(`${preview.hostname || ''}`, previewHref)
-    }
-  }
-
-  if (isLinkMention(item)) {
-    const payload = item.mention?.link_mention || {}
-    return {
-      href: `${payload.href || href}`.trim() || href,
-      title: `${payload.title || ''}`.trim() || label,
-      description: `${payload.description || ''}`.trim(),
-      icon: `${payload.icon_url || ''}`.trim(),
-      image: `${payload.thumbnail_url || ''}`.trim(),
-      provider: getUrlMentionProvider(`${payload.link_provider || ''}`, href)
     }
   }
 
@@ -246,8 +291,8 @@ export const RichText = defineComponent({
         if (isLinkPreviewMention(item) || isLinkMention(item)) {
           const preview = getResolvedLinkPreview(href, props.linkPreviewMap)
           const fallbackLabel = getUrlMentionTitle(item) || getUrlMentionLabel(href, textContent)
-          const label = `${preview?.title || fallbackLabel}`.trim() || fallbackLabel
-          const iconUrl = preview ? `${preview.icon || ''}`.trim() : getUrlMentionIconUrl(item)
+          const label = `${isLinkMention(item) ? fallbackLabel : preview?.title || fallbackLabel}`.trim() || fallbackLabel
+          const iconUrl = getUrlMentionIconUrl(item, href) || `${preview?.icon || ''}`.trim()
           return h(UrlMentionComponent, {
             key: `${index}-${href}`,
             href,
