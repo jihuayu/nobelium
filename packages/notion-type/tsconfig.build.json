@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "incremental": false,
+    "tsBuildInfoFile": "../../.cache/tsconfig.notion-type.build.tsbuildinfo"
+  },
+  "exclude": [
+    "tests",
+    "**/*.test.ts"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "incremental": false,
+    "types": ["node"],
+    "paths": {
+      "@jihuayu/notion-type": ["../notion-type/dist/index.d.ts"],
+      "@jihuayu/notion-type/normalize": ["../notion-type/dist/normalize.d.ts"],
+      "@jihuayu/notion-type/output-adapters": ["../notion-type/dist/output-adapters.d.ts"],
+      "@jihuayu/notion-type/og": ["../notion-type/dist/og.d.ts"],
+      "@jihuayu/notion-type/rss": ["../notion-type/dist/rss.d.ts"]
+    },
+    "tsBuildInfoFile": "../../.cache/tsconfig.notion-data.build.tsbuildinfo"
+  },
+  "exclude": [
+    "tests",
+    "**/*.test.ts"
+  ]
+}

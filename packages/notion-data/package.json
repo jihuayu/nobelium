@@ -18,7 +18,7 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsc -p tsconfig.build.json",
     "clean": "if exist dist rmdir /s /q dist"
   },
   "dependencies": {

@@ -32,7 +32,7 @@
     "./dist/styles.css"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsc -p tsconfig.build.json",
     "clean": "if exist dist rmdir /s /q dist",
     "storybook": "storybook dev -p 6006 -c .storybook --disable-telemetry",
     "storybook:build": "storybook build -c .storybook -o storybook-static --disable-telemetry"
@@ -44,9 +44,9 @@
   "dependencies": {
     "@jihuayu/notion-type": "workspace:*",
     "classnames": "^2.5.1",
-    "dayjs": "^1.11.20",
-    "katex": "^0.16.38",
-    "mermaid": "^11.13.0"
+    "dayjs": "^1.11.21",
+    "katex": "^0.18.1",
+    "mermaid": "^11.16.0"
   },
   "devDependencies": {
     "tsup": "^8.5.1"

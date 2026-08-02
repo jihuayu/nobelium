@@ -8,7 +8,7 @@ export default defineConfig([
       prepare: 'src/prepare.ts'
     },
     format: ['esm'],
-    dts: true,
+    dts: false,
     sourcemap: true,
     clean: true,
     target: 'es2020',
