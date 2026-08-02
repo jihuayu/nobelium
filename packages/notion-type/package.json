@@ -43,11 +43,11 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsc -p tsconfig.build.json",
     "clean": "if exist dist rmdir /s /q dist"
   },
   "dependencies": {
-    "feed": "^5.2.0"
+    "feed": "^6.0.0"
   },
   "devDependencies": {
     "tsup": "^8.5.1"

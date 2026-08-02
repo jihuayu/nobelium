@@ -18,7 +18,7 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsc -p tsconfig.build.json",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "peerDependencies": {
@@ -29,7 +29,7 @@
     "tsup": "^8.5.1"
   },
   "dependencies": {
-    "dompurify": "^3.4.11",
-    "marked": "^18.0.5"
+    "dompurify": "^3.4.12",
+    "marked": "^18.0.7"
   }
 }

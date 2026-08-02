@@ -1,27 +1,10 @@
-const fs = require('fs')
 const path = require('path')
-const ts = require('typescript')
 const { createRequire } = require('module')
 
-function loadTsConfig(filePath) {
-  const source = fs.readFileSync(filePath, 'utf-8')
-  const compiled = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.ES2020,
-      esModuleInterop: true
-    },
-    fileName: filePath
-  })
-
-  const compiledModule = { exports: {} }
-  const localRequire = createRequire(filePath)
-  const execute = new Function('require', 'module', 'exports', '__dirname', '__filename', compiled.outputText)
-  execute(localRequire, compiledModule, compiledModule.exports, path.dirname(filePath), filePath)
-  return compiledModule.exports.default || compiledModule.exports
-}
-
-const config = loadTsConfig(path.resolve(__dirname, 'config/blog.config.ts'))
+const tailwindRequire = createRequire(require.resolve('@tailwindcss/postcss'))
+const createJiti = tailwindRequire('jiti')
+const jiti = createJiti(__filename, { interopDefault: true })
+const config = jiti(path.resolve(__dirname, 'config/blog.config.ts'))
 
 const FONTS_SANS = [
   'var(--font-ibm-plex-sans)',

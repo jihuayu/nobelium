@@ -1,9 +1,25 @@
 import { defineConfig } from 'eslint/config'
+import tsParser from '@typescript-eslint/parser'
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
 
 export default defineConfig([
   { ignores: ['.cache/**', '.next/**', 'node_modules/**', 'packages/*/dist/**', 'packages/*/storybook-static/**'] },
   ...nextCoreWebVitals,
+  {
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true
+        }
+      }
+    },
+    settings: {
+      react: {
+        version: '19'
+      }
+    }
+  },
   {
     files: ['packages/notion-react/**/*.{js,jsx,ts,tsx}'],
     rules: {
