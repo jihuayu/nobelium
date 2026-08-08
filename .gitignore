@@ -39,6 +39,9 @@ yarn-error.log*
 
 # vercel
 .vercel
+apps/blog/dist/
+apps/blog/.astro/
+apps/blog/node_modules/
 public/robots.txt
 public/sitemap.xml
 .env*.local

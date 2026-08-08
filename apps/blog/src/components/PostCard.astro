@@ -1,0 +1,24 @@
+---
+import type { Locale } from '@jihuayu/site-policy'
+import { getPostHref } from '@blog/lib/policy-content'
+import type { TranslationGroup } from '@jihuayu/site-policy'
+import { formatDate } from '@/lib/formatDate'
+
+interface Props {
+  group: TranslationGroup
+  locale: Locale
+}
+
+const { group, locale } = Astro.props
+const entry = group.translations[locale]!
+const href = getPostHref(group, locale)
+const dateLang = locale === 'en' ? 'en' : 'zh-CN'
+---
+
+<article class="mb-10 border-b border-stone-200 pb-8 dark:border-stone-800">
+  <h2 class="font-serif text-2xl font-semibold">
+    <a href={href} class="hover:underline">{entry.title}</a>
+  </h2>
+  <p class="mt-2 text-sm text-stone-500 dark:text-stone-400">{formatDate(entry.date, dateLang)}</p>
+  {entry.summary && <p class="mt-3 text-stone-700 dark:text-stone-300">{entry.summary}</p>}
+</article>

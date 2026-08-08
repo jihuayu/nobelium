@@ -11,6 +11,9 @@ export interface PostData {
   formats: PostFormat[]
   fullWidth: boolean
   date: number
+  lang: string[]
+  visibility: string[]
+  comments: string[]
 }
 
 function normalizeSingleSelect(value: unknown): string | null {

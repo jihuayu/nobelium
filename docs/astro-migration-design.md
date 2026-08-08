@@ -75,7 +75,7 @@ interface RenderContext {
    internal rewrite       404
           │
           ▼
- /__site/{region}/{locale}/...   ← 用户永远看不到的内部路径
+ /site/{region}/{locale}/...   ← 用户永远看不到的内部路径（Astro 路由目录，非 `__site` 前缀）
           │
           ▼
      Static HTML（Vercel CDN）
@@ -131,7 +131,7 @@ Somnium/
 │       ├── middleware.ts          ← Vercel Routing Middleware（Edge Policy Router）
 │       └── src/
 │           ├── layouts/           BaseLayout / ArticleLayout
-│           ├── pages/__site/[region]/[locale]/   ← 全部页面挂在变体矩阵下
+│           ├── pages/site/[region]/[locale]/   ← 全部页面挂在变体矩阵下（Astro 忽略 `_` 前缀目录）
 │           │   ├── index.astro                  首页
 │           │   ├── [slug].astro                 文章页
 │           │   ├── page/[page].astro            分页

@@ -1,0 +1,57 @@
+---
+import { config } from '@/lib/server/config'
+import { localePrefix } from '@blog/lib/variants'
+import type { Locale } from '@jihuayu/site-policy'
+
+interface Props {
+  locale: Locale
+  articleTitle?: string | null
+}
+
+const { locale, articleTitle = null } = Astro.props
+const prefix = localePrefix(locale)
+const nav = locale === 'en'
+  ? { index: 'Home', about: 'About', rss: 'RSS', search: 'Search' }
+  : { index: '首页', about: '关于', rss: 'RSS', search: '搜索' }
+---
+
+<header class="sticky top-0 z-40 border-b border-stone-200/80 bg-white/90 backdrop-blur dark:border-stone-800/80 dark:bg-stone-950/90">
+  <div class="mx-auto flex max-w-5xl flex-wrap items-end justify-between gap-4 px-4 py-4">
+    <div class="font-serif">
+      {articleTitle
+        ? <p class="text-lg font-semibold">{articleTitle}</p>
+        : null}
+      <p class="text-sm text-stone-500 dark:text-stone-400">
+        <a href={prefix || '/'} class="font-semibold text-stone-900 dark:text-stone-100">{config.title}</a>
+        <span class="ml-2">{config.description}</span>
+      </p>
+    </div>
+    <nav>
+      <ul class="flex gap-4 text-sm text-stone-500 dark:text-stone-400">
+        <li><a href={prefix || '/'}>{nav.index}</a></li>
+        {config.showAbout && <li><a href={`${prefix}/about`}> {nav.about}</a></li>}
+        <li><a href="/feed" target="_blank" rel="noopener noreferrer">{nav.rss}</a></li>
+        <li><a href={`${prefix}/search`}>{nav.search}</a></li>
+        <li>
+          <button type="button" id="locale-toggle" class="underline-offset-2 hover:underline" data-locale={locale}>
+            {locale === 'en' ? '中文' : 'English'}
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<script>
+  const button = document.getElementById('locale-toggle')
+  button?.addEventListener('click', () => {
+    const current = button.dataset.locale
+    const next = current === 'en' ? 'zh-CN' : 'en'
+    document.cookie = `somnium-locale=${next}; path=/; max-age=31536000; samesite=lax`
+    const path = window.location.pathname
+    if (next === 'en') {
+      window.location.href = path.startsWith('/en') ? path : `/en${path === '/' ? '/' : path}`
+    } else {
+      window.location.href = path.replace(/^\/en(?=\/|$)/, '') || '/'
+    }
+  })
+</script>

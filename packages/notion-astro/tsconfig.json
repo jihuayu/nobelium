@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "tsBuildInfoFile": "../../.cache/tsconfig.notion-astro.tsbuildinfo"
+  },
+  "include": [
+    "../../types/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ]
+}

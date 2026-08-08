@@ -1,0 +1,47 @@
+---
+import BaseLayout from '@blog/layouts/BaseLayout.astro'
+import { getAllVariants } from '@blog/lib/variants'
+import { filterGroupsForVariant, getPostHref, loadTranslationGroups } from '@blog/lib/policy-content'
+import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+
+export async function getStaticPaths() {
+  const groups = await loadTranslationGroups(false)
+  const tagSet = new Set<string>()
+  for (const group of groups) {
+    for (const entry of Object.values(group.translations)) {
+      if (!entry) continue
+      for (const tag of entry.tags) tagSet.add(tag)
+    }
+  }
+
+  const variants = getAllVariants()
+  const paths = []
+  for (const { region, locale } of variants) {
+    for (const tag of tagSet) {
+      paths.push({ params: { region, locale, tag } })
+    }
+  }
+  return paths
+}
+
+const { region, locale, tag } = Astro.params as { region: RegionPolicy, locale: Locale, tag: string }
+const decodedTag = decodeURIComponent(tag)
+const groups = filterGroupsForVariant(await loadTranslationGroups(false), region, locale)
+  .filter(group => (group.translations[locale]?.tags || []).includes(decodedTag))
+---
+
+<BaseLayout region={region} locale={locale} title={`#${decodedTag}`}>
+  <div class="mx-auto max-w-3xl">
+    <h1 class="mb-8 font-serif text-3xl">#{decodedTag}</h1>
+  <ul class="space-y-4">
+    {groups.map(group => {
+      const entry = group.translations[locale]!
+      return (
+        <li>
+          <a class="text-lg font-medium hover:underline" href={getPostHref(group, locale)}>{entry.title}</a>
+        </li>
+      )
+    })}
+  </ul>
+  </div>
+</BaseLayout>

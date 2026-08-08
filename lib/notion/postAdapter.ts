@@ -25,6 +25,9 @@ export interface PostFieldNames {
   tags: string | string[]
   date: string | string[]
   formats: string | string[]
+  lang: string | string[]
+  visibility: string | string[]
+  comments: string | string[]
 }
 
 export const BLOG_POST_FIELD_NAMES: PostFieldNames = {
@@ -35,7 +38,10 @@ export const BLOG_POST_FIELD_NAMES: PostFieldNames = {
   status: 'status',
   tags: ['tags', 'tag'],
   date: 'date',
-  formats: ['格式', 'format', 'formats']
+  formats: ['格式', 'format', 'formats'],
+  lang: 'lang',
+  visibility: 'visibility',
+  comments: 'comments'
 }
 
 interface MapPageToPostOptions {
@@ -117,6 +123,9 @@ export function mapNotionPageToPost(
   const status = readNotionSelectProperty(properties, fieldNames.status)
   const tags = readNotionMultiSelectProperty(properties, fieldNames.tags)
   const formats = normalizePostFormats(readNotionMultiSelectProperty(properties, fieldNames.formats))
+  const lang = readNotionSelectProperty(properties, fieldNames.lang)
+  const visibility = readNotionSelectProperty(properties, fieldNames.visibility)
+  const comments = readNotionSelectProperty(properties, fieldNames.comments)
 
   const dateStart = readNotionDateStartProperty(properties, fieldNames.date)
   const date = dateStart
@@ -133,7 +142,10 @@ export function mapNotionPageToPost(
     status: normalizeSingleSelect(status),
     formats,
     fullWidth: formats.includes('wide'),
-    date
+    date,
+    lang: normalizeSingleSelect(lang) ? [normalizeSingleSelect(lang)!] : [],
+    visibility: normalizeSingleSelect(visibility) ? [normalizeSingleSelect(visibility)!] : [],
+    comments: normalizeSingleSelect(comments) ? [normalizeSingleSelect(comments)!] : []
   }
 }
 

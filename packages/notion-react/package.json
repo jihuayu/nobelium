@@ -26,6 +26,11 @@
       "import": "./dist/prepare.js",
       "default": "./dist/prepare.js"
     },
+    "./prepare-core": {
+      "types": "../notion-render-core/dist/index.d.ts",
+      "import": "../notion-render-core/dist/index.js",
+      "default": "../notion-render-core/dist/index.js"
+    },
     "./styles.css": "./dist/styles.css"
   },
   "sideEffects": [
@@ -42,6 +47,7 @@
     "react-dom": "^18.2.0 || ^19.0.0"
   },
   "dependencies": {
+    "@jihuayu/notion-render-core": "workspace:*",
     "@jihuayu/notion-type": "workspace:*",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.21",

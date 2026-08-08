@@ -67,51 +67,25 @@ export type {
   TocItem
 } from '@jihuayu/notion-type'
 
-/**
- * EN: Highlight output for a single code block.
- * ZH: 单个代码块的高亮输出结构。
- */
-export interface HighlightedCode {
-  html: string
-  language: string
-  displayLanguage: string
-}
+import type {
+  HighlightCodeResolver,
+  HighlightedCode,
+  HighlightedCodeByBlockId,
+  LinkPreviewResolver,
+  NotionRenderModel,
+  PageHrefResolver,
+  PrepareNotionRenderModelOptions
+} from '@jihuayu/notion-render-core'
 
-export type HighlightedCodeByBlockId = Record<string, HighlightedCode>
-
-/**
- * EN: Fully prepared model consumed by renderer components.
- * ZH: 渲染组件消费的完整预处理模型。
- */
-export interface NotionRenderModel {
-  document: NotionDocument
-  toc: TocItem[]
-  highlightedCodeByBlockId: HighlightedCodeByBlockId
-  linkPreviewMap: LinkPreviewMap
-  pageHrefMap: PageHrefMap
-  pagePreviewMap: PagePreviewMap
-}
-
-export type HighlightCodeResolver = (
-  source: string,
-  language: string
-) => Promise<{ html: string, displayLanguage?: string } | null>
-
-export type LinkPreviewResolver = (url: string) => Promise<LinkPreviewData | null>
-export type PageHrefResolver = (id: string) => string | null | Promise<string | null>
-
-/**
- * EN: Options for preparing render model data.
- * ZH: 渲染模型预处理选项。
- */
-export interface PrepareNotionRenderModelOptions {
-  highlightCode?: HighlightCodeResolver
-  resolveLinkPreview?: LinkPreviewResolver
-  resolvePageHref?: PageHrefResolver
-  initialLinkPreviewMap?: LinkPreviewMap
-  initialPageHrefMap?: PageHrefMap
-  initialPagePreviewMap?: PagePreviewMap
-}
+export type {
+  HighlightCodeResolver,
+  HighlightedCode,
+  HighlightedCodeByBlockId,
+  LinkPreviewResolver,
+  NotionRenderModel,
+  PageHrefResolver,
+  PrepareNotionRenderModelOptions
+} from '@jihuayu/notion-render-core'
 
 export type DateMentionDisplayMode = 'notion' | 'relative' | 'absolute'
 export type DateMentionIncludeTimeMode = 'auto' | 'always' | 'never'

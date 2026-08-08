@@ -18,7 +18,11 @@
     "tsdoc:export": "node scripts/tsdoc-export.mjs --export",
     "lint": "eslint .",
     "comments:build": "pnpm --filter @jihuayu/somnium-comments build",
-    "notion:build": "pnpm --filter @jihuayu/notion-type build && pnpm --filter @jihuayu/notion-data build && pnpm --filter @jihuayu/notion-react build",
+    "notion:build": "pnpm --filter @jihuayu/notion-type build && pnpm --filter @jihuayu/notion-data build && pnpm --filter @jihuayu/notion-render-core build && pnpm --filter @jihuayu/notion-react build",
+    "policy:build": "pnpm --filter @jihuayu/site-policy build",
+    "blog:deps": "pnpm run comments:build && pnpm run notion:build && pnpm run policy:build && pnpm --filter @jihuayu/notion-astro build",
+    "blog:dev": "pnpm run blog:deps && pnpm --filter @jihuayu/somnium-blog dev",
+    "blog:build": "pnpm run blog:deps && pnpm --filter @jihuayu/somnium-blog build",
     "notion-react:build": "pnpm --filter @jihuayu/notion-react build",
     "notion-react:storybook": "storybook dev -p 6006 -c packages/notion-react/.storybook --disable-telemetry",
     "notion-react:storybook:build": "storybook build -c packages/notion-react/.storybook -o packages/notion-react/storybook-static --disable-telemetry"

@@ -1,0 +1,32 @@
+---
+import BaseLayout from '@blog/layouts/BaseLayout.astro'
+import { buildPublicPath, getAllVariants } from '@blog/lib/variants'
+import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+
+export async function getStaticPaths() {
+  return getAllVariants().map(({ region, locale }) => ({ params: { region, locale } }))
+}
+
+const { region, locale } = Astro.params as { region: RegionPolicy, locale: Locale }
+const title = locale === 'en' ? 'Search' : '搜索'
+const searchIndexUrl = buildPublicPath('/search-index.json', locale)
+---
+
+<BaseLayout
+  region={region}
+  locale={locale}
+  title={title}
+  searchIndexUrl={searchIndexUrl}
+>
+  <div class="mx-auto max-w-3xl">
+    <h1 class="mb-6 font-serif text-3xl">{title}</h1>
+    <input
+      id="search-input"
+      type="search"
+      placeholder={locale === 'en' ? 'Search posts…' : '搜索文章…'}
+      class="w-full rounded border border-stone-300 bg-white px-4 py-2 dark:border-stone-700 dark:bg-stone-900"
+    />
+    <div id="search-results" class="mt-8"></div>
+  </div>
+  <script src="/scripts/search.js" defer></script>
+</BaseLayout>

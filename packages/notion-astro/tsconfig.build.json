@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "incremental": false,
+    "paths": {
+      "@jihuayu/notion-react": ["../notion-react/dist/index.d.ts"],
+      "@jihuayu/notion-render-core": ["../notion-render-core/dist/index.d.ts"],
+      "@jihuayu/notion-type": ["../notion-type/dist/index.d.ts"]
+    },
+    "tsBuildInfoFile": "../../.cache/tsconfig.notion-astro.build.tsbuildinfo"
+  },
+  "exclude": [
+    "tests",
+    "**/*.test.ts"
+  ]
+}

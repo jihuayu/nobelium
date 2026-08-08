@@ -1,0 +1,63 @@
+---
+import '@/styles/globals.css'
+import '@jihuayu/notion-astro/styles.css'
+import { config } from '@/lib/server/config'
+import Header from '@blog/components/Header.astro'
+import Footer from '@blog/components/Footer.astro'
+import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+
+interface Props {
+  title?: string
+  description?: string
+  region: RegionPolicy
+  locale: Locale
+  fullWidth?: boolean
+  articleTitle?: string | null
+  searchIndexUrl?: string
+}
+
+const {
+  title,
+  description,
+  region,
+  locale,
+  fullWidth = false,
+  articleTitle = null,
+  searchIndexUrl
+} = Astro.props
+const pageTitle = title ? `${title} | ${config.title}` : config.title
+const lang = locale === 'en' ? 'en' : 'zh-CN'
+---
+
+<!doctype html>
+<html lang={lang} data-region={region} data-locale={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    {description && <meta name="description" content={description} />}
+    <script is:inline>
+      (() => {
+        const stored = localStorage.getItem('theme')
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        const theme = stored === 'dark' || stored === 'light' ? stored : (prefersDark ? 'dark' : 'light')
+        document.documentElement.classList.toggle('dark', theme === 'dark')
+      })()
+    </script>
+    <script src="/scripts/reading-progress.js" defer></script>
+    <script src="/scripts/code-copy.js" defer></script>
+    <script src="/scripts/toc.js" defer></script>
+    <script src="/scripts/lightbox.js" defer></script>
+  </head>
+  <body
+    class="min-h-screen bg-white text-stone-900 dark:bg-stone-950 dark:text-stone-100"
+    data-search-index={searchIndexUrl}
+  >
+    <div id="reading-progress" class="reading-progress" aria-hidden="true"></div>
+    <Header locale={locale} articleTitle={articleTitle} />
+    <main class="mx-auto w-full px-4 py-8">
+      <slot />
+    </main>
+    <Footer fullWidth={fullWidth} />
+  </body>
+</html>

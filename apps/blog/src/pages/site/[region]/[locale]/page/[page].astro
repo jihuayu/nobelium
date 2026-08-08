@@ -1,0 +1,48 @@
+---
+import BaseLayout from '@blog/layouts/BaseLayout.astro'
+import PostCard from '@blog/components/PostCard.astro'
+import { buildPublicPath, getAllVariants } from '@blog/lib/variants'
+import { filterGroupsForVariant, loadTranslationGroups } from '@blog/lib/policy-content'
+import { config } from '@/lib/server/config'
+import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+
+export async function getStaticPaths() {
+  const groups = await loadTranslationGroups(false)
+  const variants = getAllVariants()
+  const paths = []
+
+  for (const { region, locale } of variants) {
+    const filtered = filterGroupsForVariant(groups, region, locale)
+    const totalPages = Math.max(1, Math.ceil(filtered.length / config.postsPerPage))
+    for (let page = 1; page <= totalPages; page++) {
+      paths.push({ params: { region, locale, page: String(page) } })
+    }
+  }
+
+  return paths
+}
+
+const { region, locale, page } = Astro.params as { region: RegionPolicy, locale: Locale, page: string }
+const pageNumber = Number(page)
+const groups = filterGroupsForVariant(await loadTranslationGroups(false), region, locale)
+  .sort((a, b) => (b.translations[locale]?.date || 0) - (a.translations[locale]?.date || 0))
+const start = (pageNumber - 1) * config.postsPerPage
+const postsToShow = groups.slice(start, start + config.postsPerPage)
+const totalPages = Math.ceil(groups.length / config.postsPerPage)
+const prevHref = pageNumber === 2
+  ? buildPublicPath('/', locale)
+  : buildPublicPath(`/page/${pageNumber - 1}`, locale)
+const nextHref = buildPublicPath(`/page/${pageNumber + 1}`, locale)
+const prevLabel = locale === 'en' ? '← Previous' : '← 上一页'
+const nextLabel = locale === 'en' ? 'Next →' : '下一页 →'
+---
+
+<BaseLayout region={region} locale={locale} title={locale === 'en' ? `Page ${pageNumber}` : `第 ${pageNumber} 页`}>
+  <div class="mx-auto max-w-3xl">
+    {postsToShow.map(group => <PostCard group={group} locale={locale} />)}
+    <nav class="mt-8 flex justify-between text-sm text-stone-500">
+      {pageNumber > 1 && <a href={prevHref}>{prevLabel}</a>}
+      {pageNumber < totalPages && <a href={nextHref}>{nextLabel}</a>}
+    </nav>
+  </div>
+</BaseLayout>

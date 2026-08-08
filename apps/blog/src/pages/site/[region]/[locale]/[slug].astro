@@ -1,0 +1,92 @@
+---
+import BaseLayout from '@blog/layouts/BaseLayout.astro'
+import { NotionArticle } from '@jihuayu/notion-astro'
+import CommentsIsland from '@blog/components/CommentsIsland'
+import { getAllVariants } from '@blog/lib/variants'
+import {
+  filterGroupsForVariant,
+  getPostHref,
+  loadTranslationGroups,
+  shouldRenderComments
+} from '@blog/lib/policy-content'
+import { loadArticleRenderModel } from '@blog/lib/render-article'
+import { loadPageMaps } from '@blog/lib/page-maps'
+import { buildPublicPath } from '@blog/lib/variants'
+import { formatDate } from '@/lib/formatDate'
+import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+
+export async function getStaticPaths() {
+  const groups = await loadTranslationGroups(true)
+  const variants = getAllVariants()
+  const paths = []
+
+  for (const { region, locale } of variants) {
+    for (const group of filterGroupsForVariant(groups, region, locale)) {
+      paths.push({ params: { region, locale, slug: group.contentKey } })
+    }
+  }
+
+  return paths
+}
+
+const { region, locale, slug } = Astro.params as { region: RegionPolicy, locale: Locale, slug: string }
+const groups = await loadTranslationGroups(true)
+const group = groups.find(item => item.contentKey === slug)
+if (!group) throw new Error(`Missing translation group for ${slug}`)
+
+const entry = group.translations[locale]
+if (!entry) throw new Error(`Missing locale ${locale} for ${slug}`)
+
+const { pageLinkMap, pagePreviewMap } = await loadPageMaps()
+const model = await loadArticleRenderModel(entry.pageId, pageLinkMap, pagePreviewMap)
+if (!model) throw new Error(`Failed to render ${slug}`)
+
+const showComments = shouldRenderComments(group, region)
+const publicSlugPath = getPostHref(group, locale)
+const dateLang = locale === 'en' ? 'en' : 'zh-CN'
+---
+
+<BaseLayout
+  region={region}
+  locale={locale}
+  title={entry.title}
+  description={entry.summary}
+  fullWidth={entry.fullWidth}
+  articleTitle={entry.title}
+>
+  <article class="notion-article mx-auto max-w-3xl">
+    <header class="mb-8">
+      <h1 class="font-serif text-4xl font-semibold">{entry.title}</h1>
+      <p class="mt-3 text-sm text-stone-500">{formatDate(entry.date, dateLang)}</p>
+      {entry.tags?.length > 0 && (
+        <ul class="mt-4 flex flex-wrap gap-2 text-sm text-stone-500">
+          {entry.tags.map(tag => <li><a href={buildPublicPath(`/tag/${encodeURIComponent(tag)}`, locale)}>#{tag}</a></li>)}
+        </ul>
+      )}
+    </header>
+    <NotionArticle model={model} className="notion-renderer" renderOptions={{ locale }} />
+    {model.toc.length > 0 && (
+      <aside class="toc-panel hidden lg:block" data-toc>
+        <nav>
+          <ul>
+            {model.toc.map(item => (
+              <li style={`padding-left:${(item.level - 1) * 12}px`}>
+                <a href={`#notion-heading-${item.id.replaceAll('-', '')}`}>{item.text}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </aside>
+    )}
+    {showComments && (
+      <CommentsIsland
+        client:visible
+        pageId={entry.pageId}
+        title={entry.title}
+        slug={publicSlugPath}
+        fullWidth={entry.fullWidth}
+        locale={locale}
+      />
+    )}
+  </article>
+</BaseLayout>
