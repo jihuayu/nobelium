@@ -135,13 +135,13 @@ export const metadata: Metadata = {
       {
         url: '/favicon-mark-light-512.png',
         type: 'image/png',
-        sizes: '512x512',
+        sizes: '256x256',
         media: '(prefers-color-scheme: light)'
       },
       {
         url: '/favicon-mark-dark-512.png',
         type: 'image/png',
-        sizes: '512x512',
+        sizes: '256x256',
         media: '(prefers-color-scheme: dark)'
       }
     ]
