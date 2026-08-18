@@ -34,7 +34,8 @@ export default async function ContainerServer({ children, layout, fullWidth, tit
         <main
           className={cn(
             'flex-grow transition-all',
-            layout !== 'blog' && ['self-center w-full px-4', contentWidthClass]
+            layout === 'me' && 'w-full',
+            layout !== 'blog' && layout !== 'me' && ['self-center w-full px-4', contentWidthClass]
           )}
         >
           {children}

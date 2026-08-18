@@ -6,6 +6,7 @@ import {
   formatQuote,
   getMonthInTimeZone,
   getSeason,
+  inferSocialIcon,
   isExternalHref,
   padIndex
 } from '../lib/profile'
@@ -60,6 +61,14 @@ test('padIndex zero-pads writing indices', () => {
 test('formatQuote wraps plain text in corner brackets', () => {
   assert.equal(formatQuote('大梦一场，浮生今歇。'), '「大梦一场，浮生今歇。」')
   assert.equal(formatQuote('「已有引号」'), '「已有引号」')
+})
+
+test('inferSocialIcon maps common profile links', () => {
+  assert.equal(inferSocialIcon('https://github.com/jihuayu'), 'github')
+  assert.equal(inferSocialIcon('https://twitter.com/jihuayu123', 'X'), 'x')
+  assert.equal(inferSocialIcon('mailto:hi@example.com'), 'mail')
+  assert.equal(inferSocialIcon('/feed', 'RSS'), 'rss')
+  assert.equal(inferSocialIcon('/about'), 'link')
 })
 
 test('isExternalHref detects http(s) and mailto links', () => {

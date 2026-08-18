@@ -22,6 +22,7 @@ export interface BlogConfig {
     name: string
     tagline: string
     quote: string
+    avatar?: string
     recentPostCount: number
     showGuestbook: boolean
     socials: Array<{

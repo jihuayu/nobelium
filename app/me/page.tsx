@@ -65,12 +65,13 @@ export default async function MeRoutePage() {
   const guestbookTitle = locale.ME.GUESTBOOK
 
   return (
-    <ContainerServer>
+    <ContainerServer layout="me">
       <MePage
         greeting={profile.greeting}
         name={profile.name || config.author}
         tagline={profile.tagline}
         quote={profile.quote || config.description}
+        avatar={profile.avatar}
         postCount={posts.length}
         days={countSiteDays({
           sinceYear: config.since,
@@ -83,13 +84,16 @@ export default async function MeRoutePage() {
         blogPath={config.path || ''}
         copy={{
           recent: locale.ME.RECENT,
+          recentKicker: locale.ME.RECENT_KICKER,
           guestbook: guestbookTitle,
           posts: locale.ME.POSTS,
           days: locale.ME.DAYS,
-          viewAll: locale.ME.VIEW_ALL
+          viewAll: locale.ME.VIEW_ALL,
+          welcome: locale.ME.WELCOME,
+          subscribe: locale.ME.SUBSCRIBE,
+          subscribeHint: locale.ME.SUBSCRIBE_HINT,
+          writing: locale.ME.WRITING
         }}
-        lang={config.lang}
-        timezone={config.timezone}
         guestbook={profile.showGuestbook ? (
           <Comments
             compact

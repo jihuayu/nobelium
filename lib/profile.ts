@@ -51,6 +51,17 @@ export function isExternalHref(href: string): boolean {
   return /^(https?:)?\/\//i.test(href) || href.startsWith('mailto:')
 }
 
+export type SocialIcon = 'github' | 'x' | 'mail' | 'rss' | 'link'
+
+export function inferSocialIcon(href: string, label = ''): SocialIcon {
+  const haystack = `${href} ${label}`.toLowerCase()
+  if (href.startsWith('mailto:') || /mail|郵件|邮件/.test(haystack)) return 'mail'
+  if (haystack.includes('github')) return 'github'
+  if (/(?:^|\/\/)(?:www\.)?(?:twitter|x)\.com\b/.test(href) || label.trim() === 'X') return 'x'
+  if (/\/feed\b|rss|訂閱|订阅/.test(haystack)) return 'rss'
+  return 'link'
+}
+
 export function formatQuote(quote: string): string {
   const trimmed = `${quote || ''}`.trim()
   if (!trimmed) return ''

@@ -21,10 +21,15 @@ export interface Locale {
   }
   ME: {
     RECENT: string
+    RECENT_KICKER: string
     GUESTBOOK: string
     POSTS: string
     DAYS: string
     VIEW_ALL: string
+    WELCOME: string
+    SUBSCRIBE: string
+    SUBSCRIBE_HINT: string
+    WRITING: string
     SEASON: {
       SPRING: string
       SUMMER: string
