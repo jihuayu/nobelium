@@ -33,7 +33,9 @@ module.exports = {
     './packages/notion-react/.storybook/**/*.{js,ts,jsx,tsx,mdx}',
     './packages/notion-react/stories/**/*.{js,ts,jsx,tsx,mdx}',
     './packages/notion-react/src/**/*.{js,ts,jsx,tsx}',
-    './packages/somnium-comments/src/**/*.{js,ts,jsx,tsx}'
+    './packages/somnium-comments/src/**/*.{js,ts,jsx,tsx}',
+    './apps/blog/src/**/*.{astro,js,ts,jsx,tsx}',
+    './apps/blog/public/scripts/**/*.js'
   ],
   darkMode: 'class',
   theme: {

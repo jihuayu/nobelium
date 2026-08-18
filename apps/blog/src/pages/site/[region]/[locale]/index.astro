@@ -4,6 +4,7 @@ import PostCard from '@blog/components/PostCard.astro'
 import { buildPublicPath, getAllVariants } from '@blog/lib/variants'
 import { filterGroupsForVariant, loadTranslationGroups } from '@blog/lib/policy-content'
 import { config } from '@/lib/server/config'
+import { siteOrigin } from '@blog/lib/urls'
 import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
 
 export async function getStaticPaths() {
@@ -17,9 +18,21 @@ const postsToShow = groups.slice(0, config.postsPerPage)
 const showNext = groups.length > config.postsPerPage
 const nextPageHref = buildPublicPath('/page/2', locale)
 const nextLabel = locale === 'en' ? 'Next →' : '下一页 →'
+const origin = siteOrigin()
+const homeZh = `${origin}/`
+const homeEn = `${origin}/en/`
 ---
 
-<BaseLayout region={region} locale={locale}>
+<BaseLayout
+  region={region}
+  locale={locale}
+  canonicalPath={locale === 'en' ? '/en/' : '/'}
+  alternates={[
+    { hreflang: 'zh-CN', href: homeZh },
+    { hreflang: 'en', href: homeEn },
+    { hreflang: 'x-default', href: homeZh }
+  ]}
+>
   <div class="mx-auto max-w-3xl">
     {postsToShow.map(group => <PostCard group={group} locale={locale} />)}
     {showNext && (

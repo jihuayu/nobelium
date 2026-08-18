@@ -1,0 +1,24 @@
+---
+import BaseLayout from '@blog/layouts/BaseLayout.astro'
+import { getAllVariants } from '@blog/lib/variants'
+import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+
+export async function getStaticPaths() {
+  return getAllVariants().map(({ region, locale }) => ({ params: { region, locale } }))
+}
+
+const { region, locale } = Astro.params as { region: RegionPolicy, locale: Locale }
+const title = locale === 'en' ? 'Not found' : '页面不存在'
+const message = locale === 'en' ? 'This page does not exist.' : '这个页面不存在。'
+---
+
+<BaseLayout region={region} locale={locale} title={title}>
+  <Fragment slot="head">
+    <meta name="robots" content="noindex, nofollow" />
+  </Fragment>
+  <div class="mx-auto max-w-3xl py-16 text-center">
+    <h1 class="font-serif text-4xl">{title}</h1>
+    <p class="mt-4 text-stone-500">{message}</p>
+    <p class="mt-8"><a class="underline" href={locale === 'en' ? '/en/' : '/'}>{locale === 'en' ? 'Back home' : '返回首页'}</a></p>
+  </div>
+</BaseLayout>

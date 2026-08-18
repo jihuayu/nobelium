@@ -20,7 +20,7 @@ test('resolveRegionPolicy maps CN to mainland', () => {
   assert.equal(resolveRegionPolicy(), 'global')
 })
 
-test('resolveLocale prefers URL prefix and cookie', () => {
+test('resolveLocale prefers URL prefix; cookie only negotiates homepage', () => {
   assert.deepEqual(resolveLocale({ pathname: '/en/foo' }), {
     locale: 'en',
     explicit: true,
@@ -30,9 +30,25 @@ test('resolveLocale prefers URL prefix and cookie', () => {
     pathname: '/foo',
     cookie: 'somnium-locale=en'
   }), {
+    locale: 'zh-CN',
+    explicit: false,
+    restPath: '/foo'
+  })
+  assert.deepEqual(resolveLocale({
+    pathname: '/',
+    cookie: 'somnium-locale=en'
+  }), {
     locale: 'en',
     explicit: true,
-    restPath: '/foo'
+    restPath: '/'
+  })
+  assert.deepEqual(resolveLocale({
+    pathname: '/',
+    acceptLanguage: 'en-US,en;q=0.9'
+  }), {
+    locale: 'en',
+    explicit: false,
+    restPath: '/'
   })
 })
 

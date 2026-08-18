@@ -1,3 +1,3 @@
-export { default as NotionArticle } from './NotionArticle'
-export type { NotionArticleProps } from './NotionArticle'
-export type { NotionRenderModel, NotionRenderOptions } from './NotionArticle'
+export { renderNotionArticleHtml } from './renderHtml'
+export type { NotionAstroRenderOptions } from './renderHtml'
+export type { NotionRenderModel } from '@jihuayu/notion-render-core'

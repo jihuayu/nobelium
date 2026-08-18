@@ -7,5 +7,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   target: 'es2020',
-  external: ['react', 'react-dom', '@jihuayu/notion-react', '@jihuayu/notion-render-core', '@jihuayu/notion-type']
+  external: ['@jihuayu/notion-render-core', '@jihuayu/notion-type', 'katex']
 })

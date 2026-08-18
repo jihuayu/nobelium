@@ -58,6 +58,9 @@
       "@jihuayu/site-policy": [
         "./packages/site-policy/src/index.ts"
       ],
+      "@jihuayu/notion-astro": [
+        "./packages/notion-astro/src/index.ts"
+      ],
       "@jihuayu/somnium-comments": [
         "./packages/somnium-comments/src/index.tsx"
       ],

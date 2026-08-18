@@ -1,7 +1,7 @@
 {
   "name": "@jihuayu/notion-astro",
   "version": "0.1.0",
-  "description": "Astro integration for Notion render models",
+  "description": "Framework-free HTML renderer for Notion render models",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -20,18 +20,12 @@
     "build": "tsup && tsc -p tsconfig.build.json",
     "clean": "rm -rf dist"
   },
-  "peerDependencies": {
-    "react": "^18.2.0 || ^19.0.0",
-    "react-dom": "^18.2.0 || ^19.0.0"
-  },
   "dependencies": {
-    "@jihuayu/notion-react": "workspace:*",
     "@jihuayu/notion-render-core": "workspace:*",
-    "@jihuayu/notion-type": "workspace:*"
+    "@jihuayu/notion-type": "workspace:*",
+    "katex": "^0.18.1"
   },
   "devDependencies": {
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.3",
     "tsup": "^8.5.1"
   }
 }

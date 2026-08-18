@@ -1,8 +1,7 @@
 ---
-import BaseLayout from '@blog/layouts/BaseLayout.astro'
-import { NotionArticle } from '@jihuayu/notion-astro'
+import ArticleLayout from '@blog/layouts/ArticleLayout.astro'
 import CommentsIsland from '@blog/components/CommentsIsland'
-import { getAllVariants } from '@blog/lib/variants'
+import { getAllVariants, buildPublicPath } from '@blog/lib/variants'
 import {
   filterGroupsForVariant,
   getPostHref,
@@ -11,7 +10,8 @@ import {
 } from '@blog/lib/policy-content'
 import { loadArticleRenderModel } from '@blog/lib/render-article'
 import { loadPageMaps } from '@blog/lib/page-maps'
-import { buildPublicPath } from '@blog/lib/variants'
+import { buildHreflangLinks } from '@blog/lib/urls'
+import { renderNotionArticleHtml } from '@jihuayu/notion-astro'
 import { formatDate } from '@/lib/formatDate'
 import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
 
@@ -44,17 +44,29 @@ if (!model) throw new Error(`Failed to render ${slug}`)
 const showComments = shouldRenderComments(group, region)
 const publicSlugPath = getPostHref(group, locale)
 const dateLang = locale === 'en' ? 'en' : 'zh-CN'
+const otherLocale: Locale = locale === 'en' ? 'zh-CN' : 'en'
+const hasOtherLocale = Boolean(group.translations[otherLocale])
+const articleHtml = renderNotionArticleHtml(model, { locale, className: 'notion-renderer' })
+const bannerHref = hasOtherLocale ? getPostHref(group, otherLocale) : null
 ---
 
-<BaseLayout
+<ArticleLayout
   region={region}
   locale={locale}
   title={entry.title}
   description={entry.summary}
   fullWidth={entry.fullWidth}
   articleTitle={entry.title}
+  canonicalPath={publicSlugPath}
+  alternates={buildHreflangLinks(group, locale)}
+  translationAvailable={hasOtherLocale}
 >
   <article class="notion-article mx-auto max-w-3xl">
+    {locale === 'zh-CN' && bannerHref && (
+      <p class="mb-6 rounded border border-stone-200 px-3 py-2 text-sm text-stone-600 dark:border-stone-800 dark:text-stone-300">
+        English version available: <a class="underline" href={bannerHref}>Open English</a>
+      </p>
+    )}
     <header class="mb-8">
       <h1 class="font-serif text-4xl font-semibold">{entry.title}</h1>
       <p class="mt-3 text-sm text-stone-500">{formatDate(entry.date, dateLang)}</p>
@@ -64,7 +76,7 @@ const dateLang = locale === 'en' ? 'en' : 'zh-CN'
         </ul>
       )}
     </header>
-    <NotionArticle model={model} className="notion-renderer" renderOptions={{ locale }} />
+    <div set:html={articleHtml} />
     {model.toc.length > 0 && (
       <aside class="toc-panel hidden lg:block" data-toc>
         <nav>
@@ -89,4 +101,4 @@ const dateLang = locale === 'en' ? 'en' : 'zh-CN'
       />
     )}
   </article>
-</BaseLayout>
+</ArticleLayout>

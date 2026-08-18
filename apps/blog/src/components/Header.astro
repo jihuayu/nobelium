@@ -1,18 +1,20 @@
 ---
 import { config } from '@/lib/server/config'
-import { localePrefix } from '@blog/lib/variants'
+import { buildPublicPath, localePrefix } from '@blog/lib/variants'
 import type { Locale } from '@jihuayu/site-policy'
 
 interface Props {
   locale: Locale
   articleTitle?: string | null
+  translationAvailable?: boolean
 }
 
-const { locale, articleTitle = null } = Astro.props
+const { locale, articleTitle = null, translationAvailable = true } = Astro.props
 const prefix = localePrefix(locale)
 const nav = locale === 'en'
   ? { index: 'Home', about: 'About', rss: 'RSS', search: 'Search' }
   : { index: '首页', about: '关于', rss: 'RSS', search: '搜索' }
+const otherLabel = locale === 'en' ? '中文' : 'English'
 ---
 
 <header class="sticky top-0 z-40 border-b border-stone-200/80 bg-white/90 backdrop-blur dark:border-stone-800/80 dark:bg-stone-950/90">
@@ -29,12 +31,20 @@ const nav = locale === 'en'
     <nav>
       <ul class="flex gap-4 text-sm text-stone-500 dark:text-stone-400">
         <li><a href={prefix || '/'}>{nav.index}</a></li>
-        {config.showAbout && <li><a href={`${prefix}/about`}> {nav.about}</a></li>}
-        <li><a href="/feed" target="_blank" rel="noopener noreferrer">{nav.rss}</a></li>
+        {config.showAbout && <li><a href={`${prefix}/about`}>{nav.about}</a></li>}
+        <li><a href={buildPublicPath('/feed', locale)} target="_blank" rel="noopener noreferrer">{nav.rss}</a></li>
         <li><a href={`${prefix}/search`}>{nav.search}</a></li>
         <li>
-          <button type="button" id="locale-toggle" class="underline-offset-2 hover:underline" data-locale={locale}>
-            {locale === 'en' ? '中文' : 'English'}
+          <button
+            type="button"
+            id="locale-toggle"
+            class:list={['underline-offset-2 hover:underline', !translationAvailable && 'cursor-not-allowed opacity-40']}
+            data-locale={locale}
+            data-available={translationAvailable ? 'true' : 'false'}
+            disabled={!translationAvailable}
+            aria-disabled={!translationAvailable}
+          >
+            {otherLabel}
           </button>
         </li>
       </ul>
@@ -44,6 +54,7 @@ const nav = locale === 'en'
 <script>
   const button = document.getElementById('locale-toggle')
   button?.addEventListener('click', () => {
+    if (button.dataset.available === 'false') return
     const current = button.dataset.locale
     const next = current === 'en' ? 'zh-CN' : 'en'
     document.cookie = `somnium-locale=${next}; path=/; max-age=31536000; samesite=lax`

@@ -68,21 +68,32 @@ export function readLocaleCookie(cookieHeader: string | null | undefined): Local
   return normalizeLocale(decodeURIComponent(match[1]))
 }
 
+export function resolvePreferredLocale(input: Pick<ResolveLocaleInput, 'cookie' | 'acceptLanguage'>): Locale {
+  return readLocaleCookie(input.cookie ?? null) || negotiateFromAcceptLanguage(input.acceptLanguage)
+}
+
 export function resolveLocale(input: ResolveLocaleInput): ResolveLocaleResult {
   const fromPath = parseLocaleFromPathname(input.pathname)
   if (fromPath.locale === 'en') {
     return { locale: 'en', explicit: true, restPath: fromPath.restPath }
   }
 
+  // Unprefixed URLs are always zh-CN content (canonical Chinese paths). Cookie /
+  // Accept-Language only negotiate the bare homepage, which middleware redirects.
+  const isHome = fromPath.restPath === '/' || fromPath.restPath === ''
+  if (!isHome) {
+    return { locale: 'zh-CN', explicit: false, restPath: fromPath.restPath }
+  }
+
   const fromCookie = readLocaleCookie(input.cookie ?? null)
   if (fromCookie) {
-    return { locale: fromCookie, explicit: true, restPath: fromPath.restPath }
+    return { locale: fromCookie, explicit: true, restPath: '/' }
   }
 
   return {
     locale: negotiateFromAcceptLanguage(input.acceptLanguage),
     explicit: false,
-    restPath: fromPath.restPath
+    restPath: '/'
   }
 }
 

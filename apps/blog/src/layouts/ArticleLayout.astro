@@ -1,0 +1,29 @@
+---
+import articleCss from '../../../../packages/notion-react/src/styles.css?url'
+import BaseLayout from './BaseLayout.astro'
+import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+
+interface AlternateLink {
+  hreflang: string
+  href: string
+}
+
+interface Props {
+  title?: string
+  description?: string
+  region: RegionPolicy
+  locale: Locale
+  fullWidth?: boolean
+  articleTitle?: string | null
+  canonicalPath?: string
+  alternates?: AlternateLink[]
+  translationAvailable?: boolean
+}
+
+const props = Astro.props
+---
+
+<BaseLayout {...props} article={true}>
+  <link slot="head" rel="stylesheet" href={articleCss} />
+  <slot />
+</BaseLayout>
