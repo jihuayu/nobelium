@@ -382,8 +382,8 @@
   white-space: nowrap;
 }
 
-.link-preview-title-owner { font-weight: 400; }
-.link-preview-title-name { font-weight: 650; }
+.notion-url-mention-hover-title-owner { font-weight: 400; }
+.notion-url-mention-hover-title-name { font-weight: 650; }
 
 .notion-tabs-block {
   display: flex;
@@ -791,156 +791,21 @@ a[data-link-preview-card='true']:hover .link-preview-cover {
   filter: none !important;
 }
 
-.link-preview-card {
-  display: block;
-  width: 100%;
-  max-width: min(var(--notion-url-hover-width), 100%);
-  margin: 1.15rem 0;
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  background-color: #fff;
-  border: 1px solid rgb(231 229 228 / 0.95);
-  border-radius: 1rem;
-  box-shadow:
-    0 10px 28px rgb(15 23 42 / 0.08),
-    0 1px 3px rgb(15 23 42 / 0.05);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+a[data-link-preview-card='true'].link-preview-card,
+div[data-link-preview-card='true'].link-preview-card {
+  container-type: inline-size;
+  container-name: link-preview-card;
 }
 
-.dark .link-preview-card {
-  background-color: rgb(28 25 23);
-  border-color: rgb(87 83 78 / 0.9);
-  box-shadow:
-    0 10px 28px rgb(0 0 0 / 0.34),
-    0 1px 3px rgb(0 0 0 / 0.22);
-}
+@container link-preview-card (max-width: 379px) {
+  .link-preview-card[data-has-image='true'] .link-preview-card-media {
+    display: none;
+  }
 
-.link-preview-card:hover {
-  border-color: rgb(214 211 209 / 0.98);
-  box-shadow:
-    0 14px 32px rgb(15 23 42 / 0.12),
-    0 2px 8px rgb(15 23 42 / 0.06);
-}
-
-.dark .link-preview-card:hover {
-  border-color: rgb(120 113 108 / 0.92);
-}
-
-.link-preview-card-media {
-  position: relative;
-  display: block;
-  aspect-ratio: 1.91 / 1;
-  background-color: rgb(245 245 244);
-  overflow: hidden;
-}
-
-.dark .link-preview-card-media {
-  background-color: rgb(41 37 36);
-}
-
-.link-preview-card[data-preview-kind='github-repo'] .link-preview-card-media {
-  aspect-ratio: 2 / 1;
-}
-
-.link-preview-cover {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-}
-
-.link-preview-card[data-preview-kind='github-repo'] .link-preview-cover {
-  object-fit: contain;
-  object-position: center top;
-  background-color: #fff;
-}
-
-.link-preview-card-body {
-  display: block;
-  padding: 1rem 1.25rem 1.05rem;
-}
-
-.link-preview-card-title {
-  display: block;
-  min-width: 0;
-  font-size: 0.98rem;
-  line-height: 1.35;
-  font-weight: 650;
-  color: #1f2328;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dark .link-preview-card-title {
-  color: rgb(245 245 244);
-}
-
-.link-preview-card-description {
-  display: -webkit-box;
-  margin-top: 0.35rem;
-  font-size: 0.84rem;
-  line-height: 1.45;
-  color: #656d76;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.dark .link-preview-card-description {
-  color: rgb(168 162 158);
-}
-
-.link-preview-card-footer {
-  margin-top: 0.7rem;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-width: 0;
-  color: #656d76;
-  font-size: 0.75rem;
-  line-height: 1.2;
-}
-
-.dark .link-preview-card-footer {
-  color: rgb(168 162 158);
-}
-
-.link-preview-card-icon {
-  width: 0.9rem;
-  height: 0.9rem;
-  border-radius: 0.2rem;
-  overflow: hidden;
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.link-preview-card-icon img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
-}
-
-.link-preview-card-icon-fallback {
-  background-color: rgb(214 211 209);
-}
-
-.dark .link-preview-card-icon-fallback {
-  background-color: rgb(87 83 78);
-}
-
-.link-preview-card-provider {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  .link-preview-card[data-has-image='true'] .link-preview-card-main {
+    flex: 1 1 auto !important;
+    width: 100%;
+  }
 }
 
 .notion-asset-caption {

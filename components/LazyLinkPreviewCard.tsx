@@ -4,7 +4,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import cn from 'classnames'
-import { getLinkPreviewPresentation } from '@jihuayu/notion-type'
 import type { LinkPreviewCardProps, LinkPreviewData } from '@jihuayu/notion-react'
 import { normalizePreviewUrl } from '@/lib/link-preview/normalize'
 
@@ -22,30 +21,22 @@ function getHostname(url: string): string {
   }
 }
 
-function toOgProxyImageUrl(rawImageUrl: string, referer = '', options?: { format?: 'png' | 'jpeg' | 'webp', quality?: number }): string {
+function toOgProxyImageUrl(rawImageUrl: string, referer = ''): string {
   if (!rawImageUrl) return ''
   try {
     const parsed = new URL(rawImageUrl)
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return rawImageUrl
-    const proxyUrl = parsed.hostname === OG_PROXY_IMAGE_HOSTNAME && parsed.pathname === OG_PROXY_IMAGE_PATHNAME
-      ? parsed
-      : (() => {
-          const next = new URL(OG_PROXY_IMAGE_URL)
-          next.searchParams.set('url', parsed.toString())
-          if (referer) next.searchParams.set('referer', referer)
-          return next
-        })()
-    for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) proxyUrl.searchParams.delete(param)
-    if (options?.format) proxyUrl.searchParams.set('f', options.format)
-    if (typeof options?.quality === 'number') proxyUrl.searchParams.set('q', String(options.quality))
+    if (parsed.hostname === OG_PROXY_IMAGE_HOSTNAME && parsed.pathname === OG_PROXY_IMAGE_PATHNAME) {
+      for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) parsed.searchParams.delete(param)
+      return parsed.toString()
+    }
+    const proxyUrl = new URL(OG_PROXY_IMAGE_URL)
+    proxyUrl.searchParams.set('url', parsed.toString())
+    if (referer) proxyUrl.searchParams.set('referer', referer)
     return proxyUrl.toString()
   } catch {
     return rawImageUrl
   }
-}
-
-function toOgProxyPreviewImageUrl(rawImageUrl: string, referer = ''): string {
-  return toOgProxyImageUrl(rawImageUrl, referer, { format: 'png' })
 }
 
 function buildFallbackPreview(url: string): LinkPreviewData {
@@ -81,16 +72,6 @@ function loadPreview(url: string): Promise<LinkPreviewData | null> {
   return request
 }
 
-function renderPreviewTitle(prefix: string, name: string) {
-  if (!prefix) return name
-  return (
-    <>
-      <span className="link-preview-title-owner">{prefix}</span>
-      <span className="link-preview-title-name">{name}</span>
-    </>
-  )
-}
-
 export default function LazyLinkPreviewCard({ url, className, preview }: LinkPreviewCardProps) {
   const hostRef = useRef<HTMLAnchorElement | null>(null)
   const normalizedUrl = normalizePreviewUrl(url) || ''
@@ -109,14 +90,9 @@ export default function LazyLinkPreviewCard({ url, className, preview }: LinkPre
   }
 
   const displayUrl = resolvedPreview.url || normalizedUrl
-  const generatedImageUrl = displayUrl ? toOgProxyPreviewImageUrl(`${resolvedPreview.image || ''}`.trim(), displayUrl) : ''
-  const iconUrl = displayUrl ? toOgProxyPreviewImageUrl(`${resolvedPreview.icon || ''}`.trim(), displayUrl) : ''
-  const showImage = Boolean(generatedImageUrl && !imageFailed)
-  const presentation = getLinkPreviewPresentation(
-    displayUrl,
-    resolvedPreview.title || resolvedPreview.hostname || displayUrl,
-    resolvedPreview.hostname
-  )
+  const generatedImageUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.image || ''}`.trim(), displayUrl) : ''
+  const iconUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.icon || ''}`.trim(), displayUrl) : ''
+  const showImage = generatedImageUrl && !imageFailed
 
   useEffect(() => {
     if (preview || !normalizedUrl || !hostRef.current) return undefined
@@ -168,38 +144,51 @@ export default function LazyLinkPreviewCard({ url, className, preview }: LinkPre
       rel="noopener noreferrer"
       data-link-preview-card="true"
       data-has-image={showImage ? 'true' : 'false'}
-      data-preview-kind={presentation.previewKind}
-      className={cn('link-preview-card', className)}
-    >
-      {showImage && (
-        <span className="link-preview-card-media">
-          <img
-            src={generatedImageUrl}
-            alt=""
-            className="link-preview-cover"
-            loading="lazy"
-            onError={() => setImageFailed(true)}
-          />
-        </span>
+      className={cn(
+        'link-preview-card block my-4 h-[110px] rounded-md border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 transition-colors overflow-hidden bg-transparent opacity-100 hover:opacity-100',
+        className
       )}
-      <span className="link-preview-card-body">
-        <span className="link-preview-card-title">
-          {renderPreviewTitle(presentation.titlePrefix, presentation.titleName)}
-        </span>
-        {resolvedPreview.description && (
-          <span className="link-preview-card-description">{resolvedPreview.description}</span>
+      style={{ opacity: 1 }}
+    >
+      <div className="link-preview-card-inner flex h-full items-stretch">
+        <div className={cn('link-preview-card-main min-w-0 flex flex-col px-3 py-2', showImage ? 'basis-[65%] shrink-0' : 'flex-1')}>
+          <p className="text-base text-stone-900 dark:text-stone-100 font-medium truncate">
+            {resolvedPreview.title || resolvedPreview.hostname || displayUrl}
+          </p>
+          {resolvedPreview.description && (
+            <p
+              className="mt-0.5 text-stone-600 dark:text-stone-300 text-sm leading-5 overflow-hidden"
+              style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+            >
+              {resolvedPreview.description}
+            </p>
+          )}
+          <div className="mt-auto pt-1.5 flex items-center gap-2 text-stone-800 dark:text-stone-200 text-xs">
+            {iconUrl
+              ? (
+                <span className="relative h-4 w-4 rounded-sm flex-none overflow-hidden bg-transparent">
+                  <img src={iconUrl} alt="" className="h-4 w-4 rounded-sm bg-transparent object-contain" loading="lazy" />
+                </span>
+                )
+              : <span className="h-4 w-4 rounded-sm bg-stone-300 dark:bg-stone-700 flex-none" />}
+            <span className="truncate">{displayUrl}</span>
+          </div>
+        </div>
+        {showImage && (
+          <div className="link-preview-card-media basis-[35%] shrink-0 h-full">
+            <div className="relative h-full w-full overflow-hidden bg-stone-100 dark:bg-stone-800">
+              <img
+                src={generatedImageUrl}
+                alt=""
+                className="link-preview-cover pointer-events-none h-full w-full object-cover transition-opacity duration-200"
+                style={{ filter: 'none' }}
+                loading="lazy"
+                onError={() => setImageFailed(true)}
+              />
+            </div>
+          </div>
         )}
-        <span className="link-preview-card-footer">
-          {iconUrl
-            ? (
-              <span className="link-preview-card-icon">
-                <img src={iconUrl} alt="" loading="lazy" />
-              </span>
-            )
-            : <span className="link-preview-card-icon link-preview-card-icon-fallback" />}
-          <span className="link-preview-card-provider">{presentation.providerLabel}</span>
-        </span>
-      </span>
+      </div>
     </a>
   )
 }

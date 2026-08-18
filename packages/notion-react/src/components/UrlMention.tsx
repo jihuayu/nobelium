@@ -12,8 +12,8 @@ function renderPreviewTitle(prefix: string, name: string) {
   if (!prefix) return name
   return (
     <>
-      <span className="link-preview-title-owner">{prefix}</span>
-      <span className="link-preview-title-name">{name}</span>
+      <span className="notion-url-mention-hover-title-owner">{prefix}</span>
+      <span className="notion-url-mention-hover-title-name">{name}</span>
     </>
   )
 }

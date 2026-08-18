@@ -8,8 +8,8 @@ import { useFloatingHoverCard } from './useFloatingHoverCard'
 function renderPreviewTitle(prefix: string, name: string) {
   if (!prefix) return name
   return [
-    h('span', { class: 'link-preview-title-owner' }, prefix),
-    h('span', { class: 'link-preview-title-name' }, name)
+    h('span', { class: 'notion-url-mention-hover-title-owner' }, prefix),
+    h('span', { class: 'notion-url-mention-hover-title-name' }, name)
   ]
 }
 
