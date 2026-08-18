@@ -15,7 +15,20 @@ export interface BlogConfig {
   postsPerPage: number
   sortByDate: boolean
   showAbout: boolean
+  showMe: boolean
   showArchive: boolean
+  profile: {
+    greeting: string
+    name: string
+    tagline: string
+    quote: string
+    recentPostCount: number
+    showGuestbook: boolean
+    socials: Array<{
+      label: string
+      href: string
+    }>
+  }
   autoCollapsedNavBar: boolean
   ogImageGenerateURL: string
   socialLink: string

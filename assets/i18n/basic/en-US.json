@@ -1,9 +1,23 @@
 {
   "NAV": {
     "INDEX": "Blog",
+    "ME": "Me",
     "RSS": "RSS",
     "SEARCH": "Search",
     "ABOUT": "About"
+  },
+  "ME": {
+    "RECENT": "Recent writing",
+    "GUESTBOOK": "Leave a mark",
+    "POSTS": "posts",
+    "DAYS": "days",
+    "VIEW_ALL": "All posts",
+    "SEASON": {
+      "SPRING": "Spring greetings",
+      "SUMMER": "Midsummer peace",
+      "AUTUMN": "Early autumn greetings",
+      "WINTER": "Winter greetings"
+    }
   },
   "PAGINATION": {
     "PREV": "Prev",

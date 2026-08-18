@@ -1,9 +1,23 @@
 {
   "NAV": {
     "INDEX": "Blog",
+    "ME": "Yo",
     "RSS": "RSS",
     "SEARCH": "Buscar",
     "ABOUT": "Acerca de mí"
+  },
+  "ME": {
+    "RECENT": "Escritos recientes",
+    "GUESTBOOK": "Deja una marca",
+    "POSTS": "notas",
+    "DAYS": "días",
+    "VIEW_ALL": "Todas las notas",
+    "SEASON": {
+      "SPRING": "Saludos de primavera",
+      "SUMMER": "Saludos de verano",
+      "AUTUMN": "Saludos de otoño",
+      "WINTER": "Saludos de invierno"
+    }
   },
   "PAGINATION": {
     "PREV": "Anterior",

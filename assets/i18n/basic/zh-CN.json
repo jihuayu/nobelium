@@ -1,9 +1,23 @@
 {
   "NAV": {
     "INDEX": "博客",
+    "ME": "我",
     "RSS": "订阅",
     "SEARCH": "搜索",
     "ABOUT": "关于"
+  },
+  "ME": {
+    "RECENT": "近期写作",
+    "GUESTBOOK": "留个记号",
+    "POSTS": "篇",
+    "DAYS": "天",
+    "VIEW_ALL": "全部文章",
+    "SEASON": {
+      "SPRING": "春日问候",
+      "SUMMER": "夏日安好",
+      "AUTUMN": "秋日致意",
+      "WINTER": "冬日安好"
+    }
   },
   "PAGINATION": {
     "PREV": "上一页",

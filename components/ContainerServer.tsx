@@ -26,6 +26,7 @@ export default async function ContainerServer({ children, layout, fullWidth, tit
           siteTitle={config.title}
           siteDescription={config.description}
           path={config.path || '/'}
+          showMe={config.showMe}
           showAbout={config.showAbout}
           autoCollapsedNavBar={config.autoCollapsedNavBar}
           navLocale={locale.NAV}
