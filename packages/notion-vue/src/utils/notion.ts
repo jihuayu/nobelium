@@ -9,6 +9,7 @@ export {
   extractNotionPageIdFromUrl,
   getFileBlockName,
   getFileBlockUrl,
+  getLinkPreviewPresentation,
   getLinkToPageLabel,
   getPlainTextFromRichText,
   isInternalHref,

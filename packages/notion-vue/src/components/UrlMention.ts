@@ -1,8 +1,17 @@
 import { defineComponent, h, computed, Teleport } from 'vue'
 import cn from 'classnames'
+import { getLinkPreviewPresentation } from '@jihuayu/notion-type'
 import type { UrlMentionPreviewData, UrlMentionProps } from '../types'
 import { isInternalHref, toOgProxyImageUrl } from '../utils/notion'
 import { useFloatingHoverCard } from './useFloatingHoverCard'
+
+function renderPreviewTitle(prefix: string, name: string) {
+  if (!prefix) return name
+  return [
+    h('span', { class: 'link-preview-title-owner' }, prefix),
+    h('span', { class: 'link-preview-title-name' }, name)
+  ]
+}
 
 function renderUrlMentionIcon(href: string, iconUrl: string, isGithub: boolean) {
   const resolvedIconUrl = toOgProxyImageUrl(iconUrl, href)
@@ -69,16 +78,19 @@ export default defineComponent({
         viewportPadding: 12,
         gap: 10,
         initialOffset: 12,
-        fallbackWidth: 280,
-        fallbackHeight: 220,
-        targetWidth: 280,
-        minWidth: 120
+        fallbackWidth: 400,
+        fallbackHeight: 320,
+        targetWidth: 400,
+        minWidth: 240
       })
 
     return () => {
       const preview = resolvedPreview.value
+      const presentation = preview
+        ? getLinkPreviewPresentation(preview.href, preview.title || props.label, preview.provider)
+        : null
 
-      const floatingCard = isClient.value && open.value && preview
+      const floatingCard = isClient.value && open.value && preview && presentation
         ? h(Teleport, { to: 'body' }, [
             h('a', {
               ref: cardRef,
@@ -86,6 +98,7 @@ export default defineComponent({
               target: isInternalPreviewLink.value ? undefined : '_blank',
               rel: isInternalPreviewLink.value ? undefined : 'noopener noreferrer',
               class: 'notion-url-mention-hover-card',
+              'data-preview-kind': presentation.previewKind,
               style: floatingStyle.value,
               onMouseenter: openCard,
               onMouseleave: scheduleClose,
@@ -98,7 +111,9 @@ export default defineComponent({
                   ])
                 : null,
               h('span', { class: 'notion-url-mention-hover-body' }, [
-                h('span', { class: 'notion-url-mention-hover-title' }, preview.title || props.label),
+                h('span', { class: 'notion-url-mention-hover-title' },
+                  renderPreviewTitle(presentation.titlePrefix, presentation.titleName)
+                ),
                 preview.description
                   ? h('span', { class: 'notion-url-mention-hover-description' }, preview.description)
                   : null,
@@ -106,7 +121,7 @@ export default defineComponent({
                   h('span', { class: 'notion-url-mention-hover-provider-icon', 'aria-hidden': 'true' }, [
                     renderUrlMentionIcon(props.href, preview.icon || props.iconUrl || '', props.isGithub)
                   ]),
-                  h('span', { class: 'notion-url-mention-hover-provider' }, preview.provider)
+                  h('span', { class: 'notion-url-mention-hover-provider' }, presentation.providerLabel)
                 ])
               ])
             ])

@@ -195,6 +195,179 @@ export function isInternalHref(href: string | null | undefined): boolean {
   return value.startsWith('/')
 }
 
+const GITHUB_RESERVED_OWNERS = new Set([
+  'about',
+  'account',
+  'apps',
+  'auth',
+  'codespaces',
+  'collections',
+  'copilot',
+  'customer-stories',
+  'discussions',
+  'enterprise',
+  'events',
+  'explore',
+  'features',
+  'github-copilot',
+  'issues',
+  'login',
+  'logout',
+  'marketplace',
+  'new',
+  'notifications',
+  'orgs',
+  'organizations',
+  'pricing',
+  'pulls',
+  'readme',
+  'security',
+  'sessions',
+  'settings',
+  'signup',
+  'site',
+  'sponsors',
+  'stars',
+  'team',
+  'topics',
+  'watching'
+])
+
+const GITHUB_RESOURCE_LABELS: Record<string, string> = {
+  actions: 'actions',
+  blob: 'repo',
+  commit: 'commit',
+  commits: 'commit',
+  discussions: 'discussion',
+  issue: 'issue',
+  issues: 'issue',
+  projects: 'project',
+  pull: 'pull request',
+  pulls: 'pull request',
+  releases: 'release',
+  tree: 'repo',
+  wiki: 'wiki'
+}
+
+const GITHUB_REPO_OG_RESOURCES = new Set([
+  '',
+  'blob',
+  'branches',
+  'commit',
+  'commits',
+  'graphs',
+  'network',
+  'pulse',
+  'releases',
+  'security',
+  'tags',
+  'tree',
+  'wiki'
+])
+
+/**
+ * EN: Visual kind used by hover/bookmark preview cards.
+ * ZH: 悬浮预览与书签卡片使用的视觉类型。
+ */
+export type LinkPreviewKind = 'github-repo' | 'github' | 'default'
+
+/**
+ * EN: Presentation hints for rendering a URL preview card.
+ * ZH: 渲染链接预览卡片时的展示信息。
+ */
+export interface LinkPreviewPresentation {
+  previewKind: LinkPreviewKind
+  titlePrefix: string
+  titleName: string
+  providerLabel: string
+}
+
+function isGithubHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase()
+  return host === 'github.com' || host === 'www.github.com'
+}
+
+function getHostnameLabel(hostname: string): string {
+  return hostname.replace(/^www\./i, '').toLowerCase()
+}
+
+/**
+ * EN: Derive GitHub-aware title/provider presentation for preview cards.
+ * ZH: 为预览卡片推导 GitHub 风格的标题与来源展示。
+ */
+export function getLinkPreviewPresentation(
+  url: string,
+  title = '',
+  hostname = ''
+): LinkPreviewPresentation {
+  const parsed = parseUrl(url)
+  const hostLabel = getHostnameLabel(parsed?.hostname || hostname || '')
+  const fallbackTitle = `${title || hostLabel || url}`.trim()
+  const fallback: LinkPreviewPresentation = {
+    previewKind: 'default',
+    titlePrefix: '',
+    titleName: fallbackTitle,
+    providerLabel: hostLabel
+  }
+
+  if (!parsed || !isGithubHostname(parsed.hostname)) {
+    const slashIndex = fallbackTitle.indexOf('/')
+    if (slashIndex > 0 && slashIndex < fallbackTitle.length - 1 && !/\s/.test(fallbackTitle)) {
+      return {
+        ...fallback,
+        titlePrefix: fallbackTitle.slice(0, slashIndex + 1),
+        titleName: fallbackTitle.slice(slashIndex + 1)
+      }
+    }
+    return fallback
+  }
+
+  const segments = parsed.pathname.split('/').filter(Boolean).map(decodePathSegment)
+  const owner = segments[0] || ''
+  const repo = segments[1] || ''
+  const resource = `${segments[2] || ''}`.toLowerCase()
+  const ownerKey = owner.toLowerCase()
+  const isOwnerValid = Boolean(owner) && !GITHUB_RESERVED_OWNERS.has(ownerKey)
+  const isRepo = Boolean(
+    isOwnerValid
+    && repo
+    && repo !== 'followers'
+    && repo !== 'following'
+    && repo !== 'stars'
+  )
+
+  let resourceLabel = ''
+  if (isRepo) {
+    resourceLabel = GITHUB_RESOURCE_LABELS[resource] || 'repo'
+  } else if (owner) {
+    resourceLabel = 'profile'
+  }
+
+  const previewKind: LinkPreviewKind = isRepo && GITHUB_REPO_OG_RESOURCES.has(resource)
+    ? 'github-repo'
+    : 'github'
+
+  let titlePrefix = ''
+  let titleName = fallbackTitle
+  if (isRepo && previewKind === 'github-repo') {
+    titlePrefix = `${owner}/`
+    titleName = repo
+  } else {
+    const slashIndex = fallbackTitle.indexOf('/')
+    if (slashIndex > 0 && slashIndex < fallbackTitle.length - 1 && !/\s/.test(fallbackTitle)) {
+      titlePrefix = fallbackTitle.slice(0, slashIndex + 1)
+      titleName = fallbackTitle.slice(slashIndex + 1)
+    }
+  }
+
+  return {
+    previewKind,
+    titlePrefix,
+    titleName,
+    providerLabel: resourceLabel ? `github.com · ${resourceLabel}` : 'github.com'
+  }
+}
+
 function getBlockRichText(block: NotionBlock): NotionRichText[] {
   switch (block.type) {
     case 'heading_1':

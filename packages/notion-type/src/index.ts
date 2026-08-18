@@ -17,6 +17,7 @@ export {
   extractNotionPageIdFromUrl,
   getFileBlockName,
   getFileBlockUrl,
+  getLinkPreviewPresentation,
   getLinkToPageLabel,
   getPlainTextFromRichText,
   isInternalHref,
@@ -29,6 +30,10 @@ export {
   resolveEmbedIframeUrl,
   resolvePageHref,
   rewriteNotionPageHref
+} from './utils/notion'
+export type {
+  LinkPreviewKind,
+  LinkPreviewPresentation
 } from './utils/notion'
 export type {
   LinkPreviewData,

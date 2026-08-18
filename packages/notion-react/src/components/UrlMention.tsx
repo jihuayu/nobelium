@@ -3,9 +3,20 @@
 import cn from 'classnames'
 import { useMemo } from 'react'
 import { createPortal } from 'react-dom'
+import { getLinkPreviewPresentation } from '@jihuayu/notion-type'
 import type { UrlMentionPreviewData, UrlMentionProps } from '../types'
 import { isInternalHref, toOgProxyImageUrl } from '../utils/notion'
 import { useFloatingHoverCard } from './useFloatingHoverCard'
+
+function renderPreviewTitle(prefix: string, name: string) {
+  if (!prefix) return name
+  return (
+    <>
+      <span className="link-preview-title-owner">{prefix}</span>
+      <span className="link-preview-title-name">{name}</span>
+    </>
+  )
+}
 
 function renderUrlMentionIcon(href: string, iconUrl: string, isGithub: boolean) {
   const resolvedIconUrl = toOgProxyImageUrl(iconUrl, href)
@@ -74,13 +85,21 @@ export default function UrlMention({
       viewportPadding: 12,
       gap: 10,
       initialOffset: 12,
-      fallbackWidth: 280,
-      fallbackHeight: 220,
-      targetWidth: 280,
-      minWidth: 120
+      fallbackWidth: 400,
+      fallbackHeight: 320,
+      targetWidth: 400,
+      minWidth: 240
     })
 
-  const floatingCard = open && resolvedPreview
+  const presentation = resolvedPreview
+    ? getLinkPreviewPresentation(
+      resolvedPreview.href,
+      resolvedPreview.title || label,
+      resolvedPreview.provider
+    )
+    : null
+
+  const floatingCard = open && resolvedPreview && presentation
     ? createPortal(
       <a
         ref={cardRef}
@@ -88,6 +107,7 @@ export default function UrlMention({
         target={isInternalPreviewLink ? undefined : '_blank'}
         rel={isInternalPreviewLink ? undefined : 'noopener noreferrer'}
         className="notion-url-mention-hover-card"
+        data-preview-kind={presentation.previewKind}
         style={floatingStyle}
         onMouseEnter={openCard}
         onMouseLeave={scheduleClose}
@@ -100,7 +120,9 @@ export default function UrlMention({
           </span>
         )}
         <span className="notion-url-mention-hover-body">
-          <span className="notion-url-mention-hover-title">{resolvedPreview.title || label}</span>
+          <span className="notion-url-mention-hover-title">
+            {renderPreviewTitle(presentation.titlePrefix, presentation.titleName)}
+          </span>
           {resolvedPreview.description && (
             <span className="notion-url-mention-hover-description">{resolvedPreview.description}</span>
           )}
@@ -108,7 +130,7 @@ export default function UrlMention({
             <span className="notion-url-mention-hover-provider-icon" aria-hidden="true">
               {renderUrlMentionIcon(href, resolvedPreview.icon || iconUrl, isGithub)}
             </span>
-            <span className="notion-url-mention-hover-provider">{resolvedPreview.provider}</span>
+            <span className="notion-url-mention-hover-provider">{presentation.providerLabel}</span>
           </span>
         </span>
       </a>,
