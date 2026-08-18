@@ -157,7 +157,7 @@ function blockToMarkdown(document: NotionDocument, blockId: string): string {
   }
 }
 
-function documentToMarkdown(document: NotionDocument): string {
+export function documentToMarkdown(document: NotionDocument): string {
   return document.rootIds.map(blockId => blockToMarkdown(document, blockId)).filter(Boolean).join('\n\n')
 }
 

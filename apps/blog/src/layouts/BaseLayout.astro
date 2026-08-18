@@ -1,0 +1,115 @@
+---
+import '@/styles/globals.css'
+import { config } from '@/lib/server/config'
+import Header from '@blog/components/Header.astro'
+import Footer from '@blog/components/Footer.astro'
+import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+
+interface AlternateLink {
+  hreflang: string
+  href: string
+}
+
+interface Props {
+  title?: string
+  description?: string
+  region: RegionPolicy
+  locale: Locale
+  fullWidth?: boolean
+  articleTitle?: string | null
+  searchIndexUrl?: string
+  canonicalPath?: string
+  alternates?: AlternateLink[]
+  article?: boolean
+  translationAvailable?: boolean
+}
+
+const {
+  title,
+  description,
+  region,
+  locale,
+  fullWidth = false,
+  articleTitle = null,
+  searchIndexUrl,
+  canonicalPath,
+  alternates = [],
+  article = false,
+  translationAvailable = true
+} = Astro.props
+
+const pageTitle = title ? `${title} | ${config.title}` : config.title
+const lang = locale === 'en' ? 'en' : 'zh-CN'
+const site = (config.link || 'https://blog.jihuayu.com').replace(/\/$/, '')
+const canonicalHref = canonicalPath
+  ? new URL(canonicalPath, `${site}/`).toString()
+  : undefined
+const appearance = config.appearance || 'auto'
+---
+
+<!doctype html>
+<html lang={lang} data-region={region} data-locale={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    {description && <meta name="description" content={description} />}
+    {canonicalHref && <link rel="canonical" href={canonicalHref} />}
+    {alternates.map(item => (
+      <link rel="alternate" hreflang={item.hreflang} href={item.href} />
+    ))}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&family=Source+Serif+4:wght@600;700&display=swap"
+    />
+    <link rel="alternate" type="application/rss+xml" title={config.title} href={locale === 'en' ? '/en/feed' : '/feed'} />
+    {appearance === 'auto' ? (
+      <>
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0c0a09" media="(prefers-color-scheme: dark)" />
+      </>
+    ) : (
+      <meta name="theme-color" content={appearance === 'dark' ? '#0c0a09' : '#ffffff'} />
+    )}
+    <slot name="head" />
+    <script is:inline define:vars={{ appearance }}>
+      (() => {
+        const stored = localStorage.getItem('theme')
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        const fromConfig = appearance === 'dark' || (appearance === 'auto' && prefersDark)
+        const theme = stored === 'dark' || stored === 'light' ? stored : (fromConfig ? 'dark' : 'light')
+        document.documentElement.classList.toggle('dark', theme === 'dark')
+        document.documentElement.style.setProperty('--font-ibm-plex-sans', "'IBM Plex Sans'")
+        document.documentElement.style.setProperty('--font-source-serif-4', "'Source Serif 4'")
+        document.documentElement.style.setProperty('--font-noto-serif-sc', "'Songti SC', 'Noto Serif CJK SC', serif")
+      })()
+    </script>
+    {article && (
+      <>
+        <script src="/scripts/reading-progress.js" defer></script>
+        <script src="/scripts/code-copy.js" defer></script>
+        <script src="/scripts/toc.js" defer></script>
+        <script src="/scripts/lightbox.js" defer></script>
+        <script src="/scripts/mermaid.js" defer></script>
+        <script src="/scripts/link-preview.js" defer></script>
+      </>
+    )}
+  </head>
+  <body
+    class="min-h-screen bg-white text-stone-900 dark:bg-stone-950 dark:text-stone-100"
+    data-search-index={searchIndexUrl}
+  >
+    {article && <div id="reading-progress" class="reading-progress" aria-hidden="true"></div>}
+    <Header
+      locale={locale}
+      articleTitle={articleTitle}
+      translationAvailable={translationAvailable}
+    />
+    <main class="mx-auto w-full px-4 py-8">
+      <slot />
+    </main>
+    <Footer fullWidth={fullWidth} />
+  </body>
+</html>

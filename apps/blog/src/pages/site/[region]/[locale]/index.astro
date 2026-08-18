@@ -1,0 +1,44 @@
+---
+import BaseLayout from '@blog/layouts/BaseLayout.astro'
+import PostCard from '@blog/components/PostCard.astro'
+import { buildPublicPath, getAllVariants } from '@blog/lib/variants'
+import { filterGroupsForVariant, loadTranslationGroups } from '@blog/lib/policy-content'
+import { config } from '@/lib/server/config'
+import { siteOrigin } from '@blog/lib/urls'
+import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+
+export async function getStaticPaths() {
+  return getAllVariants().map(({ region, locale }) => ({ params: { region, locale } }))
+}
+
+const { region, locale } = Astro.params as { region: RegionPolicy, locale: Locale }
+const groups = filterGroupsForVariant(await loadTranslationGroups(false), region, locale)
+  .sort((a, b) => (b.translations[locale]?.date || 0) - (a.translations[locale]?.date || 0))
+const postsToShow = groups.slice(0, config.postsPerPage)
+const showNext = groups.length > config.postsPerPage
+const nextPageHref = buildPublicPath('/page/2', locale)
+const nextLabel = locale === 'en' ? 'Next →' : '下一页 →'
+const origin = siteOrigin()
+const homeZh = `${origin}/`
+const homeEn = `${origin}/en/`
+---
+
+<BaseLayout
+  region={region}
+  locale={locale}
+  canonicalPath={locale === 'en' ? '/en/' : '/'}
+  alternates={[
+    { hreflang: 'zh-CN', href: homeZh },
+    { hreflang: 'en', href: homeEn },
+    { hreflang: 'x-default', href: homeZh }
+  ]}
+>
+  <div class="mx-auto max-w-3xl">
+    {postsToShow.map(group => <PostCard group={group} locale={locale} />)}
+    {showNext && (
+      <p class="mt-8 text-center">
+        <a class="text-stone-600 underline dark:text-stone-300" href={nextPageHref}>{nextLabel}</a>
+      </p>
+    )}
+  </div>
+</BaseLayout>

@@ -19,6 +19,7 @@ function resetWebhookEnv() {
   delete process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN
   delete process.env.NOTION_WEBHOOK_TOKEN
   delete process.env.NOTION_WEBHOOK_SIGNATURE_SECRET
+  delete process.env.NOTION_DATA_SOURCE_ID
 }
 
 test('webhook route accepts events without auth when no auth env is configured', async () => {

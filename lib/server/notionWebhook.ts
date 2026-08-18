@@ -1,0 +1,325 @@
+import {
+  buildPagePathFromPage,
+  getPageParentDataSourceId,
+  isNotionVerificationRequest,
+  isValidNotionWebhookSignature,
+  normalizeNotionUuid,
+  parseNotionWebhookPayload,
+  resolveNotionWebhookEvent,
+  type NotionWebhookPayload,
+  type NotionWebhookResolution
+} from '@jihuayu/notion-data'
+import { config } from '@/lib/server/config'
+import { infoServerEvent, warnServerError, warnServerEvent } from '@/lib/server/logging'
+import { notionClient } from '@/lib/server/notionData'
+import { NOTION_WEBHOOK_REVALIDATE_PATHS, NOTION_WEBHOOK_REVALIDATE_TAGS } from '@/lib/server/cache'
+import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
+
+const PAGE_CONTENT_REVALIDATE_TAGS = ['notion-post-blocks', 'feed-post-blocks'] as const
+const PAGE_CONTENT_REVALIDATE_PATHS = ['/feed'] as const
+const PAGE_PROPERTIES_REVALIDATE_TAGS = ['sitemap', 'notion-posts', 'notion-feed-posts', 'notion-og-page', 'page-link-map'] as const
+
+export interface NotionWebhookHttpResult {
+  status: number
+  body: Record<string, unknown>
+}
+
+export interface NotionWebhookRefreshPlan {
+  result: NotionWebhookResolution
+  payloadSummary: Record<string, unknown>
+  tags: string[]
+  paths: string[]
+}
+
+export type AuthenticatedWebhookResult =
+  | { kind: 'http', status: number, body: Record<string, unknown> }
+  | { kind: 'refresh', plan: NotionWebhookRefreshPlan }
+
+function uniqueValues(values: Array<string | undefined>): string[] {
+  return Array.from(new Set(values.filter((value): value is string => !!value)))
+}
+
+function isTruthyEnvValue(value?: string): boolean {
+  const normalized = `${value || ''}`.trim().toLowerCase()
+  return ['1', 'true', 'yes', 'on'].includes(normalized)
+}
+
+export function shouldPrewarmWebhookPaths(): boolean {
+  return isTruthyEnvValue(process.env.NOTION_WEBHOOK_PREWARM)
+}
+
+function getWebhookParentDataSourceId(parent: { id?: string, type?: string, data_source_id?: string, database_id?: string }): string {
+  const parentType = `${parent.type || ''}`.trim()
+  if (parent.data_source_id) return normalizeNotionUuid(parent.data_source_id)
+  if (['data_source', 'data_source_id'].includes(parentType)) return normalizeNotionUuid(parent.id)
+  return ''
+}
+
+function getWebhookParentDatabaseId(parent: { id?: string, type?: string, data_source_id?: string, database_id?: string }): string {
+  const parentType = `${parent.type || ''}`.trim()
+  if (parent.database_id) return normalizeNotionUuid(parent.database_id)
+  if (['database', 'database_id'].includes(parentType)) return normalizeNotionUuid(parent.id)
+  return ''
+}
+
+export function summarizeWebhookPayload(payload: NotionWebhookPayload): Record<string, unknown> {
+  const parent = payload.data?.parent && typeof payload.data.parent === 'object'
+    ? payload.data.parent as { id?: string, type?: string, data_source_id?: string, database_id?: string }
+    : {}
+  const updatedProperties = Array.isArray(payload.data?.updated_properties)
+    ? payload.data.updated_properties.map(item => `${item || ''}`.trim()).filter(Boolean)
+    : []
+  const updatedBlocks = Array.isArray(payload.data?.updated_blocks)
+    ? payload.data.updated_blocks
+      .map(item => {
+        if (!item || typeof item !== 'object') return null
+        const block = item as { id?: string, type?: string }
+        return {
+          id: normalizeNotionUuid(block.id),
+          type: `${block.type || ''}`.trim()
+        }
+      })
+      .filter((item): item is { id: string, type: string } => !!item)
+    : []
+
+  return {
+    eventId: `${payload.id || ''}`.trim(),
+    eventType: `${payload.type || ''}`.trim(),
+    entityId: normalizeNotionUuid(payload.entity?.id),
+    entityType: `${payload.entity?.type || ''}`.trim(),
+    attemptNumber: typeof payload.attempt_number === 'number' ? payload.attempt_number : null,
+    apiVersion: `${payload.api_version || ''}`.trim(),
+    parentId: normalizeNotionUuid(parent.id),
+    parentType: `${parent.type || ''}`.trim(),
+    parentDataSourceId: getWebhookParentDataSourceId(parent),
+    parentDatabaseId: getWebhookParentDatabaseId(parent),
+    updatedProperties,
+    updatedPropertyCount: updatedProperties.length,
+    updatedBlocks,
+    updatedBlockCount: updatedBlocks.length
+  }
+}
+
+function getConfiguredVerificationToken(): string {
+  return (
+    process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN?.trim() ||
+    process.env.NOTION_WEBHOOK_TOKEN?.trim() ||
+    ''
+  )
+}
+
+function getConfiguredSignatureSecret(configuredVerificationToken: string): string {
+  return process.env.NOTION_WEBHOOK_SIGNATURE_SECRET?.trim() || configuredVerificationToken
+}
+
+function getConfiguredDataSourceId(): string {
+  return normalizeNotionUuid(process.env.NOTION_DATA_SOURCE_ID)
+}
+
+export function buildRevalidationTargets(result: NotionWebhookResolution): { tags: string[], paths: string[] } {
+  const homePath = buildInternalSlugHref(config.path || '', '')
+  const pagePath = result.resolvedPagePath || ''
+  const pageFallbackPath = pagePath || '/[slug]'
+
+  if (result.eventType === 'page.content_updated') {
+    return {
+      tags: [...PAGE_CONTENT_REVALIDATE_TAGS],
+      paths: uniqueValues([pageFallbackPath, ...PAGE_CONTENT_REVALIDATE_PATHS])
+    }
+  }
+
+  if (result.eventType === 'page.properties_updated') {
+    return {
+      tags: [...PAGE_PROPERTIES_REVALIDATE_TAGS],
+      paths: uniqueValues([homePath, pagePath, ...NOTION_WEBHOOK_REVALIDATE_PATHS])
+    }
+  }
+
+  switch (result.action) {
+    case 'home':
+      return {
+        tags: [...PAGE_PROPERTIES_REVALIDATE_TAGS],
+        paths: uniqueValues([homePath, ...NOTION_WEBHOOK_REVALIDATE_PATHS])
+      }
+    case 'page':
+      return { tags: [], paths: uniqueValues([pagePath]) }
+    case 'home-and-page':
+      return {
+        tags: [...PAGE_PROPERTIES_REVALIDATE_TAGS],
+        paths: uniqueValues([homePath, pagePath, ...NOTION_WEBHOOK_REVALIDATE_PATHS])
+      }
+    case 'schema':
+      return {
+        tags: [...NOTION_WEBHOOK_REVALIDATE_TAGS],
+        paths: uniqueValues([homePath, ...NOTION_WEBHOOK_REVALIDATE_PATHS])
+      }
+    default:
+      return { tags: [], paths: [] }
+  }
+}
+
+async function resolvePageParentDataSourceId(pageId: string): Promise<string> {
+  try {
+    const page = await notionClient.retrievePage(pageId)
+    const parentDataSourceId = getPageParentDataSourceId(page)
+    infoServerEvent('notion-webhook', 'Resolved page parent data source id', {
+      pageId,
+      parentDataSourceId: normalizeNotionUuid(parentDataSourceId)
+    })
+    return parentDataSourceId
+  } catch (error) {
+    warnServerError('notion-webhook:resolve-parent', error, { pageId })
+    return ''
+  }
+}
+
+async function resolvePagePath(pageId: string): Promise<string> {
+  try {
+    const page = await notionClient.retrievePage(pageId)
+    const resolvedPagePath = buildPagePathFromPage(page, config.path || '')
+    infoServerEvent('notion-webhook', 'Resolved page path from Notion API', {
+      pageId,
+      resolvedPagePath
+    })
+    return resolvedPagePath
+  } catch (error) {
+    warnServerError('notion-webhook:resolve-path', error, { pageId })
+    return ''
+  }
+}
+
+export function getPrewarmablePaths(paths: string[]): string[] {
+  return Array.from(new Set(
+    paths.filter(path => (
+      typeof path === 'string' &&
+      path.startsWith('/') &&
+      !path.startsWith('/api/') &&
+      !path.includes('[') &&
+      !path.includes(']')
+    ))
+  ))
+}
+
+export async function authenticateAndResolveWebhook(
+  rawBody: string,
+  signatureHeader: string | null
+): Promise<AuthenticatedWebhookResult> {
+  let payload: NotionWebhookPayload = {}
+  try {
+    payload = parseNotionWebhookPayload(rawBody)
+  } catch {
+    return { kind: 'http', status: 400, body: { error: 'Invalid JSON body' } }
+  }
+
+  const configuredVerificationToken = getConfiguredVerificationToken()
+  const configuredSignatureSecret = getConfiguredSignatureSecret(configuredVerificationToken)
+  const configuredDataSourceId = getConfiguredDataSourceId()
+  const requestVerificationToken = `${payload.verification_token || ''}`.trim()
+  const payloadSummary = summarizeWebhookPayload(payload)
+
+  infoServerEvent('notion-webhook', 'Received webhook request', {
+    ...payloadSummary,
+    rawBodyBytes: rawBody.length,
+    hasConfiguredVerificationToken: !!configuredVerificationToken,
+    hasConfiguredSignatureSecret: !!configuredSignatureSecret,
+    configuredDataSourceId,
+    hasRequestVerificationToken: !!requestVerificationToken,
+    hasSignatureHeader: !!signatureHeader,
+    prewarmEnabled: shouldPrewarmWebhookPaths()
+  })
+
+  if (isNotionVerificationRequest(payload)) {
+    if (configuredVerificationToken && requestVerificationToken && configuredVerificationToken !== requestVerificationToken) {
+      warnServerEvent('notion-webhook', 'Rejected verification request with mismatched verification token', {
+        verification: true,
+        hasConfiguredVerificationToken: true,
+        hasRequestVerificationToken: true
+      })
+      return { kind: 'http', status: 401, body: { error: 'Invalid verification token' } }
+    }
+
+    if (!configuredVerificationToken && requestVerificationToken) {
+      infoServerEvent('notion-webhook', 'Received verification token from Notion. Save it to NOTION_WEBHOOK_VERIFICATION_TOKEN before enabling production refreshes.', {
+        verificationTokenLength: requestVerificationToken.length,
+        verificationTokenSuffix: requestVerificationToken.slice(-6)
+      })
+    }
+
+    return {
+      kind: 'http',
+      status: 200,
+      body: {
+        ok: true,
+        verification: true,
+        verificationTokenReceived: !!requestVerificationToken
+      }
+    }
+  }
+
+  if (configuredSignatureSecret) {
+    if (!signatureHeader) {
+      warnServerEvent('notion-webhook', 'Rejected webhook request due to missing signature header', {
+        verification: false,
+        eventType: payload.type || '',
+        hasConfiguredSignatureSecret: true,
+        hasSignatureHeader: false
+      })
+      return { kind: 'http', status: 401, body: { error: 'Missing signature' } }
+    }
+
+    if (!isValidNotionWebhookSignature(rawBody, configuredSignatureSecret, signatureHeader)) {
+      warnServerEvent('notion-webhook', 'Rejected webhook request due to invalid signature', {
+        verification: false,
+        eventType: payload.type || '',
+        hasConfiguredSignatureSecret: true,
+        hasSignatureHeader: true
+      })
+      return { kind: 'http', status: 401, body: { error: 'Invalid signature' } }
+    }
+  }
+
+  const result = await resolveNotionWebhookEvent(payload, {
+    configuredDataSourceId,
+    basePath: config.path || '',
+    resolvePageParentDataSourceId,
+    resolvePagePath
+  })
+
+  infoServerEvent('notion-webhook', 'Resolved webhook event', {
+    ...payloadSummary,
+    configuredDataSourceId,
+    accepted: result.accepted,
+    shouldRefresh: result.shouldRefresh,
+    reason: result.reason,
+    action: result.action,
+    resolvedPagePath: result.resolvedPagePath
+  })
+
+  if (!result.accepted) {
+    return { kind: 'http', status: 400, body: { error: result.reason } }
+  }
+
+  if (!result.shouldRefresh) {
+    return {
+      kind: 'http',
+      status: 200,
+      body: {
+        ok: true,
+        ignored: true,
+        reason: result.reason,
+        eventType: result.eventType,
+        entityId: result.entityId
+      }
+    }
+  }
+
+  return {
+    kind: 'refresh',
+    plan: {
+      result,
+      payloadSummary,
+      ...buildRevalidationTargets(result)
+    }
+  }
+}
+

@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "incremental": false,
+    "paths": {
+      "@jihuayu/notion-type": ["../notion-type/dist/index.d.ts"]
+    },
+    "tsBuildInfoFile": "../../.cache/tsconfig.notion-render-core.build.tsbuildinfo"
+  },
+  "exclude": [
+    "tests",
+    "**/*.test.ts"
+  ]
+}

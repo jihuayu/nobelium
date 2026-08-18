@@ -1,0 +1,31 @@
+{
+  "name": "@jihuayu/notion-astro",
+  "version": "0.1.0",
+  "description": "Framework-free HTML renderer for Notion render models",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "src"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "build": "tsup && tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@jihuayu/notion-render-core": "workspace:*",
+    "@jihuayu/notion-type": "workspace:*",
+    "katex": "^0.18.1"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1"
+  }
+}

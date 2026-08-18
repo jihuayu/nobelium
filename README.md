@@ -101,7 +101,7 @@ POST /api/notion/webhook
 
 后续正式事件不会再把 `verification_token` 放进请求体；Notion 会改为在每次请求里附带 `X-Notion-Signature`。当前实现默认使用 `NOTION_WEBHOOK_VERIFICATION_TOKEN` 来校验这个签名；如果你有兼容性需求，也可以显式设置 `NOTION_WEBHOOK_SIGNATURE_SECRET` 进行覆盖。
 
-之后，当 Notion 页面内容、页面属性、Data Source 内容或结构发生变化时，站点会自动刷新相关缓存，包括首页、文章页、分页页、标签页、RSS、Sitemap 和 Tags API。
+之后，当 Notion 页面内容、页面属性、Data Source 内容或结构发生变化时，站点会自动刷新相关缓存（`revalidateTag` / `revalidatePath`），包括首页、文章页、分页页、标签页、RSS、Sitemap 和 Tags API。不会触发 Vercel 重新编译。
 
 ## 常用脚本
 

@@ -10,7 +10,8 @@
       "@jihuayu/notion-type/normalize": ["../notion-type/dist/normalize.d.ts"],
       "@jihuayu/notion-type/output-adapters": ["../notion-type/dist/output-adapters.d.ts"],
       "@jihuayu/notion-type/og": ["../notion-type/dist/og.d.ts"],
-      "@jihuayu/notion-type/rss": ["../notion-type/dist/rss.d.ts"]
+      "@jihuayu/notion-type/rss": ["../notion-type/dist/rss.d.ts"],
+      "@jihuayu/notion-render-core": ["../notion-render-core/dist/index.d.ts"]
     },
     "tsBuildInfoFile": "../../.cache/tsconfig.notion-react.build.tsbuildinfo"
   },

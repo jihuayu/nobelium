@@ -1,0 +1,42 @@
+{
+  "name": "@jihuayu/somnium-blog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prebuild": "pnpm exec tsx --tsconfig ./scripts/tsconfig.json ./scripts/generate-policy-manifest.ts",
+    "dev": "pnpm exec tsx --tsconfig ./scripts/tsconfig.json ./scripts/generate-policy-manifest.ts && astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/react": "^4.4.2",
+    "@astrojs/vercel": "^9.0.4",
+    "@jihuayu/notion-astro": "workspace:*",
+    "@jihuayu/notion-data": "workspace:*",
+    "@jihuayu/notion-react": "workspace:*",
+    "@jihuayu/notion-render-core": "workspace:*",
+    "@jihuayu/notion-type": "workspace:*",
+    "@jihuayu/site-policy": "workspace:*",
+    "@jihuayu/somnium-comments": "workspace:*",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/functions": "^3.4.3",
+    "@vercel/speed-insights": "^2.0.0",
+    "astro": "^5.16.15",
+    "classnames": "^2.5.1",
+    "dayjs": "^1.11.21",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "sharp": "^0.35.3",
+    "shiki": "^4.4.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.11",
+    "typescript": "^6.0.3"
+  }
+}
