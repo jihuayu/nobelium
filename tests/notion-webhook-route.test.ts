@@ -19,6 +19,9 @@ function resetWebhookEnv() {
   delete process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN
   delete process.env.NOTION_WEBHOOK_TOKEN
   delete process.env.NOTION_WEBHOOK_SIGNATURE_SECRET
+  delete process.env.NOTION_DATA_SOURCE_ID
+  delete process.env.VERCEL_DEPLOY_HOOK_URL
+  delete process.env.NOTION_WEBHOOK_SKIP_ISR
 }
 
 test('webhook route accepts events without auth when no auth env is configured', async () => {
@@ -130,4 +133,42 @@ test('webhook route invalidates collection caches for page.properties_updated ev
   assert.deepEqual(payload.tags, ['sitemap', 'notion-posts', 'notion-feed-posts', 'notion-og-page', 'page-link-map'])
   assert.deepEqual(payload.paths, ['/', '/search', '/feed', '/sitemap.xml', '/api/tags', '/[slug]', '/page/[page]', '/tag/[tag]'])
   assert.deepEqual(payload.scheduledPrewarmPaths, [])
+})
+
+test('webhook route triggers a Deploy Hook for refreshable events', async () => {
+  resetWebhookEnv()
+  process.env.VERCEL_DEPLOY_HOOK_URL = 'https://api.vercel.com/v1/integrations/deploy/hook-test'
+  process.env.NOTION_WEBHOOK_SKIP_ISR = '1'
+  process.env.VERCEL_DEPLOY_HOOK_DEBOUNCE_MS = '0'
+
+  const originalFetch = globalThis.fetch
+  const calls: string[] = []
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    calls.push(`${input}`)
+    return new Response(JSON.stringify({ job: { id: 'dep_1' } }), { status: 200 })
+  }) as typeof fetch
+
+  try {
+    const { resetDeployHookDebounceForTests } = await import('../lib/server/deployHook')
+    resetDeployHookDebounceForTests()
+    const response = await POST(createWebhookRequest({
+      type: 'page.content_updated',
+      entity: { id: '' },
+      data: {
+        parent: {
+          id: '15b104cd-477e-80c2-84a0-c32cefba5cff',
+          type: 'data_source_id'
+        }
+      }
+    }))
+    const payload = await response.json()
+    assert.equal(response.status, 200)
+    assert.equal(payload.rebuilt, true)
+    assert.equal(payload.revalidated, false)
+    assert.equal(payload.deploy?.triggered, true)
+    assert.equal(calls.some(url => url.includes('integrations/deploy')), true)
+  } finally {
+    globalThis.fetch = originalFetch
+    resetWebhookEnv()
+  }
 })

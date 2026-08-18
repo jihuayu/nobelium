@@ -1,6 +1,6 @@
 # Somnium 博客优化设计：Astro 静态化 + Edge Policy Router
 
-> 状态：设计评审中
+> 状态：M1–M4 实施中（M5 独立 Vercel 项目与切流未做）
 > 分支：`cursor/astro-policy-router-design-b768`
 
 ## 1. 背景与目标
