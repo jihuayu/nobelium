@@ -38,16 +38,6 @@ NOTION_PAGE_ID=your_home_page_id
 NOTION_API_VERSION=2025-09-03
 # 可选：Notion Webhook 首次验证后保存下来的 token
 NOTION_WEBHOOK_VERIFICATION_TOKEN=your_notion_webhook_verification_token
-# M4：Notion 内容变更后触发 Vercel Deploy Hook（指向未来的 Astro 项目）
-VERCEL_DEPLOY_HOOK_URL=https://api.vercel.com/v1/integrations/deploy/prj_xxx/xxx
-# 可选：合并短时间多次编辑（毫秒，默认 60000）
-# VERCEL_DEPLOY_HOOK_DEBOUNCE_MS=60000
-# 可选：列出部署用于去抖（跳过已在构建中的部署）
-# VERCEL_TOKEN=...
-# VERCEL_PROJECT_ID=...
-# 可选：Deploy Hook 失败告警
-# NOTION_WEBHOOK_ALERT_URL=https://hooks.slack.com/services/...
-# 切到全静态后可关闭 Next ISR：NOTION_WEBHOOK_SKIP_ISR=1
 ```
 
 ### 3. 配置站点信息
@@ -80,9 +70,9 @@ pnpm start
 1. 将仓库导入 Vercel
 2. 在 Vercel 项目中配置环境变量（与本地一致）
 3. 执行部署
-4. 后续在 Notion 更新内容后，由 Webhook 触发刷新；配置 `VERCEL_DEPLOY_HOOK_URL` 后会去抖触发全量 Deploy Hook。未配置 Webhook 时，现网 Next 页面仍可能按 ISR 在约 5 分钟内刷新
+4. 后续在 Notion 更新内容后，页面会按 ISR 策略增量更新；未配置 Webhook 时，内容相关页面默认会在 5 分钟内完成下一轮刷新
 
-## Notion Webhook 与 Deploy Hook
+## Notion Webhook 刷新缓存
 
 项目提供了一个 Notion Webhook 入口：
 
@@ -111,11 +101,7 @@ POST /api/notion/webhook
 
 后续正式事件不会再把 `verification_token` 放进请求体；Notion 会改为在每次请求里附带 `X-Notion-Signature`。当前实现默认使用 `NOTION_WEBHOOK_VERIFICATION_TOKEN` 来校验这个签名；如果你有兼容性需求，也可以显式设置 `NOTION_WEBHOOK_SIGNATURE_SECRET` 进行覆盖。
 
-之后，当 Notion 页面内容、页面属性、Data Source 内容或结构发生变化时：
-
-1. 若配置了 `VERCEL_DEPLOY_HOOK_URL`，会在去抖窗口内合并多次编辑，触发一次 Vercel Deploy Hook（全量 `astro build` / 静态重建）。短时间已有构建在进行则会跳过。Hook 失败会打日志，并在配置了 `NOTION_WEBHOOK_ALERT_URL` 时告警。
-2. 在域名切到 Astro 项目之前，默认仍会对现网 Next 做 ISR `revalidate`（设 `NOTION_WEBHOOK_SKIP_ISR=1` 可关闭）。
-3. 手动 `/api/cache/revalidate` 已下线（410），由 Deploy Hook 取代。
+之后，当 Notion 页面内容、页面属性、Data Source 内容或结构发生变化时，站点会自动刷新相关缓存（`revalidateTag` / `revalidatePath`），包括首页、文章页、分页页、标签页、RSS、Sitemap 和 Tags API。不会触发 Vercel 重新编译。
 
 ## 常用脚本
 

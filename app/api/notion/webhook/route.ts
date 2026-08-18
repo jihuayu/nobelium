@@ -4,9 +4,7 @@ import { infoServerEvent, warnServerError } from '@/lib/server/logging'
 import {
   authenticateAndResolveWebhook,
   getPrewarmablePaths,
-  shouldPrewarmWebhookPaths,
-  shouldSkipNextIsr,
-  triggerStaticRebuild
+  shouldPrewarmWebhookPaths
 } from '@/lib/server/notionWebhook'
 
 export const dynamic = 'force-dynamic'
@@ -89,28 +87,18 @@ export async function POST(req: NextRequest) {
   }
 
   const { result, payloadSummary, tags, paths } = handled.plan
-  const deploy = await triggerStaticRebuild({
-    ...payloadSummary,
-    action: result.action,
-    reason: result.reason,
-    resolvedPagePath: result.resolvedPagePath
-  })
+  applyRevalidation(tags, paths)
 
-  const keepIsr = !shouldSkipNextIsr() || !deploy.configured
-  if (keepIsr) applyRevalidation(tags, paths)
-
-  const prewarmEnabled = keepIsr && shouldPrewarmWebhookPaths()
+  const prewarmEnabled = shouldPrewarmWebhookPaths()
   const scheduledPrewarmPaths = prewarmEnabled ? getPrewarmablePaths(paths) : []
 
-  infoServerEvent('notion-webhook', 'Resolved webhook refresh targets', {
+  infoServerEvent('notion-webhook', 'Resolved webhook revalidation targets', {
     ...payloadSummary,
     action: result.action,
     reason: result.reason,
     resolvedPagePath: result.resolvedPagePath,
-    tags: keepIsr ? tags : [],
-    paths: keepIsr ? paths : [],
-    deploy,
-    keepIsr,
+    tags,
+    paths,
     prewarmEnabled,
     scheduledPrewarmPaths
   })
@@ -126,15 +114,13 @@ export async function POST(req: NextRequest) {
 
   return jsonNoStore({
     ok: true,
-    revalidated: keepIsr,
-    rebuilt: deploy.triggered,
-    deploy,
+    revalidated: true,
     reason: result.reason,
     eventType: result.eventType,
     entityId: result.entityId,
     action: result.action,
-    tags: keepIsr ? tags : [],
-    paths: keepIsr ? paths : [],
+    tags,
+    paths,
     scheduledPrewarmPaths,
     timestamp: new Date().toISOString()
   })

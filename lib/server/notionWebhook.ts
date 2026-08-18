@@ -14,7 +14,6 @@ import { infoServerEvent, warnServerError, warnServerEvent } from '@/lib/server/
 import { notionClient } from '@/lib/server/notionData'
 import { NOTION_WEBHOOK_REVALIDATE_PATHS, NOTION_WEBHOOK_REVALIDATE_TAGS } from '@/lib/server/cache'
 import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
-import { alertWebhookFailure, isDeployHookConfigured, triggerDebouncedDeployHook } from '@/lib/server/deployHook'
 
 const PAGE_CONTENT_REVALIDATE_TAGS = ['notion-post-blocks', 'feed-post-blocks'] as const
 const PAGE_CONTENT_REVALIDATE_PATHS = ['/feed'] as const
@@ -47,10 +46,6 @@ function isTruthyEnvValue(value?: string): boolean {
 
 export function shouldPrewarmWebhookPaths(): boolean {
   return isTruthyEnvValue(process.env.NOTION_WEBHOOK_PREWARM)
-}
-
-export function shouldSkipNextIsr(): boolean {
-  return isTruthyEnvValue(process.env.NOTION_WEBHOOK_SKIP_ISR)
 }
 
 function getWebhookParentDataSourceId(parent: { id?: string, type?: string, data_source_id?: string, database_id?: string }): string {
@@ -230,8 +225,7 @@ export async function authenticateAndResolveWebhook(
     configuredDataSourceId,
     hasRequestVerificationToken: !!requestVerificationToken,
     hasSignatureHeader: !!signatureHeader,
-    prewarmEnabled: shouldPrewarmWebhookPaths(),
-    deployHookConfigured: isDeployHookConfigured()
+    prewarmEnabled: shouldPrewarmWebhookPaths()
   })
 
   if (isNotionVerificationRequest(payload)) {
@@ -329,13 +323,3 @@ export async function authenticateAndResolveWebhook(
   }
 }
 
-export async function triggerStaticRebuild(context: Record<string, unknown>) {
-  const deploy = await triggerDebouncedDeployHook(context)
-  if (deploy.configured && !deploy.ok) {
-    await alertWebhookFailure('Failed to trigger Vercel Deploy Hook', {
-      ...context,
-      ...deploy
-    })
-  }
-  return deploy
-}

@@ -338,8 +338,8 @@ CSS 策略：拆分 `base / typography / header / article(notion/code/table/medi
 
 | 现有路由 | 去向 |
 |---|---|
-| `/api/notion/webhook` | **保留**（Vercel Function）：验证/事件分类逻辑不变，`revalidatePath/Tag` 替换为触发 Vercel Deploy Hook |
-| `/api/cache/revalidate` | 移除（全静态后无意义，Deploy Hook 取代） |
+| `/api/notion/webhook` | **保留**（Vercel Function）：验证/事件分类逻辑不变，命中后 `revalidateTag` / `revalidatePath` 刷新 ISR 缓存，**不**触发 Vercel 重新编译 |
+| `/api/cache/revalidate` | 保留（手动清缓存）；与 webhook 共用同一套 tag/path |
 | `/api/search`、`/api/tags` | 移除，改构建期静态索引 |
 | `/api/og/notion` | 保留 Vercel Function（可选二期改构建期生成 OG 图） |
 | `/api/link-preview`（+image） | 一期保留 Function；若构建期预取覆盖率足够则二期移除 |
@@ -348,18 +348,20 @@ CSS 策略：拆分 `base / typography / header / article(notion/code/table/medi
 
 ## 12. 内容更新链路
 
-放弃固定 5 分钟 ISR：
+放弃用重新编译来刷新内容。现网更新链路：
 
 ```text
 Notion 修改
-   │ webhook（现有验证/分类逻辑保留）
+   │ webhook（验证/分类逻辑保留）
    ▼
-/api/notion/webhook ──判断需要更新──► Vercel Deploy Hook ──► astro build（全量）──► CDN
+/api/notion/webhook ──判断需要更新──► revalidateTag / revalidatePath（ISR 缓存）
 ```
 
-- 普通访问 CDN 永远 HIT，没有 PRERENDER 长尾；
-- 全量 build 在当前文章量级可接受；未来嫌慢再评估 Astro ISR（`@astrojs/vercel` 支持 on-demand invalidation），不在本期范围；
-- webhook 需做去抖（短时间多次编辑合并为一次部署）与失败告警。
+- 普通访问仍命中 CDN；过期或 webhook 失效后由 ISR 重新生成该路径
+- **不**调用 Vercel Deploy Hook，避免整站重新编译
+- 未配置 Webhook 时，内容页仍可按 `revalidate = 300` 自然过期
+
+全静态 Astro 切流（M5）之后如果 CDN 上不再有 ISR 缓存，再另议刷新方式。
 
 ## 13. 里程碑与验收标准
 
@@ -368,7 +370,7 @@ Notion 修改
 | **M1 骨架** | `apps/blog` 脚手架；抽取 `notion-render-core`（`notion-react` 改为依赖它，现有测试/Storybook 不回归）；复用 React renderer（无 hydration）跑通首页/分页/Tag/文章页 | 本地 build 出全部页面；`notion-react` 单测全绿 |
 | **M2 静态化** | `notion-astro` 渲染器逐块替换；交互组件原生 JS 化；评论 island；构建期搜索索引；feed/sitemap/Agent MD 静态化 | 文章页除评论外 0 React；Lighthouse 本地对照 |
 | **M3 Policy Router** | `site-policy` 包 + Notion 属性读取（`lang`/`visibility`/`comments`）+ 变体矩阵构建 + manifest + middleware + hreflang | 四个变体行为符合 §5–§9 全部规则；`?__region` 模拟验证 |
-| **M4 更新链路** | webhook → Deploy Hook；下线废弃 API | Notion 编辑后自动重建生效 |
+| **M4 更新链路** | webhook 失效 ISR 缓存；保留手动 `/api/cache/revalidate` | Notion 编辑后相关页面缓存失效，无需重新编译 |
 | **M5 切换** | 独立 Vercel Preview 项目与现网 A/B 对照（Speed Insights / Lighthouse / 关键 URL diff） | FCP/LCP/JS 传输量达标、无 URL 回归后切 `blog.jihuayu.com` |
 
 回滚策略：域名切换前 Next 产线保持可部署；切换后发现问题直接把域名指回原项目。
