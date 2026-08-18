@@ -35,7 +35,7 @@ export default function UrlMention({
   label,
   iconUrl = '',
   preview,
-  isGithub,
+  isGithub = false,
   variant = 'mention',
   children
 }: UrlMentionProps) {
@@ -58,20 +58,19 @@ export default function UrlMention({
       minWidth: 240
     })
 
-  const presentation = resolvedPreview
-    ? getLinkPreviewPresentation(
-      resolvedPreview.href,
-      resolvedPreview.title || label,
-      resolvedPreview.provider
-    )
-    : null
+  const presentation = getLinkPreviewPresentation(
+    resolvedPreview?.href || href,
+    resolvedPreview?.title || label,
+    resolvedPreview?.provider || ''
+  )
+  const adapterId = isGithub ? 'github' : presentation.adapterId
 
-  const floatingCard = open && resolvedPreview && presentation
+  const floatingCard = open && resolvedPreview
     ? createPortal(
       <UrlMentionHoverCard
         preview={resolvedPreview}
         presentation={presentation}
-        providerIcon={renderUrlMentionIcon(href, resolvedPreview.icon || iconUrl, isGithub)}
+        providerIcon={renderUrlMentionIcon(href, resolvedPreview.icon || iconUrl, adapterId)}
         cardRef={cardRef}
         floatingStyle={floatingStyle}
         onOpen={openCard}
@@ -106,7 +105,7 @@ export default function UrlMention({
           ) : (
             <>
               <span className="notion-url-mention-icon" aria-hidden="true">
-                {renderUrlMentionIcon(href, iconUrl, isGithub)}
+                {renderUrlMentionIcon(href, iconUrl, adapterId)}
               </span>
               <span className="notion-url-mention-label">{label}</span>
             </>

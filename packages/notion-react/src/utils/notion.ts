@@ -10,6 +10,7 @@ export {
   getFileBlockName,
   getFileBlockUrl,
   getLinkPreviewPresentation,
+  getUrlMentionLabel,
   getLinkToPageLabel,
   getPlainTextFromRichText,
   isInternalHref,

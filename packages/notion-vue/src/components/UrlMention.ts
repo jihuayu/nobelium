@@ -34,7 +34,7 @@ export default defineComponent({
     label: { type: String, required: true },
     iconUrl: { type: String, default: '' },
     preview: { type: Object as () => UrlMentionPreviewData | null, default: null },
-    isGithub: { type: Boolean, required: true },
+    isGithub: { type: Boolean, default: false },
     variant: { type: String as () => 'mention' | 'inline', default: 'mention' }
   },
   setup(props, { slots }) {
@@ -59,16 +59,19 @@ export default defineComponent({
 
     return () => {
       const preview = resolvedPreview.value
-      const presentation = preview
-        ? getLinkPreviewPresentation(preview.href, preview.title || props.label, preview.provider)
-        : null
+      const presentation = getLinkPreviewPresentation(
+        preview?.href || props.href,
+        preview?.title || props.label,
+        preview?.provider || ''
+      )
+      const adapterId = props.isGithub ? 'github' : presentation.adapterId
 
-      const floatingCard = isClient.value && open.value && preview && presentation
+      const floatingCard = isClient.value && open.value && preview
         ? h(Teleport, { to: 'body' }, [
             renderUrlMentionHoverCard({
               preview,
               presentation,
-              providerIcon: renderUrlMentionIcon(props.href, preview.icon || props.iconUrl || '', props.isGithub),
+              providerIcon: renderUrlMentionIcon(props.href, preview.icon || props.iconUrl || '', adapterId),
               cardRef,
               floatingStyle: floatingStyle.value,
               onOpen: openCard,
@@ -99,7 +102,7 @@ export default defineComponent({
             ? [slots.default ? slots.default() : props.label]
             : [
                 h('span', { class: 'notion-url-mention-icon', 'aria-hidden': 'true' }, [
-                  renderUrlMentionIcon(props.href, props.iconUrl || '', props.isGithub)
+                  renderUrlMentionIcon(props.href, props.iconUrl || '', adapterId)
                 ]),
                 h('span', { class: 'notion-url-mention-label' }, props.label)
               ]

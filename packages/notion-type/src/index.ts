@@ -17,7 +17,6 @@ export {
   extractNotionPageIdFromUrl,
   getFileBlockName,
   getFileBlockUrl,
-  getLinkPreviewPresentation,
   getLinkToPageLabel,
   getPlainTextFromRichText,
   isInternalHref,
@@ -31,10 +30,22 @@ export {
   resolvePageHref,
   rewriteNotionPageHref
 } from './utils/notion'
+export {
+  buildLinkPreviewPresentationContext,
+  createLinkPreviewPresentationResolver,
+  defaultLinkPreviewPresentationAdapter,
+  getLinkPreviewPresentation,
+  getUrlMentionLabel,
+  githubLinkPreviewPresentationAdapter,
+  linkPreviewPresentationAdapters
+} from './link-preview-presentation'
 export type {
   LinkPreviewKind,
-  LinkPreviewPresentation
-} from './utils/notion'
+  LinkPreviewPresentation,
+  LinkPreviewPresentationAdapter,
+  LinkPreviewPresentationContext,
+  LinkPreviewPresentationResolver
+} from './link-preview-presentation'
 export type {
   LinkPreviewData,
   LinkPreviewMap,
