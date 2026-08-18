@@ -22,7 +22,7 @@ function normalizeSingleSelect(value: unknown): string | null {
   return null
 }
 
-export default function filterPublishedPosts({ posts, includePages }: {
+export function filterPublishedPosts({ posts, includePages }: {
   posts: PostData[]
   includePages: boolean
 }): PostData[] {
@@ -44,3 +44,5 @@ export default function filterPublishedPosts({ posts, includePages }: {
       )
     })
 }
+
+export default filterPublishedPosts

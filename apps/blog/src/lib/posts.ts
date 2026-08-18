@@ -1,7 +1,22 @@
 import { createNotionClientFromEnv, queryAllDataSourceEntries } from '@jihuayu/notion-data'
 import { mapNotionPageToPost, normalizeNotionUuid } from '@/lib/notion/postAdapter'
-import filterPublishedPosts, { type PostData } from '@/lib/notion/filterPublishedPosts'
+import * as publishedPosts from '@/lib/notion/filterPublishedPosts'
+import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import { config as BLOG } from '@/lib/server/config'
+
+function asFilter(value: unknown): ((args: { posts: PostData[], includePages: boolean }) => PostData[]) | null {
+  if (typeof value === 'function') return value as (args: { posts: PostData[], includePages: boolean }) => PostData[]
+  if (value && typeof value === 'object' && 'default' in value) return asFilter((value as { default: unknown }).default)
+  return null
+}
+
+function filterPublishedPosts(args: { posts: PostData[], includePages: boolean }): PostData[] {
+  const filter = asFilter(publishedPosts.filterPublishedPosts) || asFilter(publishedPosts)
+  if (!filter) {
+    throw new TypeError('filterPublishedPosts export is not callable')
+  }
+  return filter(args)
+}
 
 let cachedPosts: PostData[] | null = null
 let cachedPages: PostData[] | null = null
