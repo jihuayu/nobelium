@@ -23,4 +23,4 @@ const nextConfig = attachPolicyRouterMiddleware(config)
 writeFileSync(configPath, `${JSON.stringify(nextConfig, null, '\t')}\n`)
 
 console.log(`[vercel] promoted ${from} -> ${to}`)
-console.log('[vercel] attached policy router Edge Middleware before filesystem')
+console.log('[vercel] attached policy router dest after filesystem; /site is fetch-only')

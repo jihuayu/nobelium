@@ -10,6 +10,7 @@ import {
 import { variantBasePath } from './variants'
 
 export const INTERNAL_VARIANT_HEADER = 'x-somnium-internal'
+export const INTERNAL_VARIANT_QUERY = '__somnium'
 
 const BYPASS_PREFIXES = ['/_astro/', '/scripts/', '/fonts/', '/api/', '/.well-known/']
 const BYPASS_EXACT = new Set(['/favicon.ico', '/favicon.png', '/robots.txt', '/manifest.webmanifest'])
@@ -30,6 +31,22 @@ export function withResponseHeaders(
     status,
     statusText: status === 404 ? 'Not Found' : response.statusText,
     headers: nextHeaders
+  })
+}
+
+export function copyStaticResponse(
+  origin: Response,
+  extraHeaders: Record<string, string>,
+  status = origin.status
+): Response {
+  const headers = new Headers()
+  const contentType = origin.headers.get('content-type')
+  if (contentType) headers.set('content-type', contentType)
+  for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value)
+  return new Response(origin.body, {
+    status,
+    statusText: status === 404 ? 'Not Found' : origin.statusText,
+    headers
   })
 }
 

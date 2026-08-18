@@ -1,11 +1,20 @@
 /**
- * Astro's Vercel adapter only dests Edge Middleware at on-demand routes
- * (API handlers). Policy routing lives on prerendered pages under /site/,
- * so the catch-all must run before `handle: filesystem` or `/` 404s.
+ * Astro only dests `_middleware` at on-demand API routes. Public pages are
+ * prerendered under /site/{region}/{locale} and must be fetched by that
+ * function. `rewrite()` is a no-op here: Vercel treats `_middleware` as the
+ * terminal handler, so an empty rewrite Response becomes a blank 200.
+ *
+ * Route order:
+ * 1. 404 `/site/**` unless the internal fetch header is present
+ * 2. filesystem (serves `/site/**` to that fetch, plus assets)
+ * 3. dest `_middleware` for public HTML/JSON/XML routes
  */
 
-export const POLICY_ROUTER_MIDDLEWARE_SRC =
-  '^/(?!_astro/|_server-islands|_image|api/|scripts/|fonts/|\\.well-known/|favicon\\.ico$|favicon\\.png$|robots\\.txt$|manifest\\.webmanifest$).*$'
+export const INTERNAL_VARIANT_HEADER = 'x-somnium-internal'
+export const INTERNAL_VARIANT_QUERY = '__somnium'
+
+export const POLICY_ROUTER_DEST_SRC =
+  '^/(?!site/|_astro/|_server-islands|_image|api/|scripts/|fonts/|\\.well-known/|favicon\\.ico$|favicon\\.png$|robots\\.txt$|manifest\\.webmanifest$).*$'
 
 const VARIANT_404_DESTS = [
   ['mainland', 'zh-CN'],
@@ -14,12 +23,27 @@ const VARIANT_404_DESTS = [
   ['global', 'en']
 ]
 
-function isPolicyMiddlewareRoute(route) {
+function isPolicyDestRoute(route) {
+  return Boolean(
+    route
+    && route.dest === '_middleware'
+    && route.src === POLICY_ROUTER_DEST_SRC
+  )
+}
+
+function isLegacyMiddlewareRoute(route) {
   return Boolean(
     route
     && route.middlewarePath === '_middleware'
     && route.continue === true
-    && route.src === POLICY_ROUTER_MIDDLEWARE_SRC
+  )
+}
+
+function isDirectSiteBlockRoute(route) {
+  return Boolean(
+    route
+    && route.src === '^/site(?:/.*)?$'
+    && route.status === 404
   )
 }
 
@@ -34,33 +58,41 @@ function isVariantNotFoundRoute(route) {
   )
 }
 
-export function matchesPolicyRouterMiddleware(pathname) {
-  return new RegExp(POLICY_ROUTER_MIDDLEWARE_SRC).test(pathname)
+export function matchesPolicyRouterDest(pathname) {
+  return new RegExp(POLICY_ROUTER_DEST_SRC).test(pathname)
 }
 
 export function attachPolicyRouterMiddleware(config) {
   const routes = Array.isArray(config?.routes) ? config.routes.filter(route => (
-    !isPolicyMiddlewareRoute(route) && !isVariantNotFoundRoute(route)
+    !isPolicyDestRoute(route)
+    && !isLegacyMiddlewareRoute(route)
+    && !isDirectSiteBlockRoute(route)
+    && !isVariantNotFoundRoute(route)
   )) : []
 
-  const middlewareRoute = {
-    src: POLICY_ROUTER_MIDDLEWARE_SRC,
-    middlewarePath: '_middleware',
-    continue: true
+  const blockDirectSite = {
+    src: '^/site(?:/.*)?$',
+    missing: [
+      { type: 'header', key: INTERNAL_VARIANT_HEADER },
+      { type: 'query', key: INTERNAL_VARIANT_QUERY, value: '1' }
+    ],
+    status: 404
   }
-
-  const filesystemIndex = routes.findIndex(route => route && route.handle === 'filesystem')
-  const insertAt = filesystemIndex === -1 ? 0 : filesystemIndex
-  routes.splice(insertAt, 0, middlewareRoute)
-
-  const afterFilesystem = routes.findIndex(route => route && route.handle === 'filesystem')
-  const fallbackAt = afterFilesystem === -1 ? routes.length : afterFilesystem + 1
+  const destRoute = {
+    src: POLICY_ROUTER_DEST_SRC,
+    dest: '_middleware'
+  }
   const fallbacks = VARIANT_404_DESTS.map(([region, locale]) => ({
     src: `^/site/${region}/${locale}/.+$`,
     dest: `/site/${region}/${locale}/404`,
     status: 404
   }))
-  routes.splice(fallbackAt, 0, ...fallbacks)
+
+  routes.unshift(blockDirectSite)
+
+  const filesystemIndex = routes.findIndex(route => route && route.handle === 'filesystem')
+  const insertAt = filesystemIndex === -1 ? routes.length : filesystemIndex + 1
+  routes.splice(insertAt, 0, ...fallbacks, destRoute)
 
   return {
     ...config,

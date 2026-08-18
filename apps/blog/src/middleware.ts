@@ -1,8 +1,9 @@
 import { defineMiddleware } from 'astro:middleware'
-import { next as vercelNext, rewrite as vercelRewrite } from '@vercel/functions/middleware'
 import { policyManifest } from './generated/policy-manifest'
 import {
   INTERNAL_VARIANT_HEADER,
+  INTERNAL_VARIANT_QUERY,
+  copyStaticResponse,
   decidePolicyRouter,
   withResponseHeaders
 } from './lib/policy-router'
@@ -22,13 +23,48 @@ function withInternalHeader(headers: Headers): Headers {
   return nextHeaders
 }
 
+async function fetchPrerenderedPage(target: URL, request: Request): Promise<Response> {
+  const headers = new Headers()
+  headers.set(INTERNAL_VARIANT_HEADER, '1')
+  const accept = request.headers.get('accept')
+  if (accept) headers.set('accept', accept)
+
+  const candidates: URL[] = [target]
+  if (!/\.(html|xml|json|txt|md)$/i.test(target.pathname)) {
+    const withIndex = new URL(target)
+    withIndex.pathname = `${target.pathname.replace(/\/$/, '')}/index.html`
+    candidates.push(withIndex)
+  }
+
+  for (const candidate of candidates) {
+    candidate.searchParams.set(INTERNAL_VARIANT_QUERY, '1')
+  }
+
+  let last: Response = new Response(null, { status: 404 })
+  for (const url of candidates) {
+    last = await fetch(url, { method: 'GET', headers, redirect: 'manual' })
+    if (last.status >= 300 && last.status < 400) {
+      const location = last.headers.get('location')
+      if (location) {
+        const redirected = new URL(location, url)
+        if (redirected.origin === url.origin) {
+          redirected.searchParams.set(INTERNAL_VARIANT_QUERY, '1')
+          last = await fetch(redirected, { method: 'GET', headers, redirect: 'manual' })
+        }
+      }
+    }
+    if (last.ok) return last
+  }
+  return last
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   if (context.isPrerendered) {
     return next()
   }
 
   const url = new URL(context.request.url)
-  const onVercelEdge = isVercelEdge(context.locals)
+  const onVercelEdge = isVercelEdge(context.locals) || Boolean(process.env.VERCEL)
   const decision = decidePolicyRouter({
     pathname: url.pathname,
     search: url.search,
@@ -37,16 +73,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
     cookie: context.request.headers.get('cookie'),
     acceptLanguage: context.request.headers.get('accept-language'),
     accept: context.request.headers.get('accept'),
-    allowInternalVariants: !onVercelEdge && context.request.headers.get(INTERNAL_VARIANT_HEADER) === '1',
+    allowInternalVariants: context.request.headers.get(INTERNAL_VARIANT_HEADER) === '1',
     manifest: policyManifest
   })
 
   switch (decision.type) {
     case 'bypass':
-      if (onVercelEdge && !url.pathname.startsWith('/api/')) {
-        return vercelNext()
-      }
-      return next()
     case 'allow-internal':
       return next()
     case 'block-direct-variant':
@@ -57,11 +89,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
     case 'rewrite': {
       const target = new URL(decision.pathname, url)
-      target.search = url.search
       if (onVercelEdge) {
-        return vercelRewrite(target, decision.status
-          ? { status: decision.status, headers: decision.headers }
-          : { headers: decision.headers })
+        let origin = await fetchPrerenderedPage(target, context.request)
+        if (!origin.ok && decision.status !== 404) {
+          origin = await fetchPrerenderedPage(new URL(decision.notFoundPathname, url), context.request)
+          return copyStaticResponse(origin, decision.headers, 404)
+        }
+        return copyStaticResponse(origin, decision.headers, decision.status ?? origin.status)
       }
 
       const rewritten = await context.rewrite(new Request(target, {
@@ -70,7 +104,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
       }))
       if (rewritten.status === 404 && decision.status !== 404) {
         const notFoundTarget = new URL(decision.notFoundPathname, url)
-        notFoundTarget.search = url.search
         const notFound = await context.rewrite(new Request(notFoundTarget, {
           method: context.request.method,
           headers: withInternalHeader(context.request.headers)

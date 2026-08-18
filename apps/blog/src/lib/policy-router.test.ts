@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { PolicyManifest } from '@jihuayu/site-policy'
 import {
+  copyStaticResponse,
   decidePolicyRouter,
   shouldBypassPolicyRouter
 } from './policy-router'
@@ -144,4 +145,15 @@ test('policy router maps markdown Accept onto variant markdown routes', () => {
   if (article.type === 'rewrite') {
     assert.equal(article.pathname, '/site/global/zh-CN/md/public-post')
   }
+})
+
+test('copyStaticResponse keeps HTML content-type and policy headers', async () => {
+  const origin = new Response('<html></html>', {
+    headers: { 'content-type': 'text/html; charset=utf-8', 'content-encoding': 'gzip' }
+  })
+  const response = copyStaticResponse(origin, { 'x-somnium-region': 'global' }, 200)
+  assert.equal(response.headers.get('content-type'), 'text/html; charset=utf-8')
+  assert.equal(response.headers.get('content-encoding'), null)
+  assert.equal(response.headers.get('x-somnium-region'), 'global')
+  assert.equal(await response.text(), '<html></html>')
 })
