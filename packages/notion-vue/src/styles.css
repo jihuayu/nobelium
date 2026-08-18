@@ -30,18 +30,19 @@
   --notion-red_background: rgb(253, 235, 236);
   --notion-url-hover-width: 360px;
   --notion-url-hover-viewport-padding: 24px;
-  --notion-url-hover-radius: 1rem;
+  --notion-url-hover-radius: 0.5rem;
   --notion-url-hover-border: rgb(231 229 228 / 0.95);
   --notion-url-hover-bg: rgb(255 255 255);
   --notion-url-hover-shadow:
-    0 10px 28px rgb(15 23 42 / 0.10),
-    0 2px 8px rgb(15 23 42 / 0.05);
+    0 4px 14px rgb(28 25 23 / 0.08),
+    0 1px 3px rgb(28 25 23 / 0.06);
   --notion-url-hover-cover-bg: rgb(245 245 244);
-  --notion-url-hover-body-px: 1.25rem;
-  --notion-url-hover-body-pt: 1rem;
-  --notion-url-hover-body-pb: 1.05rem;
-  --notion-url-hover-title: #1f2328;
-  --notion-url-hover-description: #656d76;
+  --notion-url-hover-body-px: 0.75rem;
+  --notion-url-hover-body-pt: 0.65rem;
+  --notion-url-hover-body-pb: 0.7rem;
+  --notion-url-hover-title: var(--notion-text-color);
+  --notion-url-hover-description: rgb(68 64 60);
+  --notion-url-hover-muted: rgb(87 83 78);
 }
 
 :root.dark {
@@ -66,11 +67,12 @@
   --notion-url-hover-border: rgb(87 83 78 / 0.9);
   --notion-url-hover-bg: rgb(28 25 23);
   --notion-url-hover-shadow:
-    0 10px 28px rgb(0 0 0 / 0.38),
-    0 2px 8px rgb(0 0 0 / 0.24);
+    0 4px 14px rgb(0 0 0 / 0.34),
+    0 1px 3px rgb(0 0 0 / 0.22);
   --notion-url-hover-cover-bg: rgb(41 37 36);
   --notion-url-hover-title: rgb(245 245 244);
-  --notion-url-hover-description: rgb(168 162 158);
+  --notion-url-hover-description: rgb(214 211 209);
+  --notion-url-hover-muted: rgb(168 162 158);
 }
 
 .notion {
@@ -317,7 +319,7 @@
 .notion-url-mention-hover-card[data-preview-kind='github-repo'] .notion-url-mention-hover-cover img {
   object-fit: contain;
   object-position: center top;
-  background-color: #fff;
+  background-color: var(--notion-url-hover-cover-bg);
 }
 
 .notion-url-mention-hover-body {
@@ -328,9 +330,9 @@
 .notion-url-mention-hover-title {
   display: block;
   min-width: 0;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
   line-height: 1.35;
-  font-weight: 650;
+  font-weight: 600;
   color: var(--notion-url-hover-title);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -339,8 +341,8 @@
 
 .notion-url-mention-hover-description {
   display: -webkit-box;
-  margin: 0.35rem 0 0;
-  font-size: 0.8rem;
+  margin: 0.28rem 0 0;
+  font-size: 0.75rem;
   line-height: 1.45;
   color: var(--notion-url-hover-description);
   -webkit-line-clamp: 3;
@@ -349,11 +351,11 @@
 }
 
 .notion-url-mention-hover-footer {
-  margin-top: 0.7rem;
+  margin-top: 0.5rem;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  color: var(--notion-url-hover-description);
+  gap: 0.4rem;
+  color: var(--notion-url-hover-muted);
   font-size: 0.75rem;
   line-height: 1.2;
 }
@@ -361,7 +363,7 @@
 .notion-url-mention-hover-provider-icon {
   width: 0.9rem;
   height: 0.9rem;
-  border-radius: 0.2rem;
+  border-radius: 0.25rem;
   overflow: hidden;
   display: inline-flex;
   align-items: center;
@@ -384,7 +386,7 @@
 }
 
 .notion-url-mention-hover-title-owner { font-weight: 400; }
-.notion-url-mention-hover-title-name { font-weight: 650; }
+.notion-url-mention-hover-title-name { font-weight: 600; }
 
 .notion-tabs-block {
   display: flex;
