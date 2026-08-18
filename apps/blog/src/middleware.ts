@@ -1,24 +1,25 @@
 import { defineMiddleware } from 'astro:middleware'
-import {
-  canAccessArticle,
-  lookupManifestArticle,
-  lookupManifestRoute,
-  resolveLocale,
-  resolveRegionPolicy,
-  type RegionPolicy
-} from '@jihuayu/site-policy'
+import { next as vercelNext, rewrite as vercelRewrite } from '@vercel/functions/middleware'
 import { policyManifest } from './generated/policy-manifest'
-import { variantBasePath } from './lib/variants'
-import { shouldBypassPolicyRouter, withResponseHeaders } from './lib/policy-router'
+import {
+  INTERNAL_VARIANT_HEADER,
+  decidePolicyRouter,
+  withResponseHeaders
+} from './lib/policy-router'
 
-function normalizePathname(pathname: string): string {
-  if (!pathname || pathname === '/') return '/'
-  return pathname.endsWith('/') && pathname.length > 1 ? pathname.slice(0, -1) : pathname
+function isVercelEdge(locals: unknown): boolean {
+  return Boolean(
+    locals
+    && typeof locals === 'object'
+    && 'vercel' in locals
+    && (locals as { vercel?: { edge?: unknown } }).vercel?.edge
+  )
 }
 
-function wantsMarkdown(request: Request): boolean {
-  const accept = request.headers.get('accept') || ''
-  return accept.includes('text/markdown')
+function withInternalHeader(headers: Headers): Headers {
+  const nextHeaders = new Headers(headers)
+  nextHeaders.set(INTERNAL_VARIANT_HEADER, '1')
+  return nextHeaders
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -27,64 +28,60 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   const url = new URL(context.request.url)
-  const pathname = url.pathname
-
-  if (shouldBypassPolicyRouter(pathname)) {
-    return next()
-  }
-
-  if (pathname.startsWith('/site/')) {
-    return new Response(null, { status: 404 })
-  }
-
-  const country = context.request.headers.get('x-vercel-ip-country')
-    || url.searchParams.get('__country')
-    || undefined
-  const regionParam = url.searchParams.get('__region')
-  const region: RegionPolicy = regionParam === 'mainland' || regionParam === 'global'
-    ? regionParam
-    : resolveRegionPolicy(country)
-
-  const { locale, restPath } = resolveLocale({
-    pathname,
+  const onVercelEdge = isVercelEdge(context.locals)
+  const decision = decidePolicyRouter({
+    pathname: url.pathname,
+    search: url.search,
+    country: context.request.headers.get('x-vercel-ip-country') || url.searchParams.get('__country'),
+    regionParam: url.searchParams.get('__region'),
     cookie: context.request.headers.get('cookie'),
-    acceptLanguage: context.request.headers.get('accept-language')
+    acceptLanguage: context.request.headers.get('accept-language'),
+    accept: context.request.headers.get('accept'),
+    allowInternalVariants: !onVercelEdge && context.request.headers.get(INTERNAL_VARIANT_HEADER) === '1',
+    manifest: policyManifest
   })
 
-  if ((pathname === '/' || pathname === '') && locale === 'en') {
-    const target = new URL('/en/', url)
-    target.search = url.search
-    return context.redirect(target, 307)
-  }
+  switch (decision.type) {
+    case 'bypass':
+      if (onVercelEdge && !url.pathname.startsWith('/api/')) {
+        return vercelNext()
+      }
+      return next()
+    case 'allow-internal':
+      return next()
+    case 'block-direct-variant':
+      return new Response(null, { status: 404 })
+    case 'redirect': {
+      const target = new URL(decision.location, url)
+      return context.redirect(target, decision.status)
+    }
+    case 'rewrite': {
+      const target = new URL(decision.pathname, url)
+      target.search = url.search
+      if (onVercelEdge) {
+        return vercelRewrite(target, decision.status
+          ? { status: decision.status, headers: decision.headers }
+          : { headers: decision.headers })
+      }
 
-  const policyHeaders = {
-    'x-somnium-region': region,
-    'x-somnium-locale': locale
-  }
-
-  const routeKey = normalizePathname(pathname)
-  const route = lookupManifestRoute(policyManifest, routeKey)
-  if (route) {
-    const article = lookupManifestArticle(policyManifest, route.key)
-    const missingLocale = article && locale === 'en' && !article.translations.en
-    const blocked = article && !canAccessArticle(article, region)
-    if (blocked || missingLocale) {
-      const notFound = await context.rewrite(new URL(`${variantBasePath(region, locale)}/404`, url))
-      return withResponseHeaders(notFound, policyHeaders, 404)
+      const rewritten = await context.rewrite(new Request(target, {
+        method: context.request.method,
+        headers: withInternalHeader(context.request.headers)
+      }))
+      if (rewritten.status === 404 && decision.status !== 404) {
+        const notFoundTarget = new URL(decision.notFoundPathname, url)
+        notFoundTarget.search = url.search
+        const notFound = await context.rewrite(new Request(notFoundTarget, {
+          method: context.request.method,
+          headers: withInternalHeader(context.request.headers)
+        }))
+        return withResponseHeaders(notFound, decision.headers, 404)
+      }
+      return withResponseHeaders(rewritten, decision.headers, decision.status ?? rewritten.status)
+    }
+    default: {
+      const exhaustive: never = decision
+      throw new Error(`Unhandled policy router decision: ${JSON.stringify(exhaustive)}`)
     }
   }
-
-  let internalPath = restPath === '/' ? '' : restPath
-  if (wantsMarkdown(context.request)) {
-    internalPath = restPath === '/' ? '/markdown' : `/md${restPath}`
-  }
-
-  const rewriteTarget = `${variantBasePath(region, locale)}${internalPath || '/'}`
-  const response = await context.rewrite(new URL(rewriteTarget, url))
-  if (response.status === 404) {
-    const notFound = await context.rewrite(new URL(`${variantBasePath(region, locale)}/404`, url))
-    return withResponseHeaders(notFound, policyHeaders, 404)
-  }
-
-  return withResponseHeaders(response, policyHeaders)
 })
