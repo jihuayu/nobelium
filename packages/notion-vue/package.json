@@ -39,6 +39,7 @@
     "vue": "^3.3.0"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.8.0",
     "@jihuayu/notion-type": "workspace:*",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.21",
