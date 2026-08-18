@@ -18,6 +18,7 @@ export interface RawPostPolicyFields {
   date: number
   fullWidth: boolean
   formats: string[]
+  type?: string | null
   lang?: string | null
   visibility?: string | null
   comments?: string | null
@@ -32,6 +33,10 @@ function normalizeComments(raw: string | null | undefined): ArticleCommentsPolic
   if (value === 'disabled') return 'disabled'
   if (value === 'disabled-mainland') return 'disabled-mainland'
   return 'default'
+}
+
+function normalizePostType(raw: string | null | undefined): string {
+  return `${raw || ''}`.trim() === 'Page' ? 'Page' : 'Post'
 }
 
 function normalizePostLocale(raw: string | null | undefined): Locale {
@@ -68,7 +73,8 @@ export function groupPostsBySlug(posts: RawPostPolicyFields[]): TranslationGroup
         tags: entry.tags,
         date: entry.date,
         fullWidth: entry.fullWidth,
-        formats: entry.formats
+        formats: entry.formats,
+        type: normalizePostType(entry.type)
       }
     }
 

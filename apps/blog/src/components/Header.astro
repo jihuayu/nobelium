@@ -1,60 +1,88 @@
 ---
 import { config } from '@/lib/server/config'
+import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import { buildPublicPath, localePrefix } from '@blog/lib/variants'
+import { getBlogCopy } from '@blog/lib/blog-copy'
 import type { Locale } from '@jihuayu/site-policy'
 
 interface Props {
   locale: Locale
   articleTitle?: string | null
   translationAvailable?: boolean
+  fullWidth?: boolean
 }
 
-const { locale, articleTitle = null, translationAvailable = true } = Astro.props
-const prefix = localePrefix(locale)
-const nav = locale === 'en'
-  ? { index: 'Home', about: 'About', rss: 'RSS', search: 'Search' }
-  : { index: '首页', about: '关于', rss: 'RSS', search: '搜索' }
+const {
+  locale,
+  articleTitle = null,
+  translationAvailable = true,
+  fullWidth = false
+} = Astro.props
+const copy = getBlogCopy(locale)
+const homeHref = localePrefix(locale) || '/'
+const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
 const otherLabel = locale === 'en' ? '中文' : 'English'
+const navClass = 'text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 transition-colors duration-150 ease-out'
+const links = [
+  { name: copy.NAV.INDEX, href: homeHref, show: true, external: false },
+  { name: copy.NAV.ABOUT, href: buildPublicPath('/about', locale), show: config.showAbout, external: false },
+  { name: copy.NAV.RSS, href: buildPublicPath('/feed', locale), show: true, external: true },
+  { name: copy.NAV.SEARCH, href: buildPublicPath('/search', locale), show: true, external: false }
+]
 ---
 
-<header class="sticky top-0 z-40 border-b border-stone-200/80 bg-white/90 backdrop-blur dark:border-stone-800/80 dark:bg-stone-950/90">
-  <div class="mx-auto flex max-w-5xl flex-wrap items-end justify-between gap-4 px-4 py-4">
-    <div class="font-serif">
-      {articleTitle
-        ? <p class="text-lg font-semibold">{articleTitle}</p>
-        : null}
-      <p class="text-sm text-stone-500 dark:text-stone-400">
-        <a href={prefix || '/'} class="font-semibold text-stone-900 dark:text-stone-100">{config.title}</a>
-        <span class="ml-2">{config.description}</span>
-      </p>
-    </div>
-    <nav>
-      <ul class="flex gap-4 text-sm text-stone-500 dark:text-stone-400">
-        <li><a href={prefix || '/'}>{nav.index}</a></li>
-        {config.showAbout && <li><a href={`${prefix}/about`}>{nav.about}</a></li>}
-        <li><a href={buildPublicPath('/feed', locale)} target="_blank" rel="noopener noreferrer">{nav.rss}</a></li>
-        <li><a href={`${prefix}/search`}>{nav.search}</a></li>
-        <li>
-          <button
-            type="button"
-            id="locale-toggle"
-            class:list={['underline-offset-2 hover:underline', !translationAvailable && 'cursor-not-allowed opacity-40']}
-            data-locale={locale}
-            data-available={translationAvailable ? 'true' : 'false'}
-            disabled={!translationAvailable}
-            aria-disabled={!translationAvailable}
-          >
-            {otherLabel}
-          </button>
-        </li>
-      </ul>
-    </nav>
+<div class="observer-element h-4 md:h-12" id="header-sentinel"></div>
+<div
+  class={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 px-4 ${contentWidthClass}`}
+  id="sticky-nav"
+  data-full-width={fullWidth ? 'true' : 'false'}
+  data-use-sticky={config.autoCollapsedNavBar ? 'false' : 'true'}
+>
+  <svg viewBox="0 0 24 24" class="caret w-6 h-6 absolute inset-x-0 bottom-0 mx-auto pointer-events-none opacity-30 group-hover:opacity-100 transition duration-100">
+    <path d="M12 10.828l-4.95 4.95-1.414-1.414L12 8l6.364 6.364-1.414 1.414z" class="fill-black dark:fill-white"></path>
+  </svg>
+  <div class="header-main flex items-center md:items-end gap-2">
+    <a href={homeHref} aria-label={config.title} class="header-icon-link flex items-center md:items-end justify-center shrink-0 leading-none transition-transform duration-500">
+      <img src="/favicon-mark-light-512.png" width="26" height="26" alt="" aria-hidden="true" class="block header-icon dark:hidden" />
+      <img src="/favicon-mark-dark-512.png" width="26" height="26" alt="" aria-hidden="true" class="hidden header-icon dark:block" />
+    </a>
+    <p
+      id="header-title"
+      class:list={[
+        'header-name font-serif font-semibold text-stone-900 dark:text-stone-100 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none',
+        !articleTitle && 'header-name-no-post-title'
+      ]}
+    >{articleTitle && <span class="post-title row-start-1 col-start-1 tracking-tight">{articleTitle}</span>}<span class="row-start-1 col-start-1"><span class="site-title tracking-tight">{config.title}</span><span class="site-description ml-2 text-xs font-normal text-stone-400 dark:text-stone-500">{config.description}</span></span></p>
   </div>
-</header>
+  <div class="header-nav-wrap flex-shrink-0 md:self-end">
+    <ul class="header-nav-list flex flex-row items-end">
+      {links.filter(link => link.show).map(link => (
+        <li class="block ml-4 nav">
+          <a href={link.href} target={link.external ? '_blank' : undefined} rel={link.external ? 'noopener noreferrer' : undefined} class={navClass}>{link.name}</a>
+        </li>
+      ))}
+      <li class="block ml-4 nav">
+        <button
+          type="button"
+          id="locale-toggle"
+          class:list={[
+            navClass,
+            'appearance-none bg-transparent p-0 border-0 font-[inherit] cursor-pointer',
+            !translationAvailable && 'cursor-not-allowed opacity-40'
+          ]}
+          data-locale={locale}
+          data-available={translationAvailable ? 'true' : 'false'}
+          disabled={!translationAvailable}
+          aria-disabled={!translationAvailable}
+        >{otherLabel}</button>
+      </li>
+    </ul>
+  </div>
+</div>
 <script>
   const button = document.getElementById('locale-toggle')
   button?.addEventListener('click', () => {
-    if (button.dataset.available === 'false') return
+    if (!(button instanceof HTMLButtonElement) || button.dataset.available === 'false') return
     const current = button.dataset.locale
     const next = current === 'en' ? 'zh-CN' : 'en'
     document.cookie = `somnium-locale=${next}; path=/; max-age=31536000; samesite=lax`

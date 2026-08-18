@@ -8,17 +8,12 @@ export async function getStaticPaths() {
 }
 
 const { region, locale } = Astro.params as { region: RegionPolicy, locale: Locale }
-const title = locale === 'en' ? 'Not found' : '页面不存在'
-const message = locale === 'en' ? 'This page does not exist.' : '这个页面不存在。'
 ---
 
-<BaseLayout region={region} locale={locale} title={title}>
+<BaseLayout region={region} locale={locale} title="404">
   <Fragment slot="head">
     <meta name="robots" content="noindex, nofollow" />
   </Fragment>
-  <div class="mx-auto max-w-3xl py-16 text-center">
-    <h1 class="font-serif text-4xl">{title}</h1>
-    <p class="mt-4 text-stone-500">{message}</p>
-    <p class="mt-8"><a class="underline" href={locale === 'en' ? '/en/' : '/'}>{locale === 'en' ? 'Back home' : '返回首页'}</a></p>
-  </div>
+  <h1 class="text-5xl font-serif font-semibold tracking-tight text-stone-900 dark:text-stone-100 text-center">404</h1>
+  <p class="text-xl text-stone-500 dark:text-stone-400 text-center">Page not found</p>
 </BaseLayout>

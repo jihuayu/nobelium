@@ -12,9 +12,11 @@ const currentYear = new Date().getFullYear()
 const since = +config.since
 ---
 
-<footer class={`mx-auto mt-12 w-full px-4 text-stone-400 dark:text-stone-500 ${widthClass}`}>
+<div class={`mt-12 flex-shrink-0 m-auto w-full px-4 text-stone-400 dark:text-stone-500 ${widthClass}`}>
   <hr class="border-stone-200 dark:border-stone-800" />
-  <p class="my-4 text-sm">
-    © {config.author} {since === currentYear || !since ? currentYear : `${since} - ${currentYear}`}
-  </p>
-</footer>
+  <div class="my-4 text-sm leading-6">
+    <div class="flex align-baseline justify-between flex-wrap">
+      <p>© {config.author} {since === currentYear || !since ? currentYear : `${since} - ${currentYear}`}</p>
+    </div>
+  </div>
+</div>

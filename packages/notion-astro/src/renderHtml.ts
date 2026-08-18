@@ -560,5 +560,19 @@ export function renderNotionArticleHtml(model: NotionRenderModel, options: Notio
     locale: `${options.locale || 'zh-CN'}`.trim() || 'zh-CN'
   }
   const className = classNames('notion', options.className)
-  return `<div class="${className}">${renderBlockList(model.document.rootIds || [], ctx)}</div>`
+  const notionFont = [
+    'var(--font-ibm-plex-sans)',
+    '"PingFang SC"',
+    '"Microsoft YaHei"',
+    '"Hiragino Sans GB"',
+    '"Noto Sans CJK SC"',
+    '"Source Han Sans SC"',
+    'ui-sans-serif',
+    'system-ui',
+    '-apple-system',
+    '"Segoe UI"',
+    'Arial',
+    'sans-serif'
+  ].join(', ')
+  return `<div class="${className}" style="--notion-font-family:${notionFont}">${renderBlockList(model.document.rootIds || [], ctx)}</div>`
 }

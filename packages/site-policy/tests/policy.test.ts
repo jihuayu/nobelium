@@ -83,7 +83,25 @@ test('groupPostsBySlug merges policies and locales', () => {
   assert.equal(groups[0].policy.visibility, 'blocked-mainland')
   assert.equal(groups[0].policy.comments, 'disabled-mainland')
   assert.equal(groups[0].translations['zh-CN']?.title, '你好')
+  assert.equal(groups[0].translations['zh-CN']?.type, 'Post')
   assert.equal(groups[0].translations.en?.title, 'Hello')
+})
+
+test('groupPostsBySlug records Notion Page vs Post type', () => {
+  const groups = groupPostsBySlug([
+    {
+      slug: 'about',
+      pageId: 'about-id',
+      title: '关于',
+      summary: '',
+      tags: [],
+      date: 1,
+      fullWidth: false,
+      formats: [],
+      type: 'Page'
+    }
+  ])
+  assert.equal(groups[0].translations['zh-CN']?.type, 'Page')
 })
 
 test('buildPolicyManifest and access rules', () => {

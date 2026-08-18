@@ -27,6 +27,7 @@ export interface TranslationEntry {
   date: number
   fullWidth: boolean
   formats: string[]
+  type: string
 }
 
 export interface TranslationGroup {

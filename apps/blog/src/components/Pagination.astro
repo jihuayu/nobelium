@@ -1,0 +1,34 @@
+---
+import { buildPublicPath } from '@blog/lib/variants'
+import { getBlogCopy } from '@blog/lib/blog-copy'
+import type { Locale } from '@jihuayu/site-policy'
+
+interface Props {
+  locale: Locale
+  page: number
+  showNext: boolean
+}
+
+const { locale, page, showNext } = Astro.props
+const copy = getBlogCopy(locale)
+const currentPage = +page
+let additionalClassName = 'justify-between'
+if (currentPage === 1 && showNext) additionalClassName = 'justify-end'
+if (currentPage !== 1 && !showNext) additionalClassName = 'justify-start'
+const prevHref = currentPage - 1 === 1
+  ? buildPublicPath('/', locale)
+  : buildPublicPath(`/page/${currentPage - 1}`, locale)
+const nextHref = buildPublicPath(`/page/${currentPage + 1}`, locale)
+---
+
+<div class={`flex font-medium text-stone-500 dark:text-stone-400 ${additionalClassName}`}>
+  {currentPage !== 1 && (
+    <a rel="prev" href={prevHref} class="group flex items-center gap-1.5 cursor-pointer hover:text-stone-900 dark:hover:text-stone-100 transition-colors duration-150 ease-out">
+      <span class="transition-transform duration-150 ease-out group-hover:-translate-x-0.5">←</span>
+      {copy.PAGINATION.PREV}</a>
+  )}
+  {showNext && (
+    <a rel="next" href={nextHref} class="group flex items-center gap-1.5 cursor-pointer hover:text-stone-900 dark:hover:text-stone-100 transition-colors duration-150 ease-out">
+      {copy.PAGINATION.NEXT}<span class="transition-transform duration-150 ease-out group-hover:translate-x-0.5">→</span></a>
+  )}
+</div>

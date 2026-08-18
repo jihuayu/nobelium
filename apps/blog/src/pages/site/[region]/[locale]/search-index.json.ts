@@ -14,7 +14,8 @@ export async function getStaticPaths() {
           title: entry.title,
           summary: entry.summary,
           tags: entry.tags,
-          href: getPostHref(group, locale as Locale)
+          href: getPostHref(group, locale as Locale),
+          date: entry.date
         }
       })
     }

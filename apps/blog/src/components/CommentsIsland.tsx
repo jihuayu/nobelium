@@ -41,7 +41,7 @@ export default function CommentsIsland({
       pageTitle={title}
       pageUrl={buildCommentPageUrl(slug)}
       locale={locale}
-      className={cn('mx-auto px-4', contentWidthClass)}
+      className={cn('px-4', `mx-auto ${contentWidthClass}`)}
     />
   )
 }

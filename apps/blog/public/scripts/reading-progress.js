@@ -1,19 +1,19 @@
 ;(() => {
-  const bar = document.getElementById('reading-progress')
+  const bar = document.getElementById('reading-progress-bar')
   if (!bar) return
-  let ticking = false
+  let rafId = null
   const update = () => {
+    rafId = null
     const scrollTop = window.scrollY
-    const height = document.documentElement.scrollHeight - window.innerHeight
-    const progress = height > 0 ? Math.min(100, (scrollTop / height) * 100) : 0
-    bar.style.width = `${progress}%`
-    ticking = false
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight
+    const progress = docHeight <= 0 ? 0 : Math.min(1, Math.max(0, scrollTop / docHeight))
+    bar.style.transform = `scaleX(${progress})`
   }
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      ticking = true
-      requestAnimationFrame(update)
-    }
-  }, { passive: true })
+  const scheduleUpdate = () => {
+    if (rafId !== null) return
+    rafId = window.requestAnimationFrame(update)
+  }
+  window.addEventListener('scroll', scheduleUpdate, { passive: true })
+  window.addEventListener('resize', scheduleUpdate)
   update()
 })()

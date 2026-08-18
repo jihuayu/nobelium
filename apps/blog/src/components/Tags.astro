@@ -1,0 +1,39 @@
+---
+import { buildPublicPath } from '@blog/lib/variants'
+import type { Locale } from '@jihuayu/site-policy'
+
+interface Props {
+  tags: Record<string, number>
+  locale: Locale
+  currentTag?: string
+}
+
+const { tags, locale, currentTag } = Astro.props
+---
+
+{tags && Object.keys(tags).length > 0 && (
+  <div class="tag-container">
+    <ul class="flex max-w-full mt-4 overflow-x-auto">
+      {Object.keys(tags).map(key => {
+        const selected = key === currentTag
+        return (
+          <li
+            class:list={[
+              'mr-3 font-medium border whitespace-nowrap rounded-md transition-colors duration-150 ease-out',
+              selected
+                ? 'text-white bg-stone-900 border-stone-900 dark:bg-stone-100 dark:text-stone-900 dark:border-stone-100'
+                : 'bg-transparent border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-900 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-500 dark:hover:text-stone-100'
+            ]}
+          >
+            <a
+              href={selected ? buildPublicPath('/search', locale) : buildPublicPath(`/tag/${encodeURIComponent(key)}`, locale)}
+              class="px-4 py-2 block"
+            >
+              {`${key} (${tags[key]})`}
+            </a>
+          </li>
+        )
+      })}
+    </ul>
+  </div>
+)}

@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '@blog/layouts/BaseLayout.astro'
+import Tags from '@blog/components/Tags.astro'
 import { buildPublicPath, getAllVariants } from '@blog/lib/variants'
+import { collectTags, filterGroupsForVariant, loadTranslationGroups } from '@blog/lib/policy-content'
 import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
 
 export async function getStaticPaths() {
@@ -8,25 +10,36 @@ export async function getStaticPaths() {
 }
 
 const { region, locale } = Astro.params as { region: RegionPolicy, locale: Locale }
-const title = locale === 'en' ? 'Search' : '搜索'
+const groups = filterGroupsForVariant(await loadTranslationGroups(false), region, locale)
+const tags = collectTags(groups, locale)
 const searchIndexUrl = buildPublicPath('/search-index.json', locale)
+const placeholder = locale === 'en' ? 'Search Articles' : 'Search Articles'
+const hint = locale === 'en'
+  ? 'Type keywords to search posts in Notion.'
+  : 'Type keywords to search posts in Notion.'
 ---
 
 <BaseLayout
   region={region}
   locale={locale}
-  title={title}
+  title={locale === 'en' ? 'Search' : '搜索'}
   searchIndexUrl={searchIndexUrl}
 >
-  <div class="mx-auto max-w-3xl">
-    <h1 class="mb-6 font-serif text-3xl">{title}</h1>
+  <div class="relative">
+    <label for="search-input" class="sr-only">{placeholder}</label>
     <input
       id="search-input"
-      type="search"
-      placeholder={locale === 'en' ? 'Search posts…' : '搜索文章…'}
-      class="w-full rounded border border-stone-300 bg-white px-4 py-2 dark:border-stone-700 dark:bg-stone-900"
+      type="text"
+      placeholder={placeholder}
+      class="block w-full rounded-md border px-4 py-2 border-stone-300 bg-transparent text-stone-900 placeholder:text-stone-400 transition-colors duration-150 ease-out focus:border-stone-400 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-stone-500"
     />
-    <div id="search-results" class="mt-8"></div>
+    <svg class="absolute right-3 top-3 h-5 w-5 text-stone-400 dark:text-stone-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+    </svg>
+  </div>
+  <Tags tags={tags} locale={locale} />
+  <div id="search-results" class="article-container my-8">
+    <p class="text-stone-500 dark:text-stone-400">{hint}</p>
   </div>
   <script src="/scripts/search.js" defer></script>
 </BaseLayout>

@@ -1,5 +1,4 @@
 ---
-import articleCss from '../../../../packages/notion-react/src/styles.css?url'
 import BaseLayout from './BaseLayout.astro'
 import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
 
@@ -24,6 +23,5 @@ const props = Astro.props
 ---
 
 <BaseLayout {...props} article={true}>
-  <link slot="head" rel="stylesheet" href={articleCss} />
   <slot />
 </BaseLayout>

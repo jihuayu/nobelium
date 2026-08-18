@@ -27,6 +27,7 @@ export function postsToPolicyInput(posts: PostData[]) {
     fullWidth: post.fullWidth,
     formats: post.formats,
     lang: firstSelect(post.lang),
+    type: firstSelect(post.type),
     visibility: firstSelect(post.visibility),
     comments: firstSelect(post.comments)
   }))
@@ -61,6 +62,14 @@ export function shouldRenderComments(group: TranslationGroup, region: RegionPoli
   return canShowComments(group.policy, region)
 }
 
-export function listAvailableLocales(group: TranslationGroup): Locale[] {
-  return (Object.keys(group.translations) as Locale[]).filter(l => Boolean(group.translations[l]))
+export function collectTags(groups: TranslationGroup[], locale: Locale): Record<string, number> {
+  const tags: Record<string, number> = {}
+  for (const group of groups) {
+    const entry = group.translations[locale]
+    if (!entry) continue
+    for (const tag of entry.tags || []) {
+      tags[tag] = (tags[tag] || 0) + 1
+    }
+  }
+  return tags
 }
