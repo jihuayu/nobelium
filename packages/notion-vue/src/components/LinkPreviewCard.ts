@@ -2,7 +2,7 @@ import { defineComponent, h } from 'vue'
 import cn from 'classnames'
 import { getLinkPreviewPresentation } from '@jihuayu/notion-type'
 import type { LinkPreviewCardProps } from '../types'
-import { buildFallbackLinkPreview, normalizePreviewUrl, toOgProxyImageUrl } from '../utils/notion'
+import { buildFallbackLinkPreview, normalizePreviewUrl, toOgProxyPreviewImageUrl } from '../utils/notion'
 
 function renderPreviewTitle(prefix: string, name: string) {
   if (!prefix) return name
@@ -30,8 +30,8 @@ export default defineComponent({
       }
 
       const displayUrl = resolvedPreview.url || normalizedUrl
-      const generatedImageUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.image || ''}`.trim(), displayUrl) : ''
-      const iconUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.icon || ''}`.trim(), displayUrl) : ''
+      const generatedImageUrl = displayUrl ? toOgProxyPreviewImageUrl(`${resolvedPreview.image || ''}`.trim(), displayUrl) : ''
+      const iconUrl = displayUrl ? toOgProxyPreviewImageUrl(`${resolvedPreview.icon || ''}`.trim(), displayUrl) : ''
       const presentation = getLinkPreviewPresentation(
         displayUrl,
         resolvedPreview.title || resolvedPreview.hostname || displayUrl,

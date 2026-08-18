@@ -28,7 +28,7 @@
   --notion-purple_background: rgba(244, 240, 247, 0.8);
   --notion-pink_background: rgba(249, 238, 243, 0.8);
   --notion-red_background: rgb(253, 235, 236);
-  --notion-url-hover-width: 400px;
+  --notion-url-hover-width: 360px;
   --notion-url-hover-viewport-padding: 24px;
   --notion-url-hover-radius: 1rem;
   --notion-url-hover-border: rgb(231 229 228 / 0.95);
@@ -293,9 +293,11 @@
 }
 
 .notion-url-mention-hover-cover {
+  position: relative;
   display: block;
   aspect-ratio: 1.91 / 1;
   background-color: var(--notion-url-hover-cover-bg);
+  overflow: hidden;
 }
 
 .notion-url-mention-hover-card[data-preview-kind='github-repo'] .notion-url-mention-hover-cover {
@@ -303,10 +305,18 @@
 }
 
 .notion-url-mention-hover-cover img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
+}
+
+.notion-url-mention-hover-card[data-preview-kind='github-repo'] .notion-url-mention-hover-cover img {
+  object-fit: contain;
+  object-position: center top;
+  background-color: #fff;
 }
 
 .notion-url-mention-hover-body {
@@ -332,7 +342,7 @@
   font-size: 0.8rem;
   line-height: 1.45;
   color: var(--notion-url-hover-description);
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -783,6 +793,8 @@ a[data-link-preview-card='true']:hover .link-preview-cover {
 
 .link-preview-card {
   display: block;
+  width: 100%;
+  max-width: min(var(--notion-url-hover-width), 100%);
   margin: 1.15rem 0;
   overflow: hidden;
   text-decoration: none;
@@ -816,6 +828,7 @@ a[data-link-preview-card='true']:hover .link-preview-cover {
 }
 
 .link-preview-card-media {
+  position: relative;
   display: block;
   aspect-ratio: 1.91 / 1;
   background-color: rgb(245 245 244);
@@ -831,11 +844,19 @@ a[data-link-preview-card='true']:hover .link-preview-cover {
 }
 
 .link-preview-cover {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   pointer-events: none;
+}
+
+.link-preview-card[data-preview-kind='github-repo'] .link-preview-cover {
+  object-fit: contain;
+  object-position: center top;
+  background-color: #fff;
 }
 
 .link-preview-card-body {
@@ -865,7 +886,7 @@ a[data-link-preview-card='true']:hover .link-preview-cover {
   font-size: 0.84rem;
   line-height: 1.45;
   color: #656d76;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

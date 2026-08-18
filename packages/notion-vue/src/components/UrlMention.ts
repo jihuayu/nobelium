@@ -2,7 +2,7 @@ import { defineComponent, h, computed, Teleport } from 'vue'
 import cn from 'classnames'
 import { getLinkPreviewPresentation } from '@jihuayu/notion-type'
 import type { UrlMentionPreviewData, UrlMentionProps } from '../types'
-import { isInternalHref, toOgProxyImageUrl } from '../utils/notion'
+import { isInternalHref, toOgProxyPreviewImageUrl } from '../utils/notion'
 import { useFloatingHoverCard } from './useFloatingHoverCard'
 
 function renderPreviewTitle(prefix: string, name: string) {
@@ -14,7 +14,7 @@ function renderPreviewTitle(prefix: string, name: string) {
 }
 
 function renderUrlMentionIcon(href: string, iconUrl: string, isGithub: boolean) {
-  const resolvedIconUrl = toOgProxyImageUrl(iconUrl, href)
+  const resolvedIconUrl = toOgProxyPreviewImageUrl(iconUrl, href)
   if (resolvedIconUrl) {
     return h('img', { src: resolvedIconUrl, alt: '', class: 'h-full w-full object-contain', loading: 'lazy' })
   }
@@ -78,9 +78,9 @@ export default defineComponent({
         viewportPadding: 12,
         gap: 10,
         initialOffset: 12,
-        fallbackWidth: 400,
-        fallbackHeight: 320,
-        targetWidth: 400,
+        fallbackWidth: 360,
+        fallbackHeight: 340,
+        targetWidth: 360,
         minWidth: 240
       })
 
@@ -107,7 +107,7 @@ export default defineComponent({
             }, [
               preview.image
                 ? h('span', { class: 'notion-url-mention-hover-cover' }, [
-                    h('img', { src: toOgProxyImageUrl(preview.image, preview.href), alt: preview.title, loading: 'lazy' })
+                    h('img', { src: toOgProxyPreviewImageUrl(preview.image, preview.href), alt: preview.title, loading: 'lazy' })
                   ])
                 : null,
               h('span', { class: 'notion-url-mention-hover-body' }, [

@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { getLinkPreviewPresentation } from '@jihuayu/notion-type'
 import type { UrlMentionPreviewData, UrlMentionProps } from '../types'
-import { isInternalHref, toOgProxyImageUrl } from '../utils/notion'
+import { isInternalHref, toOgProxyPreviewImageUrl } from '../utils/notion'
 import { useFloatingHoverCard } from './useFloatingHoverCard'
 
 function renderPreviewTitle(prefix: string, name: string) {
@@ -19,7 +19,7 @@ function renderPreviewTitle(prefix: string, name: string) {
 }
 
 function renderUrlMentionIcon(href: string, iconUrl: string, isGithub: boolean) {
-  const resolvedIconUrl = toOgProxyImageUrl(iconUrl, href)
+  const resolvedIconUrl = toOgProxyPreviewImageUrl(iconUrl, href)
   if (resolvedIconUrl) {
     return <img src={resolvedIconUrl} alt="" className="h-full w-full object-contain" loading="lazy" />
   }
@@ -85,9 +85,9 @@ export default function UrlMention({
       viewportPadding: 12,
       gap: 10,
       initialOffset: 12,
-      fallbackWidth: 400,
-      fallbackHeight: 320,
-      targetWidth: 400,
+      fallbackWidth: 360,
+      fallbackHeight: 340,
+      targetWidth: 360,
       minWidth: 240
     })
 
@@ -116,7 +116,7 @@ export default function UrlMention({
       >
         {resolvedPreview.image && (
           <span className="notion-url-mention-hover-cover">
-            <img src={toOgProxyImageUrl(resolvedPreview.image, resolvedPreview.href)} alt={resolvedPreview.title} loading="lazy" />
+            <img src={toOgProxyPreviewImageUrl(resolvedPreview.image, resolvedPreview.href)} alt={resolvedPreview.title} loading="lazy" />
           </span>
         )}
         <span className="notion-url-mention-hover-body">

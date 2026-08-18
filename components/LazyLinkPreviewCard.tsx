@@ -22,22 +22,30 @@ function getHostname(url: string): string {
   }
 }
 
-function toOgProxyImageUrl(rawImageUrl: string, referer = ''): string {
+function toOgProxyImageUrl(rawImageUrl: string, referer = '', options?: { format?: 'png' | 'jpeg' | 'webp', quality?: number }): string {
   if (!rawImageUrl) return ''
   try {
     const parsed = new URL(rawImageUrl)
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return rawImageUrl
-    if (parsed.hostname === OG_PROXY_IMAGE_HOSTNAME && parsed.pathname === OG_PROXY_IMAGE_PATHNAME) {
-      for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) parsed.searchParams.delete(param)
-      return parsed.toString()
-    }
-    const proxyUrl = new URL(OG_PROXY_IMAGE_URL)
-    proxyUrl.searchParams.set('url', parsed.toString())
-    if (referer) proxyUrl.searchParams.set('referer', referer)
+    const proxyUrl = parsed.hostname === OG_PROXY_IMAGE_HOSTNAME && parsed.pathname === OG_PROXY_IMAGE_PATHNAME
+      ? parsed
+      : (() => {
+          const next = new URL(OG_PROXY_IMAGE_URL)
+          next.searchParams.set('url', parsed.toString())
+          if (referer) next.searchParams.set('referer', referer)
+          return next
+        })()
+    for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) proxyUrl.searchParams.delete(param)
+    if (options?.format) proxyUrl.searchParams.set('f', options.format)
+    if (typeof options?.quality === 'number') proxyUrl.searchParams.set('q', String(options.quality))
     return proxyUrl.toString()
   } catch {
     return rawImageUrl
   }
+}
+
+function toOgProxyPreviewImageUrl(rawImageUrl: string, referer = ''): string {
+  return toOgProxyImageUrl(rawImageUrl, referer, { format: 'png' })
 }
 
 function buildFallbackPreview(url: string): LinkPreviewData {
@@ -101,8 +109,8 @@ export default function LazyLinkPreviewCard({ url, className, preview }: LinkPre
   }
 
   const displayUrl = resolvedPreview.url || normalizedUrl
-  const generatedImageUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.image || ''}`.trim(), displayUrl) : ''
-  const iconUrl = displayUrl ? toOgProxyImageUrl(`${resolvedPreview.icon || ''}`.trim(), displayUrl) : ''
+  const generatedImageUrl = displayUrl ? toOgProxyPreviewImageUrl(`${resolvedPreview.image || ''}`.trim(), displayUrl) : ''
+  const iconUrl = displayUrl ? toOgProxyPreviewImageUrl(`${resolvedPreview.icon || ''}`.trim(), displayUrl) : ''
   const showImage = Boolean(generatedImageUrl && !imageFailed)
   const presentation = getLinkPreviewPresentation(
     displayUrl,
