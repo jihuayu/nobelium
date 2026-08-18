@@ -266,14 +266,14 @@ const GITHUB_REPO_OG_RESOURCES = new Set([
 ])
 
 /**
- * EN: Visual kind used by hover/bookmark preview cards.
- * ZH: 悬浮预览与书签卡片使用的视觉类型。
+ * EN: Visual kind used by UrlMention floating hover cards only.
+ * ZH: 仅用于 UrlMention 悬浮预览，不用于正文书签卡。
  */
 export type LinkPreviewKind = 'github-repo' | 'github' | 'default'
 
 /**
- * EN: Presentation hints for rendering a URL preview card.
- * ZH: 渲染链接预览卡片时的展示信息。
+ * EN: Presentation hints for the floating URL hover card.
+ * ZH: 悬浮链接预览卡片的展示信息。
  */
 export interface LinkPreviewPresentation {
   previewKind: LinkPreviewKind
@@ -292,8 +292,8 @@ function getHostnameLabel(hostname: string): string {
 }
 
 /**
- * EN: Derive GitHub-aware title/provider presentation for preview cards.
- * ZH: 为预览卡片推导 GitHub 风格的标题与来源展示。
+ * EN: Derive GitHub-aware title/provider presentation for floating hover cards.
+ * ZH: 为悬浮预览卡片推导 GitHub 风格的标题与来源展示。正文书签卡不要调用。
  */
 export function getLinkPreviewPresentation(
   url: string,

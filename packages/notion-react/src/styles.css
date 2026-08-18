@@ -276,6 +276,7 @@
   color: rgb(245 245 244);
 }
 
+/* Floating UrlMention hover card only. In-page bookmarks use .link-preview-card. */
 .notion-url-mention-hover-card {
   position: fixed;
   width: min(var(--notion-url-hover-width), calc(100vw - var(--notion-url-hover-viewport-padding)));
