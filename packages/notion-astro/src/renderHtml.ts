@@ -95,13 +95,29 @@ function looksLikeHttpUrl(text: string): boolean {
   return /^https?:\/\//i.test(text.trim())
 }
 
+function isGithubUrl(url: string | null): boolean {
+  const parsed = parseUrl(url)
+  if (!parsed) return false
+  const hostname = parsed.hostname.toLowerCase()
+  return hostname === 'github.com' || hostname === 'www.github.com'
+}
+
+function decodePathSegment(segment: string): string {
+  if (!segment) return ''
+  try { return decodeURIComponent(segment) } catch { return segment }
+}
+
 function getUrlMentionLabel(href: string, textContent: string): string {
   const trimmedText = textContent.trim()
   if (trimmedText && !looksLikeHttpUrl(trimmedText)) return trimmedText
+
   const parsed = parseUrl(href)
   if (!parsed) return trimmedText || 'link'
+
   const segments = parsed.pathname.split('/').filter(Boolean)
-  return decodeURIComponent(segments[segments.length - 1] || parsed.hostname || 'link')
+  if (isGithubUrl(href) && segments.length >= 2) return decodePathSegment(segments[1])
+  if (segments.length >= 1) return decodePathSegment(segments[segments.length - 1])
+  return parsed.hostname || 'link'
 }
 
 function getMentionPayload(item: NotionRichText): Record<string, unknown> | null {
@@ -143,9 +159,58 @@ interface MentionPreview {
   provider: string
 }
 
-function hostnameOf(href: string): string {
+const GITHUB_ICON_SVG = '<svg viewBox="0 0 16 16" fill="currentColor" role="presentation"><path d="M8 0C3.58 0 0 3.58 0 8a8.001 8.001 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.34c-2.23.49-2.7-1.08-2.7-1.08-.36-.92-.9-1.16-.9-1.16-.73-.5.06-.49.06-.49.82.06 1.25.84 1.25.84.72 1.25 1.9.89 2.36.68.07-.53.28-.9.5-1.1-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.58.82-2.13-.08-.2-.36-1.01.08-2.1 0 0 .67-.21 2.2.81.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.91.08 2.11.51.55.82 1.26.82 2.13 0 3.07-1.87 3.75-3.66 3.95.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8.001 8.001 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg>'
+const LINK_ICON_SVG = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" role="presentation"><path d="M8.75 6.25h-1.5a4 4 0 1 0 0 8h1.5"></path><path d="M11.25 6.25h1.5a4 4 0 1 1 0 8h-1.5"></path><path d="M7.5 10h5"></path></svg>'
+
+function renderUrlMentionIconHtml(href: string, iconUrl: string): string {
+  const resolvedIconUrl = toOgProxyImageUrl(iconUrl, href)
+  if (resolvedIconUrl) {
+    return `<img src="${attr(resolvedIconUrl)}" alt="" class="h-full w-full object-contain" loading="lazy" />`
+  }
+  if (isGithubUrl(href) || /^https?:\/\/(?:www\.)?github\.com\/?/i.test(href)) return GITHUB_ICON_SVG
+  return LINK_ICON_SVG
+}
+
+function getUrlMentionTitle(mention: Record<string, unknown> | null): string {
+  if (mention?.type !== 'link_mention') return ''
+  const payload = (mention.link_mention || {}) as Record<string, string | undefined>
+  return `${payload.title || ''}`.trim()
+}
+
+function getUrlMentionIconUrl(mention: Record<string, unknown> | null, href: string): string {
+  if (mention?.type !== 'link_mention') return ''
+  const payload = (mention.link_mention || {}) as Record<string, string | undefined>
+  return toOgProxyImageUrl(`${payload.icon_url || ''}`.trim(), href)
+}
+
+function getUrlMentionProvider(provider: string, href: string): string {
+  const trimmed = `${provider || ''}`.trim()
+  if (trimmed) return trimmed
+  if (isInternalHref(href)) return 'internal link'
   const parsed = parseUrl(href)
   return parsed ? parsed.hostname.replace(/^www\./i, '') : href
+}
+
+function buildFallbackPreview(href: string, label: string, iconUrl: string): MentionPreview {
+  return {
+    href,
+    title: label || href,
+    description: '',
+    icon: iconUrl || '',
+    image: '',
+    provider: getUrlMentionProvider('', href)
+  }
+}
+
+function mergePreviewData(base: MentionPreview, incoming: MentionPreview): MentionPreview {
+  return {
+    href: `${incoming.href || base.href}`.trim() || base.href,
+    title: `${incoming.title || base.title}`.trim() || base.title,
+    description: `${incoming.description || base.description}`.trim(),
+    icon: `${incoming.icon || base.icon}`.trim(),
+    image: `${incoming.image || base.image}`.trim(),
+    provider: `${incoming.provider || base.provider}`.trim() || base.provider
+  }
 }
 
 function mentionPreviewFromMap(href: string, label: string, previewMap: LinkPreviewMap): MentionPreview | null {
@@ -159,12 +224,20 @@ function mentionPreviewFromMap(href: string, label: string, previewMap: LinkPrev
     description: `${preview.description || ''}`.trim(),
     icon: toOgProxyImageUrl(`${preview.icon || ''}`.trim(), previewHref),
     image: toOgProxyImageUrl(`${preview.image || ''}`.trim(), previewHref),
-    provider: `${preview.hostname || ''}`.trim() || hostnameOf(previewHref)
+    provider: getUrlMentionProvider(`${preview.hostname || ''}`, previewHref)
   }
 }
 
-function mentionPreviewFromRichText(item: NotionRichText, href: string, label: string, ctx: RenderContext, rawHref: string | null): MentionPreview | null {
-  const mention = getMentionPayload(item)
+function getUrlMentionPreviewData(
+  item: NotionRichText,
+  href: string,
+  label: string,
+  ctx: RenderContext,
+  rawHref: string | null,
+  mention: Record<string, unknown> | null
+): MentionPreview | null {
+  if (!href) return null
+
   if (item.type === 'mention' && mention?.type === 'link_mention') {
     const payload = (mention.link_mention || {}) as Record<string, string | undefined>
     return {
@@ -173,16 +246,18 @@ function mentionPreviewFromRichText(item: NotionRichText, href: string, label: s
       description: `${payload.description || ''}`.trim(),
       icon: toOgProxyImageUrl(`${payload.icon_url || ''}`.trim(), href),
       image: toOgProxyImageUrl(`${payload.thumbnail_url || ''}`.trim(), href),
-      provider: `${payload.link_provider || ''}`.trim() || hostnameOf(href)
+      provider: getUrlMentionProvider(`${payload.link_provider || ''}`, href)
     }
   }
+
   if (item.type === 'mention' && mention?.type === 'link_preview') {
     return mentionPreviewFromMap(href, label, ctx.model.linkPreviewMap)
   }
+
   if (isInternalHref(href)) {
     const pageId = extractNotionPageIdFromUrl(rawHref)
     const preview = pageId ? ctx.model.pagePreviewMap[pageId] : undefined
-    if (!preview) return mentionPreviewFromMap(href, label, ctx.model.linkPreviewMap)
+    if (!preview) return null
     const previewHref = `${preview.url || href}`.trim() || href
     return {
       href: previewHref,
@@ -190,18 +265,25 @@ function mentionPreviewFromRichText(item: NotionRichText, href: string, label: s
       description: `${preview.description || ''}`.trim(),
       icon: toOgProxyImageUrl(`${preview.icon || ''}`.trim(), previewHref),
       image: toOgProxyImageUrl(`${preview.image || ''}`.trim(), previewHref),
-      provider: `${preview.hostname || ''}`.trim() || hostnameOf(previewHref)
+      provider: getUrlMentionProvider(`${preview.hostname || ''}`, previewHref)
     }
   }
-  return mentionPreviewFromMap(href, label, ctx.model.linkPreviewMap)
+
+  return null
 }
 
-function renderHoverableAnchor(href: string, innerHtml: string, className: string, preview: MentionPreview | null, isInternal: boolean): string {
+function renderUrlMentionTrigger(
+  href: string,
+  className: string,
+  innerHtml: string,
+  preview: MentionPreview | null,
+  isInternal: boolean
+): string {
   const target = isInternal ? '' : ' target="_blank" rel="noopener noreferrer"'
   const previewAttr = preview
     ? ` data-url-mention="true" data-preview="${attr(JSON.stringify(preview))}"`
     : ''
-  return `<a href="${attr(href)}"${target} class="${className}"${previewAttr}>${innerHtml}</a>`
+  return `<span class="notion-url-mention-wrapper"><a href="${attr(href)}"${target} class="${className}"${previewAttr}>${innerHtml}</a></span>`
 }
 
 function renderRichText(items: NotionRichText[] | undefined, ctx: RenderContext): string {
@@ -239,25 +321,33 @@ function renderRichText(items: NotionRichText[] | undefined, ctx: RenderContext)
 
     const isInternal = isInternalHref(href)
     if (mention?.type === 'link_preview' || mention?.type === 'link_mention') {
-      const label = getUrlMentionLabel(href, textContent)
-      const preview = mentionPreviewFromRichText(item, href, label, ctx, rawHref)
-      return renderHoverableAnchor(
+      const iconUrl = getUrlMentionIconUrl(mention, href)
+      const label = getUrlMentionTitle(mention) || getUrlMentionLabel(href, textContent)
+      const previewRaw = getUrlMentionPreviewData(item, href, label, ctx, rawHref, mention)
+      const preview = previewRaw ? mergePreviewData(buildFallbackPreview(href, label, iconUrl), previewRaw) : null
+      return renderUrlMentionTrigger(
         href,
-        `<span class="notion-url-mention-label">${escapeHtml(label)}</span>`,
         'notion-url-mention notion-url-mention-link-preview',
+        `<span class="notion-url-mention-icon" aria-hidden="true">${renderUrlMentionIconHtml(href, iconUrl)}</span><span class="notion-url-mention-label">${escapeHtml(label)}</span>`,
         preview,
         isInternal
       )
     }
 
-    const preview = mentionPreviewFromRichText(item, href, textContent.trim() || href, ctx, rawHref)
-    return renderHoverableAnchor(
-      href,
-      span,
-      'notion-url-mention-inline text-stone-900 dark:text-stone-100 underline underline-offset-4 decoration-stone-400 dark:decoration-stone-600',
-      preview,
-      isInternal
-    )
+    if (isInternal) {
+      const label = `${textContent || ''}`.trim() || href
+      const previewRaw = getUrlMentionPreviewData(item, href, label, ctx, rawHref, mention)
+      const preview = previewRaw ? mergePreviewData(buildFallbackPreview(href, label, ''), previewRaw) : null
+      return renderUrlMentionTrigger(
+        href,
+        'notion-url-mention notion-url-mention-inline text-stone-900 dark:text-stone-100 underline underline-offset-4 decoration-stone-400 dark:decoration-stone-600',
+        span,
+        preview,
+        true
+      )
+    }
+
+    return `<a href="${attr(href)}" target="_blank" rel="noopener noreferrer" class="text-stone-900 dark:text-stone-100 underline underline-offset-4 decoration-stone-400 dark:decoration-stone-600">${span}</a>`
   }).join('')
 }
 
@@ -275,14 +365,16 @@ function renderLinkPreviewCard(url: string, previewMap: LinkPreviewMap): string 
   const imageUrl = toOgProxyImageUrl(`${resolved.image || ''}`.trim(), displayUrl)
   const iconUrl = toOgProxyImageUrl(`${resolved.icon || ''}`.trim(), displayUrl)
   const title = escapeHtml(resolved.title || resolved.hostname || displayUrl)
-  const description = resolved.description ? `<p class="mt-0.5 text-stone-600 dark:text-stone-300 text-sm leading-5 overflow-hidden">${escapeHtml(resolved.description)}</p>` : ''
+  const description = resolved.description
+    ? `<p class="mt-0.5 text-stone-600 dark:text-stone-300 text-sm leading-5 overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escapeHtml(resolved.description)}</p>`
+    : ''
   const icon = iconUrl
-    ? `<img src="${attr(iconUrl)}" alt="" class="h-4 w-4 rounded-sm bg-transparent object-contain" loading="lazy" />`
+    ? `<span class="relative h-4 w-4 rounded-sm flex-none overflow-hidden bg-transparent"><img src="${attr(iconUrl)}" alt="" class="h-4 w-4 rounded-sm bg-transparent object-contain" loading="lazy" /></span>`
     : '<span class="h-4 w-4 rounded-sm bg-stone-300 dark:bg-stone-700 flex-none"></span>'
   const media = imageUrl
-    ? `<div class="link-preview-card-media basis-[35%] shrink-0 h-full"><img src="${attr(imageUrl)}" alt="" class="h-full w-full object-cover" loading="lazy" /></div>`
+    ? `<div class="link-preview-card-media basis-[35%] shrink-0 h-full"><div class="relative h-full w-full overflow-hidden bg-stone-100 dark:bg-stone-800"><img src="${attr(imageUrl)}" alt="" class="link-preview-cover pointer-events-none h-full w-full object-cover transition-opacity duration-200" style="filter:none" loading="lazy" /></div></div>`
     : ''
-  return `<a href="${attr(displayUrl)}" target="_blank" rel="noopener noreferrer" data-link-preview-card="true" class="link-preview-card block my-4 h-[110px] rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
+  return `<a href="${attr(displayUrl)}" target="_blank" rel="noopener noreferrer" data-link-preview-card="true" data-has-image="${imageUrl ? 'true' : 'false'}" class="link-preview-card block my-4 h-[110px] rounded-md border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 transition-colors overflow-hidden bg-transparent opacity-100 hover:opacity-100" style="opacity:1">
     <div class="link-preview-card-inner flex h-full items-stretch">
       <div class="link-preview-card-main min-w-0 flex flex-col px-3 py-2 ${imageUrl ? 'basis-[65%] shrink-0' : 'flex-1'}">
         <p class="text-base text-stone-900 dark:text-stone-100 font-medium truncate">${title}</p>
