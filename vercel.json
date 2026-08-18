@@ -1,4 +1,6 @@
 {
+  "framework": null,
+  "buildCommand": "pnpm run build",
   "installCommand": "corepack enable && pnpm install",
   "cleanUrls": true,
   "trailingSlash": false
