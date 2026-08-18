@@ -76,7 +76,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   let internalPath = restPath === '/' ? '' : restPath
   if (wantsMarkdown(context.request)) {
-    internalPath = restPath === '/' ? '/md' : `/md${restPath}`
+    internalPath = restPath === '/' ? '/markdown' : `/md${restPath}`
   }
 
   const rewriteTarget = `${variantBasePath(region, locale)}${internalPath || '/'}`
