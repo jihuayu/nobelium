@@ -96,18 +96,6 @@ const mainClass = article
       })()
     </script>
     <slot name="head" />
-    {article && (
-      <>
-        <script src="/scripts/reading-progress.js" defer></script>
-        <script src="/scripts/code-copy.js" defer></script>
-        <script src="/scripts/toc.js" defer></script>
-        <script src="/scripts/lightbox.js" defer></script>
-        <script src="/scripts/mermaid.js" defer></script>
-        <script src="/scripts/link-preview.js" defer></script>
-        <script src="/scripts/wide-toc.js" defer></script>
-      </>
-    )}
-    <script src="/scripts/header-behavior.js" defer></script>
   </head>
   <body class="bg-day dark:bg-night" data-search-index={searchIndexUrl}>
     <div id="top">
@@ -133,5 +121,8 @@ const mainClass = article
         <Footer fullWidth={fullWidth} />
       </div>
     </div>
+    <script>
+      import '../scripts/header-behavior'
+    </script>
   </body>
 </html>

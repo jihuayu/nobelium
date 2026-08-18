@@ -1,15 +1,22 @@
-;(() => {
-  const input = document.getElementById('search-input')
-  const results = document.getElementById('search-results')
-  const indexUrl = document.body.dataset.searchIndex
-  if (!(input instanceof HTMLInputElement) || !(results instanceof HTMLElement) || !indexUrl) return
+interface SearchEntry {
+  href?: string
+  title?: string
+  summary?: string
+  date?: string
+  tags?: string[]
+}
 
+const input = document.getElementById('search-input')
+const results = document.getElementById('search-results')
+const indexUrl = document.body.dataset.searchIndex
+
+if (input instanceof HTMLInputElement && results instanceof HTMLElement && indexUrl) {
   const currentTag = input.dataset.currentTag || ''
   const hasInitial = results.dataset.initialResults === 'true'
   const initialHtml = hasInitial ? results.innerHTML : ''
-  let entries = []
+  let entries: SearchEntry[] = []
 
-  const formatDate = (value) => {
+  const formatDate = (value?: string) => {
     if (!value) return ''
     try {
       return new Intl.DateTimeFormat(document.documentElement.lang || 'zh-CN', {
@@ -21,13 +28,13 @@
     }
   }
 
-  const escapeHtml = (value) => String(value || '')
+  const escapeHtml = (value: unknown) => String(value || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
 
-  const render = (items) => {
+  const render = (items: SearchEntry[]) => {
     results.innerHTML = items.map(item => `
       <a href="${escapeHtml(item.href)}" class="group block">
         <article class="mb-10 md:mb-12">
@@ -43,8 +50,8 @@
     `).join('')
   }
 
-  fetch(indexUrl).then(r => r.json()).then(data => {
-    entries = Array.isArray(data) ? data : []
+  fetch(indexUrl).then(r => r.json()).then((data: unknown) => {
+    entries = Array.isArray(data) ? data as SearchEntry[] : []
   }).catch(() => {})
 
   input.addEventListener('input', () => {
@@ -70,4 +77,4 @@
     }
     render(matched)
   })
-})()
+}

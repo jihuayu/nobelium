@@ -49,6 +49,11 @@ test('Astro chrome keeps the Nobelium class contract', () => {
   assert.match(layout, /id="top"/)
   assert.match(layout, /wrapper \$\{wrapperFont\}/)
   assert.match(layout, /flex-grow transition-all/)
+  assert.match(layout, /import '\.\.\/scripts\/header-behavior'/)
+  assert.doesNotMatch(layout, /\/scripts\/.*\.js/)
+
+  const articleLayout = readSrc('layouts/ArticleLayout.astro')
+  assert.match(articleLayout, /import '\.\.\/scripts\/article'/)
 
   assert.match(footer, /mt-12 flex-shrink-0 m-auto w-full px-4 text-stone-400/)
 })

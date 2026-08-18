@@ -3,7 +3,7 @@ import tsParser from '@typescript-eslint/parser'
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
 
 export default defineConfig([
-  { ignores: ['.cache/**', '.next/**', 'node_modules/**', 'packages/*/dist/**', 'packages/*/storybook-static/**'] },
+  { ignores: ['.cache/**', '.next/**', '.vercel/**', 'node_modules/**', 'packages/*/dist/**', 'packages/*/storybook-static/**', 'apps/blog/.astro/**', 'apps/blog/.vercel/**', 'apps/blog/dist/**'] },
   ...nextCoreWebVitals,
   {
     languageOptions: {

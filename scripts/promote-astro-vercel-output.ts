@@ -1,6 +1,6 @@
 import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { attachPolicyRouterMiddleware } from './vercel-output-config.mjs'
+import { attachPolicyRouterMiddleware, type VercelOutputConfig } from './vercel-output-config'
 
 const repoRoot = process.cwd()
 const from = path.join(repoRoot, 'apps/blog/.vercel/output')
@@ -18,7 +18,7 @@ if (!existsSync(configPath)) {
   throw new Error(`Vercel config missing at ${configPath}`)
 }
 
-const config = JSON.parse(readFileSync(configPath, 'utf8'))
+const config = JSON.parse(readFileSync(configPath, 'utf8')) as VercelOutputConfig
 const nextConfig = attachPolicyRouterMiddleware(config)
 writeFileSync(configPath, `${JSON.stringify(nextConfig, null, '\t')}\n`)
 

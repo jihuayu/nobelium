@@ -6,7 +6,7 @@ import {
   POLICY_ROUTER_DEST_SRC,
   attachPolicyRouterMiddleware,
   matchesPolicyRouterDest
-} from '../scripts/vercel-output-config.mjs'
+} from '../scripts/vercel-output-config'
 
 test('policy dest matcher covers public pages and skips /site and assets', () => {
   assert.equal(matchesPolicyRouterDest('/'), true)

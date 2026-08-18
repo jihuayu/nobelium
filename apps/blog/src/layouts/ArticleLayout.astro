@@ -24,4 +24,7 @@ const props = Astro.props
 
 <BaseLayout {...props} article={true}>
   <slot />
+  <script>
+    import '../scripts/article'
+  </script>
 </BaseLayout>

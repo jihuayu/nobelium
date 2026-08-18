@@ -2,9 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import ts from 'typescript'
-import tsdocPkg from '@microsoft/tsdoc'
-
-const { ParserMessageLogLevel, TSDocParser } = tsdocPkg
+import { ParserMessageLogLevel, TSDocParser } from '@microsoft/tsdoc'
 
 const ROOT = process.cwd()
 const PACKAGE_NAMES = ['notion-type', 'notion-data', 'notion-react', 'notion-vue']
@@ -19,13 +17,14 @@ const mode = process.argv.includes('--check')
     ? 'export'
     : 'export'
 
-function hasExportModifier(node) {
-  return Array.isArray(node.modifiers) && node.modifiers.some((modifier) => {
+function hasExportModifier(node: ts.Node) {
+  const modifiers = 'modifiers' in node ? node.modifiers : undefined
+  return Array.isArray(modifiers) && modifiers.some((modifier: ts.ModifierLike) => {
     return modifier.kind === ts.SyntaxKind.ExportKeyword || modifier.kind === ts.SyntaxKind.DefaultKeyword
   })
 }
 
-function safeGetText(node, sourceFile) {
+function safeGetText(node: ts.Node | undefined, sourceFile: ts.SourceFile) {
   if (!node) return ''
   try {
     return node.getText(sourceFile)
@@ -34,7 +33,7 @@ function safeGetText(node, sourceFile) {
   }
 }
 
-function getNodeNames(node, sourceFile) {
+function getNodeNames(node: ts.Node, sourceFile: ts.SourceFile) {
   if (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node) || ts.isEnumDeclaration(node)) {
     const name = safeGetText(node.name, sourceFile)
     return name ? [name] : ['default']
@@ -54,7 +53,7 @@ function getNodeNames(node, sourceFile) {
   return []
 }
 
-function getTSDocCommentText(sourceFile, node) {
+function getTSDocCommentText(sourceFile: ts.SourceFile, node: ts.Node) {
   const sourceText = sourceFile.getFullText()
   const ranges = ts.getLeadingCommentRanges(sourceText, node.getFullStart()) || []
   const blockComments = ranges
@@ -65,10 +64,59 @@ function getTSDocCommentText(sourceFile, node) {
   return blockComments[blockComments.length - 1]
 }
 
-function sectionToText(section) {
+interface TsdocLikeNode {
+  text?: string
+  code?: string
+  nodes?: TsdocLikeNode[]
+  getChildNodes?: () => TsdocLikeNode[]
+}
+
+interface TsdocLikeSection {
+  nodes?: TsdocLikeNode[]
+}
+
+interface TsdocParamBlock {
+  parameterName?: string
+  content?: TsdocLikeSection
+}
+
+interface TsdocDocComment {
+  summarySection?: TsdocLikeSection
+  modifierTagSet?: { nodes?: Array<{ tagName?: string }> }
+  customBlocks?: Array<{ blockTag?: { tagName?: string } }>
+  params?: { blocks?: TsdocParamBlock[] }
+  returnsBlock?: { content?: TsdocLikeSection }
+  remarksBlock?: { content?: TsdocLikeSection }
+}
+
+interface DocEntry {
+  packageName: string
+  file: string
+  kind: string
+  symbol: string
+  anchor: string
+  summary: string
+  summaryEn: string
+  summaryZh: string
+  params: Array<{ name: string, description: string, descriptionEn: string, descriptionZh: string }>
+  returns: { description: string, descriptionEn: string, descriptionZh: string } | null
+  remarks: { description: string, descriptionEn: string, descriptionZh: string } | null
+  tags: string[]
+  tsdoc: string
+}
+
+interface DocIssue {
+  packageName: string
+  file: string
+  symbol: string
+  text: string
+  level: string
+}
+
+function sectionToText(section?: TsdocLikeSection | null) {
   if (!section || !Array.isArray(section.nodes)) return ''
 
-  const renderNode = (node) => {
+  const renderNode = (node?: TsdocLikeNode | null): string => {
     if (!node) return ''
 
     if (typeof node.text === 'string') return node.text
@@ -88,7 +136,7 @@ function sectionToText(section) {
   return section.nodes.map(renderNode).join('').replace(/\s+/g, ' ').trim()
 }
 
-function splitBilingualSummary(summary) {
+function splitBilingualSummary(summary?: string) {
   const value = `${summary || ''}`.trim()
   if (!value) {
     return {
@@ -113,34 +161,34 @@ function splitBilingualSummary(summary) {
   return { en: '', zh: compact }
 }
 
-function escapeTableCell(value) {
+function escapeTableCell(value: string) {
   return `${value || ''}`.replace(/\|/g, '\\|').replace(/\n+/g, ' ')
 }
 
-function slugify(value) {
+function slugify(value: string) {
   return `${value || ''}`
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 }
 
-function buildSymbolAnchor(entry) {
+function buildSymbolAnchor(entry: Pick<DocEntry, 'symbol' | 'kind'>) {
   const symbolPart = slugify(entry.symbol)
   const kindPart = slugify(entry.kind)
   return [symbolPart, kindPart].filter(Boolean).join('-') || 'symbol'
 }
 
-function collectModifierTags(docComment) {
+function collectModifierTags(docComment?: TsdocDocComment | null) {
   const nodes = docComment?.modifierTagSet?.nodes || []
   return nodes.map((node) => `${node?.tagName || ''}`.trim()).filter(Boolean)
 }
 
-function collectBlockTags(docComment) {
+function collectBlockTags(docComment?: TsdocDocComment | null) {
   const blocks = docComment?.customBlocks || []
   return blocks.map((block) => `${block?.blockTag?.tagName || ''}`.trim()).filter(Boolean)
 }
 
-function collectParamDocs(docComment) {
+function collectParamDocs(docComment?: TsdocDocComment | null) {
   const blocks = docComment?.params?.blocks || []
   return blocks.map((block) => {
     const description = sectionToText(block?.content)
@@ -154,7 +202,7 @@ function collectParamDocs(docComment) {
   })
 }
 
-function collectReturnsDoc(docComment) {
+function collectReturnsDoc(docComment?: TsdocDocComment | null) {
   const description = sectionToText(docComment?.returnsBlock?.content)
   if (!description) return null
   const bilingual = splitBilingualSummary(description)
@@ -165,7 +213,7 @@ function collectReturnsDoc(docComment) {
   }
 }
 
-function collectRemarksDoc(docComment) {
+function collectRemarksDoc(docComment?: TsdocDocComment | null) {
   const description = sectionToText(docComment?.remarksBlock?.content)
   if (!description) return null
   const bilingual = splitBilingualSummary(description)
@@ -176,7 +224,7 @@ function collectRemarksDoc(docComment) {
   }
 }
 
-function loadProgramForPackage(packageName) {
+function loadProgramForPackage(packageName: string) {
   const tsconfigPath = path.join(ROOT, 'packages', packageName, 'tsconfig.json')
   const readResult = ts.readConfigFile(tsconfigPath, ts.sys.readFile)
   if (readResult.error) {
@@ -193,10 +241,10 @@ function loadProgramForPackage(packageName) {
   })
 }
 
-function collectExportedEntries(packageName, parser) {
+function collectExportedEntries(packageName: string, parser: InstanceType<typeof TSDocParser>) {
   const program = loadProgramForPackage(packageName)
-  const entries = []
-  const issues = []
+  const entries: DocEntry[] = []
+  const issues: DocIssue[] = []
   const packageSrcSegment = path.join('packages', packageName, 'src')
 
   for (const sourceFile of program.getSourceFiles()) {
@@ -224,23 +272,23 @@ function collectExportedEntries(packageName, parser) {
             file: relFile,
             symbol: names.join(', '),
             text: message.text,
-            level: ParserMessageLogLevel[message.logLevel]
+            level: String(ParserMessageLogLevel[message.logLevel] || message.logLevel)
           })
         }
       }
 
-      const summary = sectionToText(parseResult.docComment.summarySection)
+      const summary = sectionToText(parseResult.docComment.summarySection as TsdocLikeSection)
       const bilingual = splitBilingualSummary(summary)
-      const params = collectParamDocs(parseResult.docComment)
-      const returns = collectReturnsDoc(parseResult.docComment)
-      const remarks = collectRemarksDoc(parseResult.docComment)
+      const params = collectParamDocs(parseResult.docComment as TsdocDocComment)
+      const returns = collectReturnsDoc(parseResult.docComment as TsdocDocComment)
+      const remarks = collectRemarksDoc(parseResult.docComment as TsdocDocComment)
       const tags = Array.from(new Set([
-        ...collectModifierTags(parseResult.docComment),
-        ...collectBlockTags(parseResult.docComment)
+        ...collectModifierTags(parseResult.docComment as TsdocDocComment),
+        ...collectBlockTags(parseResult.docComment as TsdocDocComment)
       ]))
 
       for (const name of names) {
-        const entry = {
+        const entry: DocEntry = {
           packageName,
           file: relFile,
           kind,
@@ -264,7 +312,7 @@ function collectExportedEntries(packageName, parser) {
   return { entries, issues }
 }
 
-async function writePackageDocs(packageName, entries) {
+async function writePackageDocs(packageName: string, entries: DocEntry[]) {
   const lines = [
     `# ${packageName} API TSDoc`,
     '',
@@ -311,7 +359,7 @@ async function writePackageDocs(packageName, entries) {
   await fs.writeFile(path.join(OUTPUT_DIR, `${packageName}.md`), lines.join('\n'), 'utf8')
 }
 
-async function writeBilingualPage(packageName, entries) {
+async function writeBilingualPage(packageName: string, entries: DocEntry[]) {
   const lines = [
     `# ${packageName} API (EN | 中文)`,
     '',
@@ -332,7 +380,7 @@ async function writeBilingualPage(packageName, entries) {
   await fs.writeFile(path.join(OUTPUT_PAGES_DIR, `${packageName}.md`), lines.join('\n'), 'utf8')
 }
 
-async function writeJsonOutputs(allByPackage, issues) {
+async function writeJsonOutputs(allByPackage: Record<string, DocEntry[]>, issues: DocIssue[]) {
   const generatedAt = new Date().toISOString()
   await fs.mkdir(OUTPUT_JSON_DIR, { recursive: true })
   const flatSymbols = []
@@ -377,8 +425,8 @@ async function main() {
   const parser = new TSDocParser()
   let hasIssues = false
   let totalEntries = 0
-  const issuesAll = []
-  const allByPackage = {}
+  const issuesAll: DocIssue[] = []
+  const allByPackage: Record<string, DocEntry[]> = {}
 
   for (const packageName of PACKAGE_NAMES) {
     const { entries, issues } = collectExportedEntries(packageName, parser)
@@ -418,7 +466,7 @@ async function main() {
   }
 }
 
-main().catch((error) => {
+main().catch((error: unknown) => {
   console.error(error)
   process.exitCode = 1
 })

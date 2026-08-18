@@ -21,9 +21,26 @@ const VARIANT_404_DESTS = [
   ['mainland', 'en'],
   ['global', 'zh-CN'],
   ['global', 'en']
-]
+] as const
 
-function isPolicyDestRoute(route) {
+export interface VercelOutputRoute {
+  src?: string
+  dest?: string
+  handle?: string
+  status?: number
+  continue?: boolean
+  middlewarePath?: string
+  headers?: Record<string, string>
+  missing?: Array<{ type: string, key: string, value?: string }>
+}
+
+export interface VercelOutputConfig {
+  version?: number
+  routes?: VercelOutputRoute[]
+  [key: string]: unknown
+}
+
+function isPolicyDestRoute(route: VercelOutputRoute | undefined) {
   return Boolean(
     route
     && route.dest === '_middleware'
@@ -31,7 +48,7 @@ function isPolicyDestRoute(route) {
   )
 }
 
-function isLegacyMiddlewareRoute(route) {
+function isLegacyMiddlewareRoute(route: VercelOutputRoute | undefined) {
   return Boolean(
     route
     && route.middlewarePath === '_middleware'
@@ -39,7 +56,7 @@ function isLegacyMiddlewareRoute(route) {
   )
 }
 
-function isDirectSiteBlockRoute(route) {
+function isDirectSiteBlockRoute(route: VercelOutputRoute | undefined) {
   return Boolean(
     route
     && route.src === '^/site(?:/.*)?$'
@@ -47,7 +64,7 @@ function isDirectSiteBlockRoute(route) {
   )
 }
 
-function isVariantNotFoundRoute(route) {
+function isVariantNotFoundRoute(route: VercelOutputRoute | undefined) {
   return Boolean(
     route
     && typeof route.src === 'string'
@@ -58,19 +75,19 @@ function isVariantNotFoundRoute(route) {
   )
 }
 
-export function matchesPolicyRouterDest(pathname) {
+export function matchesPolicyRouterDest(pathname: string) {
   return new RegExp(POLICY_ROUTER_DEST_SRC).test(pathname)
 }
 
-export function attachPolicyRouterMiddleware(config) {
-  const routes = Array.isArray(config?.routes) ? config.routes.filter(route => (
+export function attachPolicyRouterMiddleware(config: VercelOutputConfig = {}) {
+  const routes: VercelOutputRoute[] = Array.isArray(config.routes) ? config.routes.filter(route => (
     !isPolicyDestRoute(route)
     && !isLegacyMiddlewareRoute(route)
     && !isDirectSiteBlockRoute(route)
     && !isVariantNotFoundRoute(route)
   )) : []
 
-  const blockDirectSite = {
+  const blockDirectSite: VercelOutputRoute = {
     src: '^/site(?:/.*)?$',
     missing: [
       { type: 'header', key: INTERNAL_VARIANT_HEADER },
@@ -78,11 +95,11 @@ export function attachPolicyRouterMiddleware(config) {
     ],
     status: 404
   }
-  const destRoute = {
+  const destRoute: VercelOutputRoute = {
     src: POLICY_ROUTER_DEST_SRC,
     dest: '_middleware'
   }
-  const fallbacks = VARIANT_404_DESTS.map(([region, locale]) => ({
+  const fallbacks: VercelOutputRoute[] = VARIANT_404_DESTS.map(([region, locale]) => ({
     src: `^/site/${region}/${locale}/.+$`,
     dest: `/site/${region}/${locale}/404`,
     status: 404
@@ -96,7 +113,7 @@ export function attachPolicyRouterMiddleware(config) {
 
   return {
     ...config,
-    version: config?.version ?? 3,
+    version: config.version ?? 3,
     routes
   }
 }

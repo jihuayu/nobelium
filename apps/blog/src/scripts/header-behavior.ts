@@ -1,4 +1,4 @@
-;(() => {
+function initHeaderBehavior() {
   const navEl = document.getElementById('sticky-nav')
   const sentinelEl = document.getElementById('header-sentinel')
   const titleEl = document.getElementById('header-title')
@@ -8,7 +8,7 @@
   const fullWidth = navEl.dataset.fullWidth === 'true'
   const useSticky = navEl.dataset.useSticky !== 'false'
 
-  let prevWide = null
+  let prevWide: boolean | null = null
   try {
     const stored = sessionStorage.getItem(WIDTH_STORAGE_KEY)
     prevWide = stored === null ? null : stored === 'true'
@@ -31,7 +31,7 @@
     return
   }
 
-  let collapseRaf = null
+  let collapseRaf: number | null = null
   const observer = new IntersectionObserver(([entry]) => {
     if (collapseRaf !== null) window.cancelAnimationFrame(collapseRaf)
     collapseRaf = window.requestAnimationFrame(() => {
@@ -48,4 +48,6 @@
     if (target !== navEl && target !== titleEl) return
     window.scrollTo({ top: 0, behavior: 'smooth' })
   })
-})()
+}
+
+initHeaderBehavior()

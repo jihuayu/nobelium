@@ -1,10 +1,20 @@
-const path = require('path')
-const { createRequire } = require('module')
+import path from 'node:path'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
+
+const require = createRequire(import.meta.url)
+const filename = fileURLToPath(import.meta.url)
+const dirname = path.dirname(filename)
+
+interface BlogAppearanceConfig {
+  lightBackground?: string
+  darkBackground?: string
+}
 
 const tailwindRequire = createRequire(require.resolve('@tailwindcss/postcss'))
-const createJiti = tailwindRequire('jiti')
-const jiti = createJiti(__filename, { interopDefault: true })
-const config = jiti(path.resolve(__dirname, 'config/blog.config.ts'))
+const createJiti = tailwindRequire('jiti') as (id: string, options?: { interopDefault?: boolean }) => (source: string) => BlogAppearanceConfig
+const jiti = createJiti(filename, { interopDefault: true })
+const config = jiti(path.resolve(dirname, 'config/blog.config.ts'))
 
 const FONTS_SANS = [
   'var(--font-ibm-plex-sans)',
@@ -23,7 +33,7 @@ const FONTS_SERIF = [
   '"AR PL UMing TW MBE"', 'PMingLiU', 'MingLiU', 'serif'
 ]
 
-module.exports = {
+const tailwindConfig = {
   content: [
     './*.{js,ts,jsx,tsx}',
     './app/**/*.{js,ts,jsx,tsx}',
@@ -34,10 +44,9 @@ module.exports = {
     './packages/notion-react/stories/**/*.{js,ts,jsx,tsx,mdx}',
     './packages/notion-react/src/**/*.{js,ts,jsx,tsx}',
     './packages/somnium-comments/src/**/*.{js,ts,jsx,tsx}',
-    './apps/blog/src/**/*.{astro,js,ts,jsx,tsx}',
-    './apps/blog/public/scripts/**/*.js'
+    './apps/blog/src/**/*.{astro,js,ts,jsx,tsx}'
   ],
-  darkMode: 'class',
+  darkMode: 'class' as const,
   theme: {
     extend: {
       colors: {
@@ -68,3 +77,5 @@ module.exports = {
   },
   plugins: []
 }
+
+export default tailwindConfig

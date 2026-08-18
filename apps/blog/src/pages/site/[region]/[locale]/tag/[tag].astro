@@ -57,5 +57,7 @@ const placeholder = `Search in #${decodedTag}`
   <div id="search-results" class="article-container my-8" data-initial-results="true">
     {filtered.map(group => <PostCard group={group} locale={locale} />)}
   </div>
-  <script src="/scripts/search.js" defer></script>
+  <script>
+    import '@blog/scripts/search'
+  </script>
 </BaseLayout>

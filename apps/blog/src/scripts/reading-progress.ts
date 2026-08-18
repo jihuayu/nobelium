@@ -1,7 +1,6 @@
-;(() => {
-  const bar = document.getElementById('reading-progress-bar')
-  if (!bar) return
-  let rafId = null
+const bar = document.getElementById('reading-progress-bar')
+if (bar) {
+  let rafId: number | null = null
   const update = () => {
     rafId = null
     const scrollTop = window.scrollY
@@ -16,4 +15,4 @@
   window.addEventListener('scroll', scheduleUpdate, { passive: true })
   window.addEventListener('resize', scheduleUpdate)
   update()
-})()
+}
