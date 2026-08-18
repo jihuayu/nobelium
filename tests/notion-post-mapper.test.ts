@@ -62,6 +62,9 @@ test('mapPageToPost maps required page metadata into PostData', () => {
   assert.equal(post.summary, 'Summary text')
   assert.deepEqual(post.formats, [])
   assert.equal(post.fullWidth, false)
+  assert.deepEqual(post.lang, [])
+  assert.deepEqual(post.visibility, [])
+  assert.deepEqual(post.comments, [])
 })
 
 test('mapPageToPost maps Notion 格式 multi-select into article formats', () => {

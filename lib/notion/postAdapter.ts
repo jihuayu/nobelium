@@ -143,9 +143,9 @@ export function mapNotionPageToPost(
     formats,
     fullWidth: formats.includes('wide'),
     date,
-    lang: normalizeSingleSelect(lang) ? [normalizeSingleSelect(lang)!] : [],
-    visibility: normalizeSingleSelect(visibility) ? [normalizeSingleSelect(visibility)!] : [],
-    comments: normalizeSingleSelect(comments) ? [normalizeSingleSelect(comments)!] : []
+    lang: normalizeSingleSelect(lang),
+    visibility: normalizeSingleSelect(visibility),
+    comments: normalizeSingleSelect(comments)
   }
 }
 

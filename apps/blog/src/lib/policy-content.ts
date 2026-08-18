@@ -12,7 +12,7 @@ import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import { buildLocalePath } from '@jihuayu/site-policy'
 import { getAllPosts } from './posts'
 
-function firstSelect(values: string[]): string {
+function firstSelect(values?: string[]): string {
   return values?.[0] || ''
 }
 

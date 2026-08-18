@@ -52,6 +52,12 @@
       "@jihuayu/notion-react/prepare": [
         "./packages/notion-react/src/prepare.ts"
       ],
+      "@jihuayu/notion-render-core": [
+        "./packages/notion-render-core/src/index.ts"
+      ],
+      "@jihuayu/site-policy": [
+        "./packages/site-policy/src/index.ts"
+      ],
       "@jihuayu/somnium-comments": [
         "./packages/somnium-comments/src/index.tsx"
       ],
@@ -74,6 +80,10 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "apps",
+    "packages/*/dist",
+    "packages/*/tests",
+    "packages/*/stories"
   ]
 }
