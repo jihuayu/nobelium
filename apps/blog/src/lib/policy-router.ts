@@ -1,9 +1,12 @@
 import {
+  buildLocalePath,
   canAccessArticle,
   lookupManifestArticle,
   lookupManifestRoute,
   resolveLocale,
   resolveRegionPolicy,
+  takeLocaleOverride,
+  type Locale,
   type PolicyManifest,
   type RegionPolicy
 } from '@jihuayu/site-policy'
@@ -63,7 +66,7 @@ export type PolicyRouterDecision =
   | { type: 'bypass' }
   | { type: 'allow-internal' }
   | { type: 'block-direct-variant' }
-  | { type: 'redirect'; location: string; status: 307 }
+  | { type: 'redirect'; location: string; status: 307; persistLocale?: Locale }
   | {
     type: 'rewrite'
     pathname: string
@@ -107,6 +110,12 @@ export function decidePolicyRouter(input: DecidePolicyRouterInput): PolicyRouter
   if (pathname.startsWith('/site/')) {
     if (input.allowInternalVariants) return { type: 'allow-internal' }
     return { type: 'block-direct-variant' }
+  }
+
+  const override = takeLocaleOverride(input.search)
+  if (override.locale) {
+    const location = `${buildLocalePath(pathname, override.locale)}${override.search}`
+    return { type: 'redirect', location, status: 307, persistLocale: override.locale }
   }
 
   const region = resolveRegion(input)

@@ -37,7 +37,8 @@ test('Astro chrome keeps the Nobelium class contract', () => {
   assert.match(header, /class="observer-element h-4 md:h-12"/)
   assert.match(header, /ARTICLE_CONTENT_MAX_WIDTH_CLASS/)
   assert.match(header, /header-icon-link/)
-  assert.match(header, /copy\.NAV\.INDEX/)
+  assert.match(header, /id="locale-toggle"/)
+  assert.match(header, /\/\?somnium-locale=zh-CN/)
 
   assert.match(postCard, /class="group block"/)
   assert.match(postCard, /mb-10 md:mb-12/)

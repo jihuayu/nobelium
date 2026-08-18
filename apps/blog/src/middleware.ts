@@ -1,5 +1,6 @@
 import { defineMiddleware } from 'astro:middleware'
 import { policyManifest } from './generated/policy-manifest'
+import { LOCALE_COOKIE_NAME } from '@jihuayu/site-policy'
 import {
   INTERNAL_VARIANT_HEADER,
   INTERNAL_VARIANT_QUERY,
@@ -85,7 +86,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
       return new Response(null, { status: 404 })
     case 'redirect': {
       const target = new URL(decision.location, url)
-      return context.redirect(target, decision.status)
+      const headers = new Headers({ Location: target.toString() })
+      if (decision.persistLocale) {
+        const secure = url.protocol === 'https:' ? '; Secure' : ''
+        headers.append(
+          'Set-Cookie',
+          `${LOCALE_COOKIE_NAME}=${decision.persistLocale}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
+        )
+        headers.append(
+          'Set-Cookie',
+          `${LOCALE_COOKIE_NAME}=; Path=/en; Max-Age=0; SameSite=Lax${secure}`
+        )
+      }
+      return new Response(null, { status: decision.status, headers })
     }
     case 'rewrite': {
       const target = new URL(decision.pathname, url)

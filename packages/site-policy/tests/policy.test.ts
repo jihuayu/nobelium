@@ -10,7 +10,9 @@ import {
   lookupManifestRoute,
   mergeArticlePolicies,
   resolveLocale,
-  resolveRegionPolicy
+  resolveRegionPolicy,
+  readLocaleCookie,
+  takeLocaleOverride
 } from '../src/index'
 
 test('resolveRegionPolicy maps CN to mainland', () => {
@@ -50,6 +52,22 @@ test('resolveLocale prefers URL prefix; cookie only negotiates homepage', () => 
     explicit: false,
     restPath: '/'
   })
+  assert.deepEqual(resolveLocale({
+    pathname: '/',
+    cookie: 'somnium-locale=zh-CN',
+    acceptLanguage: 'en-US,en;q=0.9'
+  }), {
+    locale: 'zh-CN',
+    explicit: true,
+    restPath: '/'
+  })
+})
+
+test('readLocaleCookie keeps the last somnium-locale value', () => {
+  assert.equal(readLocaleCookie('somnium-locale=en; somnium-locale=zh-CN'), 'zh-CN')
+  assert.equal(readLocaleCookie('somnium-locale=en'), 'en')
+  assert.equal(takeLocaleOverride('?somnium-locale=zh-CN&x=1').locale, 'zh-CN')
+  assert.equal(takeLocaleOverride('?somnium-locale=zh-CN&x=1').search, '?x=1')
 })
 
 test('groupPostsBySlug merges policies and locales', () => {

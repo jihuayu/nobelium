@@ -22,6 +22,7 @@ const copy = getBlogCopy(locale)
 const homeHref = localePrefix(locale) || '/'
 const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
 const otherLabel = locale === 'en' ? '中文' : 'English'
+const fallbackHref = locale === 'en' ? '/?somnium-locale=zh-CN' : '/en/'
 const navClass = 'text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 transition-colors duration-150 ease-out'
 const links = [
   { name: copy.NAV.INDEX, href: homeHref, show: true, external: false },
@@ -62,35 +63,41 @@ const links = [
         </li>
       ))}
       <li class="block ml-4 nav">
-        <button
-          type="button"
+        <a
           id="locale-toggle"
-          class:list={[
-            navClass,
-            'appearance-none bg-transparent p-0 border-0 font-[inherit] cursor-pointer',
-            !translationAvailable && 'cursor-not-allowed opacity-40'
-          ]}
+          href={fallbackHref}
+          class={navClass}
           data-locale={locale}
           data-available={translationAvailable ? 'true' : 'false'}
-          disabled={!translationAvailable}
-          aria-disabled={!translationAvailable}
-        >{otherLabel}</button>
+        >{otherLabel}</a>
       </li>
     </ul>
   </div>
 </div>
 <script>
-  const button = document.getElementById('locale-toggle')
-  button?.addEventListener('click', () => {
-    if (!(button instanceof HTMLButtonElement) || button.dataset.available === 'false') return
-    const current = button.dataset.locale
+  const toggle = document.getElementById('locale-toggle')
+  toggle?.addEventListener('click', event => {
+    if (!(toggle instanceof HTMLAnchorElement)) return
+    event.preventDefault()
+    const current = toggle.dataset.locale
     const next = current === 'en' ? 'zh-CN' : 'en'
-    document.cookie = `somnium-locale=${next}; path=/; max-age=31536000; samesite=lax`
+    const secure = window.location.protocol === 'https:' ? '; secure' : ''
+    const expired = `somnium-locale=; max-age=0; samesite=lax${secure}`
+    document.cookie = `${expired}; path=/`
+    document.cookie = `${expired}; path=/en`
+    document.cookie = `somnium-locale=${encodeURIComponent(next)}; path=/; max-age=31536000; samesite=lax${secure}`
+
     const path = window.location.pathname
+    const home = next === 'en' ? '/en/' : '/?somnium-locale=zh-CN'
+    if (toggle.dataset.available === 'false') {
+      window.location.href = home
+      return
+    }
     if (next === 'en') {
       window.location.href = path.startsWith('/en') ? path : `/en${path === '/' ? '/' : path}`
-    } else {
-      window.location.href = path.replace(/^\/en(?=\/|$)/, '') || '/'
+      return
     }
+    const stripped = path.replace(/^\/en(?=\/|$)/, '') || '/'
+    window.location.href = stripped === '/' ? home : stripped
   })
 </script>

@@ -86,6 +86,48 @@ test('policy router redirects English homepage negotiation to /en/', () => {
   })
 })
 
+test('policy router keeps Chinese homepage when cookie overrides English Accept-Language', () => {
+  const decision = decidePolicyRouter({
+    pathname: '/',
+    cookie: 'somnium-locale=zh-CN',
+    acceptLanguage: 'en-US,en;q=0.9',
+    regionParam: 'global',
+    manifest
+  })
+  assert.equal(decision.type, 'rewrite')
+  if (decision.type === 'rewrite') {
+    assert.equal(decision.pathname, '/site/global/zh-CN')
+    assert.equal(decision.headers['x-somnium-locale'], 'zh-CN')
+  }
+})
+
+test('policy router consumes somnium-locale query to persist Chinese and leave /en/', () => {
+  const fromHome = decidePolicyRouter({
+    pathname: '/',
+    search: '?somnium-locale=zh-CN',
+    acceptLanguage: 'en-US,en;q=0.9',
+    manifest
+  })
+  assert.deepEqual(fromHome, {
+    type: 'redirect',
+    location: '/',
+    status: 307,
+    persistLocale: 'zh-CN'
+  })
+
+  const fromEnglish = decidePolicyRouter({
+    pathname: '/en/',
+    search: '?somnium-locale=zh-CN',
+    manifest
+  })
+  assert.deepEqual(fromEnglish, {
+    type: 'redirect',
+    location: '/',
+    status: 307,
+    persistLocale: 'zh-CN'
+  })
+})
+
 test('policy router hides /site internals unless this is an Astro rewrite re-entry', () => {
   assert.equal(decidePolicyRouter({
     pathname: '/site/global/zh-CN',

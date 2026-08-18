@@ -61,11 +61,28 @@ export interface ResolveLocaleResult {
   restPath: string
 }
 
+export const LOCALE_OVERRIDE_QUERY = 'somnium-locale'
+
 export function readLocaleCookie(cookieHeader: string | null | undefined): Locale | null {
   if (!cookieHeader) return null
-  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${LOCALE_COOKIE_NAME}=([^;]+)`))
-  if (!match) return null
-  return normalizeLocale(decodeURIComponent(match[1]))
+  const pattern = new RegExp(`(?:^|;\\s*)${LOCALE_COOKIE_NAME}=([^;]*)`, 'g')
+  let lastValid: Locale | null = null
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(cookieHeader))) {
+    const parsed = normalizeLocale(decodeURIComponent(match[1] || ''))
+    if (parsed) lastValid = parsed
+  }
+  return lastValid
+}
+
+export function takeLocaleOverride(search?: string | null): { locale: Locale | null, search: string } {
+  const raw = `${search || ''}`
+  const params = new URLSearchParams(raw.startsWith('?') ? raw.slice(1) : raw)
+  const hasOverride = params.has(LOCALE_OVERRIDE_QUERY)
+  const locale = normalizeLocale(params.get(LOCALE_OVERRIDE_QUERY))
+  if (hasOverride) params.delete(LOCALE_OVERRIDE_QUERY)
+  const next = params.toString()
+  return { locale, search: next ? `?${next}` : '' }
 }
 
 export function resolvePreferredLocale(input: Pick<ResolveLocaleInput, 'cookie' | 'acceptLanguage'>): Locale {
