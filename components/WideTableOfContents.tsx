@@ -56,6 +56,8 @@ export default function WideTableOfContents({ toc, openLabel = 'Contents', close
 
   if (!toc || !toc.length) return null
 
+  const minIndent = Math.min(...toc.map(item => item.indentLevel))
+
   return (
     <div
       ref={panelRef}
@@ -80,7 +82,7 @@ export default function WideTableOfContents({ toc, openLabel = 'Contents', close
                     ? 'border-stone-400 text-stone-800 dark:border-stone-500 dark:text-stone-100'
                     : 'border-transparent text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100'
                 )}
-                style={{ paddingLeft: (node.indentLevel * 16 + 8) + 'px' }}
+                style={{ paddingLeft: `${(node.indentLevel - minIndent) * 12 + 6}px` }}
                 title={node.text}
               >
                 <span className="block whitespace-nowrap overflow-hidden text-ellipsis">{node.text}</span>

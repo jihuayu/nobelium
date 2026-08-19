@@ -45,10 +45,12 @@ export default function TableOfContents({ toc, className, style, label }: TableO
 
   if (!toc || !toc.length) return null
 
+  const minIndent = Math.min(...toc.map(item => item.indentLevel))
+
   return (
     <nav
       aria-label={label || 'Table of contents'}
-      className={cn(className, 'pl-2 text-sm text-stone-400 dark:text-stone-500')}
+      className={cn(className, 'text-sm text-stone-400 dark:text-stone-500')}
       style={style}
     >
       {toc.map(node => {
@@ -64,7 +66,7 @@ export default function TableOfContents({ toc, className, style, label }: TableO
                   ? 'border-stone-400 text-stone-800 dark:border-stone-500 dark:text-stone-100'
                   : 'border-transparent hover:text-stone-900 dark:hover:text-stone-100'
               )}
-              style={{ paddingLeft: (node.indentLevel * 16) + 8 + 'px' }}
+              style={{ paddingLeft: `${(node.indentLevel - minIndent) * 12 + 6}px` }}
               title={node.text}
             >
               {node.text}
