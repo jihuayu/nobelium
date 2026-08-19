@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { formatDate } from '@/lib/formatDate'
+import TagItem from '@/components/TagItem'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 
 const MAX_LIST_TAGS = 2
@@ -29,25 +30,16 @@ const BlogPost = ({ post, blogPath, lang, timezone }: BlogPostProps) => {
             {post.title}
           </Link>
         </h2>
-        <div className="flex shrink-0 items-baseline gap-x-3 overflow-hidden text-xs text-stone-400 dark:text-stone-500">
-          <time dateTime={dateTime} className="shrink-0 tabular-nums">
+        <div className="flex shrink-0 items-baseline text-xs text-stone-400 dark:text-stone-500">
+          <time dateTime={dateTime} className="tabular-nums">
             {formatDate(post.date, lang, timezone)}
           </time>
-          {tags.length > 0 && (
-            <ul className="relative z-10 flex min-w-0 flex-nowrap items-baseline gap-x-3 overflow-hidden">
-              {tags.map(tag => (
-                <li key={tag} className="shrink-0">
-                  <Link
-                    href={`/tag/${encodeURIComponent(tag)}`}
-                    prefetch={false}
-                    className="block max-w-[7em] truncate transition-colors duration-150 ease-out hover:text-stone-800 dark:hover:text-stone-200"
-                  >
-                    {tag}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+          {tags.map(tag => (
+            <span key={tag} className="inline-flex items-baseline">
+              <span aria-hidden="true">&nbsp;/&nbsp;</span>
+              <TagItem tag={tag} className="relative z-10 max-w-[7em] truncate" />
+            </span>
+          ))}
         </div>
       </header>
       {post.summary && (

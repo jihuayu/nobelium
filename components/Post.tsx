@@ -61,26 +61,24 @@ export default function Post(props: PostProps) {
       </h1>
       {post.type[0] !== 'Page' && (
         <nav className={cn(
-          'w-full flex mt-6 items-start text-sm text-stone-400 dark:text-stone-500',
+          'w-full flex flex-wrap items-baseline mt-6 mb-4 text-sm text-stone-400 dark:text-stone-500',
           contentWidthClass,
           'px-4'
         )}>
-          <div className="flex mb-4">
-            <a href={config.socialLink || '#'} className="flex hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-150 ease-out">
-              <p className="ml-2 md:block">{config.author}</p>
-            </a>
-            <span className="block">&nbsp;/&nbsp;</span>
-          </div>
-          <div className="mr-2 mb-4 md:ml-0">
-            {formatDate(post.date, config.lang, config.timezone)}
-          </div>
-          {post.tags && (
-            <div className="flex flex-nowrap max-w-full overflow-x-auto article-tags">
-              {post.tags.map(tag => (
-                <TagItem key={tag} tag={tag} />
-              ))}
-            </div>
-          )}
+          <a
+            href={config.socialLink || '#'}
+            className="hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-150 ease-out"
+          >
+            {config.author}
+          </a>
+          <span aria-hidden="true">&nbsp;/&nbsp;</span>
+          <time>{formatDate(post.date, config.lang, config.timezone)}</time>
+          {(post.tags || []).map(tag => (
+            <span key={tag}>
+              <span aria-hidden="true">&nbsp;/&nbsp;</span>
+              <TagItem tag={tag} />
+            </span>
+          ))}
         </nav>
       )}
       <div className="self-stretch -mt-4 relative">
