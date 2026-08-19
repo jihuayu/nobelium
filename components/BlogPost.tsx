@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/formatDate'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 
+const MAX_LIST_TAGS = 2
+
 interface BlogPostProps {
   post: PostData
   blogPath: string
@@ -11,7 +13,7 @@ interface BlogPostProps {
 
 const BlogPost = ({ post, blogPath, lang, timezone }: BlogPostProps) => {
   const href = `${blogPath}/${post.slug}`
-  const tags = post.tags || []
+  const tags = (post.tags || []).slice(0, MAX_LIST_TAGS)
   const parsedDate = new Date(post.date)
   const dateTime = Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate.toISOString()
 
@@ -38,7 +40,7 @@ const BlogPost = ({ post, blogPath, lang, timezone }: BlogPostProps) => {
                   <Link
                     href={`/tag/${encodeURIComponent(tag)}`}
                     prefetch={false}
-                    className="transition-colors duration-150 ease-out hover:text-stone-800 dark:hover:text-stone-200"
+                    className="block max-w-[7em] truncate transition-colors duration-150 ease-out hover:text-stone-800 dark:hover:text-stone-200"
                   >
                     {tag}
                   </Link>
