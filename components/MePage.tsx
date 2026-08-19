@@ -156,7 +156,7 @@ export default function MePage({
 
   return (
     <div className="me-page">
-      <section className="relative flex min-h-[calc(100svh-6.5rem)] flex-col items-center px-6 py-10 text-center">
+      <section className="relative flex min-h-svh flex-col items-center px-6 py-10 text-center">
         <div
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-[42%] -z-10 size-[250px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(255,240,210,0.22)_0%,transparent_55%)] lg:size-[450px] dark:bg-[radial-gradient(ellipse,rgba(180,200,255,0.08)_0%,transparent_55%)]"
