@@ -18,7 +18,7 @@ export default function PostList({ posts, timezone }: PostListProps) {
           <p
             className={cn(
               'font-serif text-sm text-stone-400 dark:text-stone-500',
-              index === 0 ? 'mb-6' : 'mt-14 mb-6'
+              index === 0 ? 'mb-2.5' : 'mt-8 mb-2.5'
             )}
           >
             {group.year}

@@ -18,8 +18,8 @@ const BlogPost = ({ post, blogPath, lang, timezone }: BlogPostProps) => {
   const dateTime = Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate.toISOString()
 
   return (
-    <article className="mb-10 md:mb-12">
-          <h2 className="text-lg md:text-2xl font-serif font-semibold mb-1.5 text-stone-900 dark:text-stone-100 tracking-tight">
+    <article className="mb-4 md:mb-5">
+      <h2 className="mb-0.5 text-lg font-serif font-semibold tracking-tight text-stone-900 dark:text-stone-100 md:text-xl">
         <Link
           href={href}
           prefetch={false}
@@ -29,7 +29,7 @@ const BlogPost = ({ post, blogPath, lang, timezone }: BlogPostProps) => {
         </Link>
       </h2>
       {post.summary && (
-        <p className="mb-2 line-clamp-2 leading-7 md:leading-8 text-stone-600 dark:text-stone-400">
+        <p className="mb-1 line-clamp-2 text-sm leading-6 text-stone-600 dark:text-stone-400">
           {post.summary}
         </p>
       )}

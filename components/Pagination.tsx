@@ -15,7 +15,7 @@ export default async function Pagination({ page, showNext }: PaginationProps) {
   if (currentPage !== 1 && !showNext) additionalClassName = 'justify-start'
 
   return (
-    <div className={`flex font-medium text-stone-500 dark:text-stone-400 ${additionalClassName}`}>
+    <div className={`mt-8 flex font-medium text-stone-500 dark:text-stone-400 ${additionalClassName}`}>
       {currentPage !== 1 && (
         <Link
           href={
