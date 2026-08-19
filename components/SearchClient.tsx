@@ -199,7 +199,7 @@ export default function SearchClient({
               ? copy.PLACEHOLDER_TAG.replace('{tag}', currentTag)
               : copy.PLACEHOLDER
           }
-          className="block w-full border-0 border-b border-stone-200 bg-transparent px-0 py-2 text-stone-900 placeholder:text-stone-400 outline-none transition-colors duration-150 ease-out focus:border-stone-400 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-stone-500"
+          className="block w-full appearance-none rounded-none border-0 border-b border-stone-200 bg-transparent px-0 py-2 text-stone-900 shadow-none placeholder:text-stone-400 outline-none transition-colors duration-150 ease-out focus:border-stone-800 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-stone-300"
           onChange={e => setSearchValue(e.target.value)}
         />
       </div>

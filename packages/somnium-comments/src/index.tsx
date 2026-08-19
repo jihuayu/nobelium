@@ -1689,7 +1689,7 @@ export function CommentBox({
                         window.setTimeout(() => setMentionQuery(null), 150)
                       }}
                       placeholder={isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
-                      className="block min-h-28 w-full resize-y border-0 border-b border-stone-200 bg-transparent px-0 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:text-stone-400 dark:border-stone-800 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:text-stone-700"
+                      className="block min-h-28 w-full resize-y appearance-none rounded-none border-0 border-b border-stone-200 bg-transparent px-0 py-2 text-sm leading-6 text-stone-800 shadow-none outline-none transition-colors placeholder:text-stone-400 focus:border-stone-800 disabled:cursor-not-allowed disabled:text-stone-400 dark:border-stone-800 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-300 dark:disabled:text-stone-700"
                     />
                     {mentionQuery && mentionSuggestions.length > 0 && (
                       <div className="absolute bottom-full left-0 z-20 mb-1 min-w-40 overflow-hidden border border-stone-200 bg-white py-1 dark:border-stone-800 dark:bg-stone-950">

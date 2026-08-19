@@ -49,7 +49,8 @@ body::-webkit-scrollbar-thumb {
   background: rgb(168 162 158 / 0.28);
 }
 
-/* Quiet, monochrome focus ring (replaces browser blue outline) */
+/* Quiet, monochrome focus ring (replaces browser blue outline).
+   Text fields keep an underline-only focus so they are not boxed. */
 :focus-visible {
   outline: 2px solid rgb(28 25 23 / 0.45);
   outline-offset: 2px;
@@ -57,6 +58,13 @@ body::-webkit-scrollbar-thumb {
 }
 .dark :focus-visible {
   outline-color: rgb(245 245 244 / 0.5);
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  outline-offset: 0;
+  border-radius: 0;
 }
 
 .wrapper {
