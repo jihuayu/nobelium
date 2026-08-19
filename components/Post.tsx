@@ -53,7 +53,7 @@ export default function Post(props: PostProps) {
   return (
     <article id="post-article" className={cn('flex flex-col items-center', getPostFormatClassNames(post))}>
       <h1 className={cn(
-        'w-full font-serif font-semibold text-[2.35rem] md:text-[2.6rem] leading-[1.18] text-stone-900 dark:text-stone-100',
+        'w-full font-serif font-medium text-[2rem] leading-tight tracking-[-0.025em] text-stone-900 dark:text-stone-100',
         contentWidthClass,
         'px-4'
       )}>

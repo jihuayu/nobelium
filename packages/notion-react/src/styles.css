@@ -4,7 +4,7 @@
   --no-leading: 1.75;
   --notion-font-family: inherit;
   --notion-font-size: clamp(16.5px, 1rem + 0.16vw, 18px);
-  --notion-letter-spacing: 0.012em;
+  --notion-letter-spacing: 0;
   --notion-paragraph-spacing: 0.64em;
   --notion-text-color: rgb(40, 37, 35);
   --notion-text-color-dark: rgb(214, 211, 209);
@@ -81,7 +81,9 @@
   font-size: var(--notion-font-size);
   font-weight: 400;
   line-height: var(--no-leading);
-  letter-spacing: var(--notion-letter-spacing);
+  letter-spacing: normal;
+  text-autospace: ideograph-alpha ideograph-numeric;
+  text-spacing-trim: space-first;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-wrap: break-word;
@@ -610,7 +612,12 @@
   letter-spacing: 0.02em;
 }
 
-.notion-code-content { margin: 0; overflow-x: auto; }
+.notion-code-content {
+  margin: 0;
+  overflow-x: auto;
+  text-autospace: no-autospace;
+  text-spacing-trim: space-all;
+}
 
 .notion-code-copy-button {
   position: absolute;

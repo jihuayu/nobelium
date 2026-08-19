@@ -1513,7 +1513,7 @@ export function CommentBox({
       )}
     >
       <header className="mb-5">
-        <h2 id="comments-title" className="font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+        <h2 id="comments-title" className="font-serif text-xl font-medium tracking-tight text-stone-900 dark:text-stone-100">
           <span>{copy.title}</span>
           {status === 'ready' && (
             <span className="ml-2 align-middle text-sm font-normal text-stone-400 dark:text-stone-500">

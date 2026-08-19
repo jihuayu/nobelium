@@ -10,7 +10,7 @@ export default async function NotFound() {
     <ContainerServer>
       <div className="flex flex-col items-center py-24 text-center">
         <p className="font-serif text-sm text-stone-400 dark:text-stone-500">404</p>
-        <h1 className="mt-4 font-serif text-2xl font-semibold text-stone-900 dark:text-stone-100">
+        <h1 className="mt-4 font-serif text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-100">
           {locale.PAGE.ERROR_404.MESSAGE}
         </h1>
         <Link

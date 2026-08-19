@@ -24,9 +24,18 @@ html {
   --scrollbarBG: #ffffff00;
   --thumbBG: #a8a29e;
   scroll-behavior: smooth;
+  text-autospace: ideograph-alpha ideograph-numeric;
+  text-spacing-trim: space-first;
 }
 html.dark {
   --thumbBG: #44403c;
+}
+
+pre,
+code,
+kbd,
+samp {
+  text-autospace: no-autospace;
 }
 body::-webkit-scrollbar {
   width: 5px;
