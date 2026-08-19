@@ -1,6 +1,6 @@
 import { config } from '@/lib/server/config'
 import ContainerServer from '@/components/ContainerServer'
-import PostList from '@/components/PostList'
+import BlogPostServer from '@/components/BlogPostServer'
 import Pagination from '@/components/Pagination'
 import { getAllPosts } from '@/lib/notion'
 
@@ -33,7 +33,8 @@ export default async function PaginationPage({ params }: PageProps) {
 
   return (
     <ContainerServer>
-      <PostList posts={postsToShow} timezone={config.timezone} />
+      {postsToShow &&
+        postsToShow.map(post => <BlogPostServer key={post.id} post={post} />)}
       <Pagination page={pageNum} showNext={showNext} />
     </ContainerServer>
   )
