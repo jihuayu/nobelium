@@ -1457,7 +1457,7 @@ export function CommentBox({
       replyBuckets[comment.id].hasMore
     )
     return (
-      <article key={comment.id} className={allowReply ? 'px-5 py-5' : 'py-3'}>
+      <article key={comment.id} className={allowReply ? 'py-6' : 'py-3'}>
         <div className="flex gap-3">
           {/* Avatar column with threading line */}
           <div className="flex shrink-0 flex-col items-center">
@@ -1512,8 +1512,8 @@ export function CommentBox({
         className
       )}
     >
-      <header className="mb-5">
-        <h2 id="comments-title" className="font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+      <header className="mb-8">
+        <h2 id="comments-title" className="font-serif text-xl font-semibold text-stone-900 dark:text-stone-100">
           <span>{copy.title}</span>
           {status === 'ready' && (
             <span className="ml-2 align-middle text-sm font-normal text-stone-400 dark:text-stone-500">
@@ -1526,13 +1526,9 @@ export function CommentBox({
         </p>
       </header>
 
-      <div
-        className="rounded-md border border-stone-200/75 bg-stone-50/45 dark:border-stone-800/80 dark:bg-stone-950/20"
-        role="status"
-        aria-live="polite"
-      >
+      <div role="status" aria-live="polite">
         {isLoading && (
-          <div className="px-5 py-6">
+          <div className="py-6">
             <div className="h-3 w-24 rounded-full bg-stone-200/80 dark:bg-stone-800/90" />
             <div className="mt-5 space-y-3">
               <div className="h-3 w-full max-w-[32rem] rounded-full bg-stone-200/65 dark:bg-stone-800/70" />
@@ -1545,7 +1541,7 @@ export function CommentBox({
         )}
 
         {status === 'error' && (
-          <div className="px-5 py-6">
+          <div className="py-6">
             <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">
               {copy.errorTitle}
             </p>
@@ -1557,7 +1553,7 @@ export function CommentBox({
             <button
               type="button"
               onClick={loadInitial}
-              className="mt-4 rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-stone-100"
+              className="mt-4 text-sm font-medium text-stone-500 transition-colors duration-150 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
             >
               {copy.retry}
             </button>
@@ -1566,21 +1562,21 @@ export function CommentBox({
 
         {status === 'ready' && (
           <>
-            <div className="divide-y divide-stone-200/70 dark:divide-stone-800/80">
+            <div>
               {comments.length === 0 ? (
-                <p className="px-5 py-6 text-sm text-stone-500 dark:text-stone-500">
+                <p className="py-6 text-sm text-stone-500 dark:text-stone-500">
                   {copy.empty}
                 </p>
               ) : comments.map(comment => renderCommentArticle(comment, true))}
             </div>
 
             {hasMore && (
-              <div className="border-t border-stone-200/70 px-5 py-4 dark:border-stone-800/80">
+              <div className="py-4">
                 <button
                   type="button"
                   disabled={busy}
                   onClick={handleLoadMore}
-                  className="text-sm font-medium text-stone-600 transition-colors duration-150 hover:text-stone-950 disabled:cursor-not-allowed disabled:text-stone-400 dark:text-stone-400 dark:hover:text-stone-100 dark:disabled:text-stone-700"
+                  className="text-sm font-medium text-stone-500 transition-colors duration-150 hover:text-stone-950 disabled:cursor-not-allowed disabled:text-stone-400 dark:text-stone-400 dark:hover:text-stone-100 dark:disabled:text-stone-700"
                 >
                   {copy.loadMore}
                 </button>
@@ -1590,7 +1586,7 @@ export function CommentBox({
             {/* Composer: collapsed by default, expands on click or reply */}
             <div className="border-t border-stone-200/70 dark:border-stone-800/80">
               {!composing ? (
-                <div className="flex items-center gap-3 px-5 py-4">
+                <div className="flex items-center gap-3 py-4">
                   {session ? (
                     <>
                       {session.user.avatar_url ? (
@@ -1610,7 +1606,7 @@ export function CommentBox({
                             window.requestAnimationFrame(() => composerRef.current?.focus())
                           }
                         }}
-                        className="min-w-0 flex-1 truncate rounded-md border border-stone-200 bg-white px-3 py-2 text-left text-sm text-stone-400 transition-colors duration-150 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-600 dark:hover:border-stone-700"
+                        className="min-w-0 flex-1 truncate border-0 border-b border-stone-200 bg-transparent py-2 text-left text-sm text-stone-400 transition-colors duration-150 hover:border-stone-400 dark:border-stone-800 dark:text-stone-600 dark:hover:border-stone-600"
                       >
                         {copy.textareaPlaceholder}
                       </button>
@@ -1638,7 +1634,7 @@ export function CommentBox({
                   )}
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="p-5">
+                <form onSubmit={handleSubmit} className="py-5">
                   {session && (
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex min-w-0 items-center gap-2">
@@ -1665,7 +1661,7 @@ export function CommentBox({
                     </div>
                   )}
                   {isReplying && (
-                    <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-950/45 dark:text-stone-400">
+                    <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-200 py-2 text-sm text-stone-600 dark:border-stone-800 dark:text-stone-400">
                       <span className="min-w-0 truncate">
                         正在回复 {replyTarget ? `@${displayName(replyTarget.author)}` : `#${replyingTo}`}
                       </span>
@@ -1693,10 +1689,10 @@ export function CommentBox({
                         window.setTimeout(() => setMentionQuery(null), 150)
                       }}
                       placeholder={isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
-                      className="block min-h-28 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:bg-stone-900/60 dark:disabled:text-stone-700"
+                      className="block min-h-28 w-full resize-y border-0 border-b border-stone-200 bg-transparent px-0 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:text-stone-400 dark:border-stone-800 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:text-stone-700"
                     />
                     {mentionQuery && mentionSuggestions.length > 0 && (
-                      <div className="absolute bottom-full left-3 z-20 mb-1 min-w-40 overflow-hidden rounded-md border border-stone-200 bg-white py-1 shadow-md dark:border-stone-800 dark:bg-stone-950">
+                      <div className="absolute bottom-full left-0 z-20 mb-1 min-w-40 overflow-hidden border border-stone-200 bg-white py-1 dark:border-stone-800 dark:bg-stone-950">
                         {mentionSuggestions.map((login, i) => (
                           <button
                             key={login}
@@ -1741,7 +1737,7 @@ export function CommentBox({
                       <button
                         type="submit"
                         disabled={!canSubmit}
-                        className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-stone-100 dark:disabled:border-stone-800 dark:disabled:text-stone-700"
+                        className="text-sm font-medium text-stone-700 transition-colors duration-150 hover:text-stone-950 disabled:cursor-not-allowed disabled:text-stone-400 dark:text-stone-300 dark:hover:text-stone-100 dark:disabled:text-stone-700"
                       >
                         {busy ? copy.submitting : isReplying ? copy.submitReply : copy.submit}
                       </button>

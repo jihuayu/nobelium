@@ -25,6 +25,8 @@ interface PostProps {
   linkPreviewMap?: LinkPreviewMap
   pageLinkMap?: PageLinkMap
   pagePreviewMap?: PagePreviewMap
+  tocLabel?: string
+  tocCloseLabel?: string
 }
 
 export function getPostFormatClassNames(post: Pick<PostData, 'formats'>): string[] {
@@ -36,13 +38,22 @@ export function getPostFormatClassNames(post: Pick<PostData, 'formats'>): string
 }
 
 export default function Post(props: PostProps) {
-  const { post, document, fullWidth = false, linkPreviewMap = {}, pageLinkMap = {}, pagePreviewMap = {} } = props
+  const {
+    post,
+    document,
+    fullWidth = false,
+    linkPreviewMap = {},
+    pageLinkMap = {},
+    pagePreviewMap = {},
+    tocLabel,
+    tocCloseLabel
+  } = props
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
 
   return (
-    <article className={cn('flex flex-col items-center', getPostFormatClassNames(post))}>
+    <article id="post-article" className={cn('flex flex-col items-center', getPostFormatClassNames(post))}>
       <h1 className={cn(
-        'w-full font-serif font-semibold text-[2rem] leading-tight tracking-[-0.025em] text-stone-900 dark:text-stone-100',
+        'w-full font-serif font-semibold text-[2.35rem] md:text-[2.6rem] leading-[1.18] text-stone-900 dark:text-stone-100',
         contentWidthClass,
         'px-4'
       )}>
@@ -86,12 +97,19 @@ export default function Post(props: PostProps) {
           >
             <TableOfContents
               toc={document?.toc || []}
+              label={tocLabel}
               className="sticky pt-3 overflow-y-auto"
               style={{ top: `${ARTICLE_TOC_TOP_PX}px`, maxHeight: `min(${ARTICLE_TOC_MAX_HEIGHT}, 100%)` }}
             />
           </div>
         )}
-        {fullWidth && <WideTableOfContents toc={document?.toc || []} />}
+        {fullWidth && (
+          <WideTableOfContents
+            toc={document?.toc || []}
+            openLabel={tocLabel}
+            closeLabel={tocCloseLabel}
+          />
+        )}
       </div>
     </article>
   )

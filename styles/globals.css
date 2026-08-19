@@ -43,10 +43,10 @@ body::-webkit-scrollbar-thumb {
 }
 
 ::selection {
-  background: rgba(24, 24, 27, 0.15);
+  background: rgb(168 162 158 / 0.28);
 }
 .dark ::selection {
-  background: rgba(244, 244, 245, 0.18);
+  background: rgb(168 162 158 / 0.28);
 }
 
 /* Quiet, monochrome focus ring (replaces browser blue outline) */
@@ -83,10 +83,6 @@ body::-webkit-scrollbar-thumb {
 
 .sticky-nav-full {
   @apply cursor-pointer border-b border-stone-200/70 dark:border-stone-700/50;
-}
-
-.sticky-nav:not(.sticky-nav-full) .caret {
-  opacity: 0 !important;
 }
 
 .header-name {
@@ -129,27 +125,21 @@ nav {
     display: grid;
   }
   .site-title,
-  .post-title {
-    @apply transition duration-500;
-  }
+  .post-title,
   .site-description {
-    opacity: 0;
-    transition: opacity 0.5s cubic-bezier(0.4, 0, 0, 1);
-  }
-  .sticky-nav-full .site-description {
-    @apply opacity-100 transition duration-500;
+    @apply transition duration-500;
   }
   .post-title {
     @apply opacity-0;
-  }
-  .post-title ~ span .site-description {
-    @apply hidden;
   }
   .sticky-nav-full .post-title {
     @apply opacity-100;
   }
   .sticky-nav-full .post-title ~ span .site-title {
     @apply opacity-0;
+  }
+  .sticky-nav-full .post-title ~ span .site-description {
+    @apply hidden;
   }
 }
 
