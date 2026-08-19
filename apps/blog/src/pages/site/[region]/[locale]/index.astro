@@ -2,19 +2,19 @@
 import BaseLayout from '@blog/layouts/BaseLayout.astro'
 import PostCard from '@blog/components/PostCard.astro'
 import Pagination from '@blog/components/Pagination.astro'
-import { getAllVariants } from '@blog/lib/variants'
+import { parseVariantParams } from '@blog/lib/variants'
 import { filterGroupsForVariant, loadTranslationGroups } from '@blog/lib/policy-content'
 import { config } from '@/lib/server/config'
 import { siteOrigin } from '@blog/lib/urls'
-import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
 
-export async function getStaticPaths() {
-  return getAllVariants().map(({ region, locale }) => ({ params: { region, locale } }))
+export const prerender = false
+
+const variant = parseVariantParams(Astro.params.region, Astro.params.locale)
+if (!variant) {
+  return new Response(null, { status: 404 })
 }
 
-export const prerender = true
-
-const { region, locale } = Astro.params as { region: RegionPolicy, locale: Locale }
+const { region, locale } = variant
 const groups = filterGroupsForVariant(await loadTranslationGroups(false), region, locale)
   .sort((a, b) => (b.translations[locale]?.date || 0) - (a.translations[locale]?.date || 0))
 const postsToShow = groups.slice(0, config.postsPerPage)

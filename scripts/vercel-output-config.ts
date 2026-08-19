@@ -1,17 +1,16 @@
 /**
  * Public HTML is dest'd to Edge `_middleware`, which fetch()es the matching
- * `/site/{region}/{locale}` route. Homepage/404 stay prerendered files;
- * articles and other content routes are ISR functions. Direct `/site/**`
- * stays 404 unless the internal fetch header is present.
+ * `/site/{region}/{locale}` route. All content pages are ISR functions.
+ * Direct `/site/**` stays 404 unless the internal fetch header is present.
  *
  * Route order:
  * 1. 404 `/site/**` unless the internal fetch header is present
- * 2. filesystem (prerendered `/site/**` HTML plus assets)
+ * 2. filesystem (hashed assets; no prerendered HTML)
  * 3. dest `_middleware` for public HTML/JSON/XML routes
  *    (unmatched `/site/**` then falls through to the ISR function)
  *
  * Do not dest leftover `/site/{region}/{locale}/.+` paths to 404 — that
- * would steal ISR function requests for articles, pagination, and feeds.
+ * would steal ISR function requests for home, articles, pagination, and feeds.
  */
 
 export const INTERNAL_VARIANT_HEADER = 'x-somnium-internal'

@@ -23,7 +23,7 @@ test('policy dest matcher covers public pages and skips /site and assets', () =>
   assert.equal(matchesPolicyRouterDest('/favicon.ico'), false)
 })
 
-test('attachPolicyRouterMiddleware serves /site via filesystem fetch and dests public pages', () => {
+test('attachPolicyRouterMiddleware dests public pages and lets /site fall through to ISR', () => {
   const next = attachPolicyRouterMiddleware({
     version: 3,
     routes: [

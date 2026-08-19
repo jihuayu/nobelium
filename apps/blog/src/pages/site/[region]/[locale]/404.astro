@@ -1,15 +1,15 @@
 ---
 import BaseLayout from '@blog/layouts/BaseLayout.astro'
-import { getAllVariants } from '@blog/lib/variants'
-import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+import { parseVariantParams } from '@blog/lib/variants'
 
-export async function getStaticPaths() {
-  return getAllVariants().map(({ region, locale }) => ({ params: { region, locale } }))
+export const prerender = false
+
+const variant = parseVariantParams(Astro.params.region, Astro.params.locale)
+if (!variant) {
+  return new Response(null, { status: 404 })
 }
 
-export const prerender = true
-
-const { region, locale } = Astro.params as { region: RegionPolicy, locale: Locale }
+const { region, locale } = variant
 ---
 
 <BaseLayout region={region} locale={locale} title="404">

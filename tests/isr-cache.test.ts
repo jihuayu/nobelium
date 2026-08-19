@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import path from 'node:path'
 import test from 'node:test'
 import {
   expandPublicPathToInternalVariants,
@@ -42,4 +44,24 @@ test('expandPublicPathsToInternalVariants also busts search index and feed.xml c
   assert.equal(paths.includes('/site/global/zh-CN/search-index.json'), true)
   assert.equal(paths.includes('/site/mainland/en/feed'), true)
   assert.equal(paths.includes('/site/mainland/en/feed.xml'), true)
+})
+
+test('blog pages do not prerender, so Vercel ISR can cache every content route', () => {
+  const pagesRoot = path.resolve(import.meta.dirname, '../apps/blog/src/pages')
+  const files: string[] = []
+  const walk = (dir: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) walk(full)
+      else if (/\.(astro|ts)$/.test(entry.name)) files.push(full)
+    }
+  }
+  walk(pagesRoot)
+
+  assert.ok(files.length > 0)
+  for (const file of files) {
+    const source = fs.readFileSync(file, 'utf8')
+    assert.doesNotMatch(source, /prerender\s*=\s*true/, file)
+    assert.doesNotMatch(source, /getStaticPaths/, file)
+  }
 })
