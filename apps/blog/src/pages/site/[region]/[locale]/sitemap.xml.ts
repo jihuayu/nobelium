@@ -3,6 +3,7 @@ import { buildPublicPath, parseVariantParams } from '@blog/lib/variants'
 import { filterGroupsForVariant, getPostHref, loadTranslationGroups } from '@blog/lib/policy-content'
 import { config } from '@/lib/server/config'
 import { siteOrigin } from '@blog/lib/urls'
+import { ISR_PAGE_CACHE_CONTROL } from '@blog/lib/isr-cache'
 
 export const prerender = false
 
@@ -55,7 +56,7 @@ ${urls.map(url => `  <url><loc>${url}</loc></url>`).join('\n')}
   return new Response(body, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400'
+      'Cache-Control': ISR_PAGE_CACHE_CONTROL
     }
   })
 }

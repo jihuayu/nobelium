@@ -65,3 +65,12 @@ test('blog pages do not prerender, so Vercel ISR can cache every content route',
     assert.doesNotMatch(source, /getStaticPaths/, file)
   }
 })
+
+test('Vercel ISR keeps pages until on-demand revalidate instead of a timed TTL', () => {
+  const config = fs.readFileSync(
+    path.resolve(import.meta.dirname, '../apps/blog/astro.config.ts'),
+    'utf8'
+  )
+  assert.match(config, /expiration:\s*false/)
+  assert.doesNotMatch(config, /expiration:\s*\d+/)
+})

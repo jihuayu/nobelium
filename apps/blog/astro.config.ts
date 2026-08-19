@@ -4,7 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@astrojs/react'
 import vercel from '@astrojs/vercel'
 import { defineConfig } from 'astro/config'
-import { FIVE_MINUTES_SECONDS } from '../../lib/server/cache'
 
 const rootDir = fileURLToPath(new URL('../../', import.meta.url))
 const blogDir = fileURLToPath(new URL('./', import.meta.url))
@@ -22,7 +21,8 @@ export default defineConfig({
   adapter: vercel({
     edgeMiddleware: true,
     isr: {
-      expiration: FIVE_MINUTES_SECONDS,
+      // Keep the cached page until on-demand revalidate (webhook) or a new deploy.
+      expiration: false,
       exclude: [/^\/api\//],
       ...(isrBypassToken ? { bypassToken: isrBypassToken } : {})
     }

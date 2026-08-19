@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro'
 import { parseVariantParams } from '@blog/lib/variants'
 import { filterGroupsForVariant, getPostHref, loadTranslationGroups } from '@blog/lib/policy-content'
+import { ISR_PAGE_CACHE_CONTROL } from '@blog/lib/isr-cache'
 
 export const prerender = false
 
@@ -23,7 +24,7 @@ export const GET: APIRoute = async ({ params }) => {
   return new Response(JSON.stringify(entries), {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400'
+      'Cache-Control': ISR_PAGE_CACHE_CONTROL
     }
   })
 }

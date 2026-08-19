@@ -1,10 +1,9 @@
 import { resolveLocale } from '@jihuayu/site-policy'
-import { FIVE_MINUTES_SECONDS } from '@/lib/server/cache'
 import { INTERNAL_VARIANT_HEADER, INTERNAL_VARIANT_QUERY } from './policy-router'
 import { getAllVariants, variantBasePath } from './variants'
 
-export const ISR_EXPIRATION_SECONDS = FIVE_MINUTES_SECONDS
 export const ISR_REVALIDATE_HEADER = 'x-prerender-revalidate'
+export const ISR_PAGE_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
 
 const COMPANION_REST_PATHS: Record<string, string[]> = {
   '/search': ['/search-index.json'],
