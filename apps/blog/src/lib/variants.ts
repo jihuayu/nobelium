@@ -6,6 +6,20 @@ export interface VariantParams {
   locale: Locale
 }
 
+export function parseVariantParams(
+  region: string | undefined,
+  locale: string | undefined
+): VariantParams | null {
+  if (!region || !locale) return null
+  if (!(REGION_POLICIES as readonly string[]).includes(region)) return null
+  if (!(LOCALES as readonly string[]).includes(locale)) return null
+  return { region: region as RegionPolicy, locale: locale as Locale }
+}
+
+export function variantNotFoundPath(region: RegionPolicy, locale: Locale): string {
+  return `${variantBasePath(region, locale)}/404`
+}
+
 export function getAllVariants(): VariantParams[] {
   const variants: VariantParams[] = []
   for (const region of REGION_POLICIES) {

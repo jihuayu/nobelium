@@ -4,15 +4,28 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@astrojs/react'
 import vercel from '@astrojs/vercel'
 import { defineConfig } from 'astro/config'
+import { FIVE_MINUTES_SECONDS } from '../../lib/server/cache'
 
 const rootDir = fileURLToPath(new URL('../../', import.meta.url))
 const blogDir = fileURLToPath(new URL('./', import.meta.url))
 const serverOnlyStub = path.resolve(rootDir, 'node_modules/next/dist/compiled/server-only/empty.js')
 
+const isrBypassToken = (
+  process.env.CACHE_REVALIDATE_TOKEN?.trim()
+  || process.env.ISR_BYPASS_TOKEN?.trim()
+  || process.env.REVALIDATE_TOKEN?.trim()
+  || ''
+)
+
 export default defineConfig({
-  output: 'static',
+  output: 'server',
   adapter: vercel({
-    edgeMiddleware: true
+    edgeMiddleware: true,
+    isr: {
+      expiration: FIVE_MINUTES_SECONDS,
+      exclude: [/^\/api\//],
+      ...(isrBypassToken ? { bypassToken: isrBypassToken } : {})
+    }
   }),
   integrations: [react()],
   site: process.env.SITE_URL || 'https://blog.jihuayu.com',

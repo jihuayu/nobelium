@@ -46,15 +46,18 @@ test('attachPolicyRouterMiddleware serves /site via filesystem fetch and dests p
     status: 404
   })
   assert.deepEqual(next.routes[1], { handle: 'filesystem' })
-  assert.equal(next.routes[2].dest, '/site/mainland/zh-CN/404')
-  assert.deepEqual(next.routes[6], {
+  assert.deepEqual(next.routes[2], {
     src: POLICY_ROUTER_DEST_SRC,
     dest: '_middleware'
   })
   assert.equal(next.routes.at(-1)?.src, '^/api/health/?$')
+  assert.equal(
+    next.routes.some(route => typeof route.dest === 'string' && route.dest.endsWith('/404')),
+    false
+  )
 })
 
-test('attachPolicyRouterMiddleware is idempotent and drops the blank-page rewrite route', () => {
+test('attachPolicyRouterMiddleware is idempotent and drops leftover variant 404 dests', () => {
   const first = attachPolicyRouterMiddleware({
     version: 3,
     routes: [
@@ -63,7 +66,12 @@ test('attachPolicyRouterMiddleware is idempotent and drops the blank-page rewrit
         middlewarePath: '_middleware',
         continue: true
       },
-      { handle: 'filesystem' }
+      { handle: 'filesystem' },
+      {
+        src: '^/site/global/zh-CN/.+$',
+        dest: '/site/global/zh-CN/404',
+        status: 404
+      }
     ]
   })
   const second = attachPolicyRouterMiddleware(first)
@@ -78,5 +86,9 @@ test('attachPolicyRouterMiddleware is idempotent and drops the blank-page rewrit
   assert.equal(
     second.routes.filter(route => route.src === '^/site(?:/.*)?$').length,
     1
+  )
+  assert.equal(
+    second.routes.some(route => typeof route.dest === 'string' && route.dest.endsWith('/404')),
+    false
   )
 })

@@ -1,37 +1,25 @@
 import type { APIRoute } from 'astro'
-import { getAllVariants, buildPublicPath } from '@blog/lib/variants'
+import { buildPublicPath, parseVariantParams } from '@blog/lib/variants'
 import { filterGroupsForVariant, getPostHref, loadTranslationGroups } from '@blog/lib/policy-content'
 import { config } from '@/lib/server/config'
 import { siteOrigin } from '@blog/lib/urls'
-import type { Locale } from '@jihuayu/site-policy'
 
-export async function getStaticPaths() {
-  const [pages, posts] = await Promise.all([
-    loadTranslationGroups(true),
-    loadTranslationGroups(false)
-  ])
-  return getAllVariants().map(({ region, locale }) => ({
-    params: { region, locale },
-    props: {
-      pages: filterGroupsForVariant(pages, region, locale),
-      posts: filterGroupsForVariant(posts, region, locale),
-      locale
-    }
-  }))
-}
+export const prerender = false
 
 function xmlEscape(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-export const GET: APIRoute = ({ props }) => {
-  const { pages, posts, locale } = props as {
-    pages: Awaited<ReturnType<typeof loadTranslationGroups>>
-    posts: Awaited<ReturnType<typeof loadTranslationGroups>>
-    locale: Locale
-  }
+export const GET: APIRoute = async ({ params }) => {
+  const variant = parseVariantParams(params.region, params.locale)
+  if (!variant) return new Response('Not found', { status: 404 })
+
+  const [pages, posts] = await Promise.all([
+    filterGroupsForVariant(await loadTranslationGroups(true), variant.region, variant.locale),
+    filterGroupsForVariant(await loadTranslationGroups(false), variant.region, variant.locale)
+  ])
   const origin = siteOrigin()
-  const loc = (path: string) => xmlEscape(new URL(buildPublicPath(path, locale), `${origin}/`).toString())
+  const loc = (path: string) => xmlEscape(new URL(buildPublicPath(path, variant.locale), `${origin}/`).toString())
   const urls: string[] = [
     loc('/'),
     loc('/search'),
@@ -40,7 +28,7 @@ export const GET: APIRoute = ({ props }) => {
 
   const seen = new Set<string>()
   for (const group of [...pages, ...posts]) {
-    const href = xmlEscape(new URL(getPostHref(group, locale), `${origin}/`).toString())
+    const href = xmlEscape(new URL(getPostHref(group, variant.locale), `${origin}/`).toString())
     if (seen.has(href)) continue
     seen.add(href)
     urls.push(href)
@@ -53,7 +41,7 @@ export const GET: APIRoute = ({ props }) => {
 
   const tags = new Set<string>()
   for (const group of posts) {
-    for (const tag of group.translations[locale]?.tags || []) tags.add(tag)
+    for (const tag of group.translations[variant.locale]?.tags || []) tags.add(tag)
   }
   for (const tag of tags) {
     urls.push(loc(`/tag/${encodeURIComponent(tag)}`))
@@ -67,7 +55,7 @@ ${urls.map(url => `  <url><loc>${url}</loc></url>`).join('\n')}
   return new Response(body, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600'
+      'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400'
     }
   })
 }

@@ -1,15 +1,17 @@
 ---
 import BaseLayout from '@blog/layouts/BaseLayout.astro'
 import Tags from '@blog/components/Tags.astro'
-import { buildPublicPath, getAllVariants } from '@blog/lib/variants'
+import { buildPublicPath, parseVariantParams } from '@blog/lib/variants'
 import { collectTags, filterGroupsForVariant, loadTranslationGroups } from '@blog/lib/policy-content'
-import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
 
-export async function getStaticPaths() {
-  return getAllVariants().map(({ region, locale }) => ({ params: { region, locale } }))
+export const prerender = false
+
+const variant = parseVariantParams(Astro.params.region, Astro.params.locale)
+if (!variant) {
+  return new Response(null, { status: 404 })
 }
 
-const { region, locale } = Astro.params as { region: RegionPolicy, locale: Locale }
+const { region, locale } = variant
 const groups = filterGroupsForVariant(await loadTranslationGroups(false), region, locale)
 const tags = collectTags(groups, locale)
 const searchIndexUrl = buildPublicPath('/search-index.json', locale)

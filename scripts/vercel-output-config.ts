@@ -1,13 +1,17 @@
 /**
- * Astro only dests `_middleware` at on-demand API routes. Public pages are
- * prerendered under /site/{region}/{locale} and must be fetched by that
- * function. `rewrite()` is a no-op here: Vercel treats `_middleware` as the
- * terminal handler, so an empty rewrite Response becomes a blank 200.
+ * Public HTML is dest'd to Edge `_middleware`, which fetch()es the matching
+ * `/site/{region}/{locale}` route. Homepage/404 stay prerendered files;
+ * articles and other content routes are ISR functions. Direct `/site/**`
+ * stays 404 unless the internal fetch header is present.
  *
  * Route order:
  * 1. 404 `/site/**` unless the internal fetch header is present
- * 2. filesystem (serves `/site/**` to that fetch, plus assets)
+ * 2. filesystem (prerendered `/site/**` HTML plus assets)
  * 3. dest `_middleware` for public HTML/JSON/XML routes
+ *    (unmatched `/site/**` then falls through to the ISR function)
+ *
+ * Do not dest leftover `/site/{region}/{locale}/.+` paths to 404 — that
+ * would steal ISR function requests for articles, pagination, and feeds.
  */
 
 export const INTERNAL_VARIANT_HEADER = 'x-somnium-internal'
@@ -15,13 +19,6 @@ export const INTERNAL_VARIANT_QUERY = '__somnium'
 
 export const POLICY_ROUTER_DEST_SRC =
   '^/(?!site/|_astro/|_server-islands|_image|api/|scripts/|fonts/|\\.well-known/|favicon\\.ico$|favicon\\.png$|robots\\.txt$|manifest\\.webmanifest$).*$'
-
-const VARIANT_404_DESTS = [
-  ['mainland', 'zh-CN'],
-  ['mainland', 'en'],
-  ['global', 'zh-CN'],
-  ['global', 'en']
-] as const
 
 export interface VercelOutputRoute {
   src?: string
@@ -99,17 +96,12 @@ export function attachPolicyRouterMiddleware(config: VercelOutputConfig = {}) {
     src: POLICY_ROUTER_DEST_SRC,
     dest: '_middleware'
   }
-  const fallbacks: VercelOutputRoute[] = VARIANT_404_DESTS.map(([region, locale]) => ({
-    src: `^/site/${region}/${locale}/.+$`,
-    dest: `/site/${region}/${locale}/404`,
-    status: 404
-  }))
 
   routes.unshift(blockDirectSite)
 
   const filesystemIndex = routes.findIndex(route => route && route.handle === 'filesystem')
   const insertAt = filesystemIndex === -1 ? routes.length : filesystemIndex + 1
-  routes.splice(insertAt, 0, ...fallbacks, destRoute)
+  routes.splice(insertAt, 0, destRoute)
 
   return {
     ...config,

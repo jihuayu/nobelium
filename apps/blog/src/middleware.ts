@@ -29,6 +29,8 @@ async function fetchPrerenderedPage(target: URL, request: Request): Promise<Resp
   headers.set(INTERNAL_VARIANT_HEADER, '1')
   const accept = request.headers.get('accept')
   if (accept) headers.set('accept', accept)
+  const bypass = request.headers.get('x-prerender-revalidate')
+  if (bypass) headers.set('x-prerender-revalidate', bypass)
 
   const candidates: URL[] = [target]
   if (!/\.(html|xml|json|txt|md)$/i.test(target.pathname)) {

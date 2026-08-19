@@ -2,9 +2,8 @@
 import ArticleLayout from '@blog/layouts/ArticleLayout.astro'
 import CommentsIsland from '@blog/components/CommentsIsland'
 import TagItem from '@blog/components/TagItem.astro'
-import { getAllVariants, localePrefix } from '@blog/lib/variants'
+import { localePrefix, parseVariantParams } from '@blog/lib/variants'
 import {
-  filterGroupsForVariant,
   getPostHref,
   loadTranslationGroups,
   shouldRenderComments
@@ -25,33 +24,29 @@ import {
   ARTICLE_TOC_WIDTH_PX,
   ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS
 } from '@/consts'
-import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
+import type { Locale } from '@jihuayu/site-policy'
 
-export async function getStaticPaths() {
-  const groups = await loadTranslationGroups(true)
-  const variants = getAllVariants()
-  const paths = []
+export const prerender = false
 
-  for (const { region, locale } of variants) {
-    for (const group of filterGroupsForVariant(groups, region, locale)) {
-      paths.push({ params: { region, locale, slug: group.contentKey } })
-    }
-  }
-
-  return paths
+const variant = parseVariantParams(Astro.params.region, Astro.params.locale)
+const slug = `${Astro.params.slug || ''}`.trim()
+if (!variant || !slug) {
+  return new Response(null, { status: 404 })
 }
 
-const { region, locale, slug } = Astro.params as { region: RegionPolicy, locale: Locale, slug: string }
+const { region, locale } = variant
 const groups = await loadTranslationGroups(true)
 const group = groups.find(item => item.contentKey === slug)
-if (!group) throw new Error(`Missing translation group for ${slug}`)
-
-const entry = group.translations[locale]
-if (!entry) throw new Error(`Missing locale ${locale} for ${slug}`)
+const entry = group?.translations[locale]
+if (!group || !entry) {
+  return new Response(null, { status: 404 })
+}
 
 const { pageLinkMap, pagePreviewMap } = await loadPageMaps()
 const model = await loadArticleRenderModel(entry.pageId, pageLinkMap, pagePreviewMap)
-if (!model) throw new Error(`Failed to render ${slug}`)
+if (!model) {
+  return new Response(null, { status: 404 })
+}
 
 const showComments = shouldRenderComments(group, region)
 const publicSlugPath = getPostHref(group, locale)

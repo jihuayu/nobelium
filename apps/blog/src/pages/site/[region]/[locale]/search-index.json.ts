@@ -1,32 +1,29 @@
 import type { APIRoute } from 'astro'
-import { getAllVariants } from '@blog/lib/variants'
+import { parseVariantParams } from '@blog/lib/variants'
 import { filterGroupsForVariant, getPostHref, loadTranslationGroups } from '@blog/lib/policy-content'
-import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
 
-export async function getStaticPaths() {
-  const groups = await loadTranslationGroups(false)
-  return getAllVariants().map(({ region, locale }) => ({
-    params: { region, locale },
-    props: {
-      entries: filterGroupsForVariant(groups, region, locale).map(group => {
-        const entry = group.translations[locale as Locale]!
-        return {
-          title: entry.title,
-          summary: entry.summary,
-          tags: entry.tags,
-          href: getPostHref(group, locale as Locale),
-          date: entry.date
-        }
-      })
+export const prerender = false
+
+export const GET: APIRoute = async ({ params }) => {
+  const variant = parseVariantParams(params.region, params.locale)
+  if (!variant) return new Response('Not found', { status: 404 })
+
+  const groups = filterGroupsForVariant(await loadTranslationGroups(false), variant.region, variant.locale)
+  const entries = groups.map(group => {
+    const entry = group.translations[variant.locale]!
+    return {
+      title: entry.title,
+      summary: entry.summary,
+      tags: entry.tags,
+      href: getPostHref(group, variant.locale),
+      date: entry.date
     }
-  }))
-}
+  })
 
-export const GET: APIRoute = ({ props }) => {
-  return new Response(JSON.stringify(props.entries), {
+  return new Response(JSON.stringify(entries), {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'public, max-age=31536000, immutable'
+      'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400'
     }
   })
 }

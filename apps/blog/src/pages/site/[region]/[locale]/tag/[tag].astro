@@ -2,32 +2,18 @@
 import BaseLayout from '@blog/layouts/BaseLayout.astro'
 import PostCard from '@blog/components/PostCard.astro'
 import Tags from '@blog/components/Tags.astro'
-import { buildPublicPath, getAllVariants } from '@blog/lib/variants'
+import { buildPublicPath, parseVariantParams } from '@blog/lib/variants'
 import { collectTags, filterGroupsForVariant, loadTranslationGroups } from '@blog/lib/policy-content'
-import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
 
-export async function getStaticPaths() {
-  const groups = await loadTranslationGroups(false)
-  const tagSet = new Set<string>()
-  for (const group of groups) {
-    for (const entry of Object.values(group.translations)) {
-      if (!entry) continue
-      for (const tag of entry.tags) tagSet.add(tag)
-    }
-  }
+export const prerender = false
 
-  const variants = getAllVariants()
-  const paths = []
-  for (const { region, locale } of variants) {
-    for (const tag of tagSet) {
-      paths.push({ params: { region, locale, tag } })
-    }
-  }
-  return paths
+const variant = parseVariantParams(Astro.params.region, Astro.params.locale)
+const decodedTag = decodeURIComponent(`${Astro.params.tag || ''}`)
+if (!variant || !decodedTag) {
+  return new Response(null, { status: 404 })
 }
 
-const { region, locale, tag } = Astro.params as { region: RegionPolicy, locale: Locale, tag: string }
-const decodedTag = decodeURIComponent(tag)
+const { region, locale } = variant
 const groups = filterGroupsForVariant(await loadTranslationGroups(false), region, locale)
 const tags = collectTags(groups, locale)
 const filtered = groups.filter(group => (group.translations[locale]?.tags || []).includes(decodedTag))

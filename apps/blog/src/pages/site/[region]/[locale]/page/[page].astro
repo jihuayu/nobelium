@@ -2,33 +2,26 @@
 import BaseLayout from '@blog/layouts/BaseLayout.astro'
 import PostCard from '@blog/components/PostCard.astro'
 import Pagination from '@blog/components/Pagination.astro'
-import { getAllVariants } from '@blog/lib/variants'
+import { parseVariantParams } from '@blog/lib/variants'
 import { filterGroupsForVariant, loadTranslationGroups } from '@blog/lib/policy-content'
 import { config } from '@/lib/server/config'
-import type { Locale, RegionPolicy } from '@jihuayu/site-policy'
 
-export async function getStaticPaths() {
-  const groups = await loadTranslationGroups(false)
-  const variants = getAllVariants()
-  const paths = []
+export const prerender = false
 
-  for (const { region, locale } of variants) {
-    const filtered = filterGroupsForVariant(groups, region, locale)
-    const totalPages = Math.max(1, Math.ceil(filtered.length / config.postsPerPage))
-    for (let page = 1; page <= totalPages; page++) {
-      paths.push({ params: { region, locale, page: String(page) } })
-    }
-  }
-
-  return paths
+const variant = parseVariantParams(Astro.params.region, Astro.params.locale)
+const pageNumber = Number(Astro.params.page)
+if (!variant || !Number.isInteger(pageNumber) || pageNumber < 1) {
+  return new Response(null, { status: 404 })
 }
 
-const { region, locale, page } = Astro.params as { region: RegionPolicy, locale: Locale, page: string }
-const pageNumber = Number(page)
+const { region, locale } = variant
 const groups = filterGroupsForVariant(await loadTranslationGroups(false), region, locale)
   .sort((a, b) => (b.translations[locale]?.date || 0) - (a.translations[locale]?.date || 0))
 const start = (pageNumber - 1) * config.postsPerPage
 const postsToShow = groups.slice(start, start + config.postsPerPage)
+if (!postsToShow.length) {
+  return new Response(null, { status: 404 })
+}
 const showNext = pageNumber * config.postsPerPage < groups.length
 ---
 

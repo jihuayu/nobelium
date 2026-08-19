@@ -12,6 +12,8 @@ export async function getStaticPaths() {
   return getAllVariants().map(({ region, locale }) => ({ params: { region, locale } }))
 }
 
+export const prerender = true
+
 const { region, locale } = Astro.params as { region: RegionPolicy, locale: Locale }
 const groups = filterGroupsForVariant(await loadTranslationGroups(false), region, locale)
   .sort((a, b) => (b.translations[locale]?.date || 0) - (a.translations[locale]?.date || 0))
