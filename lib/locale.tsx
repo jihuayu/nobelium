@@ -30,6 +30,8 @@ export interface Locale {
     SEARCHING: string
     EMPTY: string
     FAILED: string
+    TAGS: string
+    CLEAR_TAG: string
   }
   [key: string]: unknown
 }

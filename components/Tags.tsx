@@ -4,14 +4,15 @@ import cn from 'classnames'
 interface TagsProps {
   tags: Record<string, number>
   currentTag?: string
+  className?: string
 }
 
-const Tags = ({ tags, currentTag }: TagsProps) => {
+const Tags = ({ tags, currentTag, className }: TagsProps) => {
   const names = Object.keys(tags || {}).sort((left, right) => left.localeCompare(right))
   if (names.length === 0) return null
 
   return (
-    <nav className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-stone-400 dark:text-stone-500">
+    <nav className={cn('flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-stone-400 dark:text-stone-500', className)}>
       {names.map(name => {
         const selected = name === currentTag
         return (

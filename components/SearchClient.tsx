@@ -1,6 +1,7 @@
 'use client'
 
 import { useDeferredValue, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
+import Link from 'next/link'
 import BlogPost from '@/components/BlogPost'
 import Tags from '@/components/Tags'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
@@ -203,11 +204,19 @@ export default function SearchClient({
           onChange={e => setSearchValue(e.target.value)}
         />
       </div>
-      {tagsSlot || (
-        <Tags
-          tags={displayTags}
-          currentTag={currentTag}
-        />
+      {currentTag && (
+        <p className="mt-3 text-sm text-stone-400 dark:text-stone-500">
+          <Link
+            href="/search"
+            prefetch={false}
+            title={copy.CLEAR_TAG}
+            className="transition-colors duration-150 ease-out hover:text-stone-800 dark:hover:text-stone-200"
+          >
+            {copy.TAGS}
+          </Link>
+          <span aria-hidden="true">&nbsp;/&nbsp;</span>
+          <span aria-current="page" className="text-stone-900 dark:text-stone-100">{currentTag}</span>
+        </p>
       )}
       <div className="article-container my-8">
         {statusMessage && (
@@ -232,6 +241,12 @@ export default function SearchClient({
           <BlogPost key={post.id} post={post} blogPath={blogPath} lang={lang} timezone={timezone} />
         ))}
       </div>
+      {tagsSlot || (
+        <Tags
+          tags={displayTags}
+          currentTag={currentTag}
+        />
+      )}
     </>
   )
 }

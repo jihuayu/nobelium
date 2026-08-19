@@ -29,6 +29,8 @@
     "HINT_SHORT": "Type at least {n} characters",
     "SEARCHING": "Searching",
     "EMPTY": "No posts found",
-    "FAILED": "Search failed"
+    "FAILED": "Search failed",
+    "TAGS": "Tags",
+    "CLEAR_TAG": "Show all posts"
   }
 }

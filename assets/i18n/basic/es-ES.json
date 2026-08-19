@@ -29,6 +29,8 @@
     "HINT_SHORT": "Escribe al menos {n} caracteres",
     "SEARCHING": "Buscando",
     "EMPTY": "No hay artículos",
-    "FAILED": "Error de búsqueda"
+    "FAILED": "Error de búsqueda",
+    "TAGS": "Etiquetas",
+    "CLEAR_TAG": "Ver todos los artículos"
   }
 }

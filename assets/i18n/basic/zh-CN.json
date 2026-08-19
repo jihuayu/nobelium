@@ -29,6 +29,8 @@
     "HINT_SHORT": "至少输入 {n} 个字",
     "SEARCHING": "正在搜索",
     "EMPTY": "没有找到文章",
-    "FAILED": "搜索失败"
+    "FAILED": "搜索失败",
+    "TAGS": "标签",
+    "CLEAR_TAG": "显示全部文章"
   }
 }
