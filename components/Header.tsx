@@ -70,7 +70,7 @@ function HeaderName({ siteTitle, siteDescription, postTitle }: HeaderNameProps) 
   return (
     <p
       id="header-title"
-      className={`header-name ${!postTitle ? 'header-name-no-post-title' : ''} font-serif font-medium text-stone-900 dark:text-stone-100 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none`}
+      className={`header-name ${!postTitle ? 'header-name-no-post-title' : ''} font-serif font-semibold text-stone-900 dark:text-stone-100 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none`}
     >
       {postTitle && <span className="post-title row-start-1 col-start-1 tracking-tight">{postTitle}</span>}
       <span className="row-start-1 col-start-1">

@@ -19,7 +19,7 @@ const BlogPost = ({ post, blogPath, lang, timezone }: BlogPostProps) => {
 
   return (
     <article className="mb-10 md:mb-12">
-      <h2 className="text-lg md:text-2xl font-serif font-medium mb-1.5 text-stone-900 dark:text-stone-100 tracking-tight">
+          <h2 className="text-lg md:text-2xl font-serif font-semibold mb-1.5 text-stone-900 dark:text-stone-100 tracking-tight">
         <Link
           href={href}
           prefetch={false}

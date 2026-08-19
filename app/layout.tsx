@@ -20,7 +20,7 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 const notoSerifSC = Noto_Serif_SC({
   subsets: ['latin'],
-  weight: ['500', '600', '700'],
+  weight: ['600', '700'],
   style: ['normal'],
   display: 'swap',
   variable: '--font-noto-serif-sc',
@@ -29,7 +29,7 @@ const notoSerifSC = Noto_Serif_SC({
 
 const sourceSerif4 = Source_Serif_4({
   subsets: ['latin'],
-  weight: ['500', '600', '700'],
+  weight: ['600', '700'],
   style: ['normal'],
   display: 'swap',
   variable: '--font-source-serif-4'
