@@ -256,9 +256,7 @@ export default async function RootLayout({
         <Script id="theme-bootstrap" strategy="beforeInteractive">
           {themeBootstrapScript}
         </Script>
-        <Script id="favicon-bootstrap" strategy="beforeInteractive">
-          {faviconBootstrapScript}
-        </Script>
+        <script dangerouslySetInnerHTML={{ __html: faviconBootstrapScript }} />
         <Script id="webmcp-tools" strategy="afterInteractive">
           {webMcpScript}
         </Script>
