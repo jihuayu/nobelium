@@ -132,19 +132,45 @@ export const metadata: Metadata = {
   ...defaultMetadata,
   icons: {
     icon: [
+      { url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
       {
-        url: '/favicon-mark-light-512.png',
-        type: 'image/png',
-        sizes: '256x256',
+        url: '/favicon.svg',
+        type: 'image/svg+xml',
+        sizes: 'any',
         media: '(prefers-color-scheme: light)'
       },
       {
-        url: '/favicon-mark-dark-512.png',
+        url: '/favicon-dark.svg',
+        type: 'image/svg+xml',
+        sizes: 'any',
+        media: '(prefers-color-scheme: dark)'
+      },
+      {
+        url: '/favicon-32.png',
         type: 'image/png',
-        sizes: '256x256',
+        sizes: '32x32',
+        media: '(prefers-color-scheme: light)'
+      },
+      {
+        url: '/favicon-dark-32.png',
+        type: 'image/png',
+        sizes: '32x32',
+        media: '(prefers-color-scheme: dark)'
+      },
+      {
+        url: '/favicon-64.png',
+        type: 'image/png',
+        sizes: '64x64',
+        media: '(prefers-color-scheme: light)'
+      },
+      {
+        url: '/favicon-dark-64.png',
+        type: 'image/png',
+        sizes: '64x64',
         media: '(prefers-color-scheme: dark)'
       }
-    ]
+    ],
+    apple: [{ url: '/favicon-180.png', type: 'image/png', sizes: '180x180' }]
   },
   alternates: {
     ...defaultMetadata.alternates,
