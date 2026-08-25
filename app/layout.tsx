@@ -131,12 +131,7 @@ function sanitizeThemeColor(value: string, fallback: string): string {
 export const metadata: Metadata = {
   ...defaultMetadata,
   icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml', sizes: 'any' },
-      { url: '/favicon-32.png', type: 'image/png', sizes: '32x32' },
-      { url: '/favicon-64.png', type: 'image/png', sizes: '64x64' },
-      { url: '/favicon.ico', sizes: '16x16 32x32 48x48' }
-    ],
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml', sizes: 'any' }],
     apple: [{ url: '/favicon-180.png', type: 'image/png', sizes: '180x180' }]
   },
   alternates: {
@@ -174,34 +169,6 @@ export default async function RootLayout({
     };
     apply();
     if (appearance !== 'auto') return;
-    const onChange = () => apply();
-    if (typeof media.addEventListener === 'function') {
-      media.addEventListener('change', onChange);
-    } else if (typeof media.addListener === 'function') {
-      media.addListener(onChange);
-    }
-  })();`
-
-  const faviconBootstrapScript = `(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const toVariant = (href, dark) => {
-      const path = href.replace(/[?#].*$/, '');
-      const isDark = path.includes('/favicon-dark');
-      if (dark === isDark) return null;
-      return dark
-        ? path.replace('/favicon', '/favicon-dark')
-        : path.replace('/favicon-dark', '/favicon');
-    };
-    const apply = () => {
-      const dark = media.matches;
-      document
-        .querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]')
-        .forEach((link) => {
-          const next = toVariant(link.getAttribute('href') || '', dark);
-          if (next) link.setAttribute('href', next);
-        });
-    };
-    apply();
     const onChange = () => apply();
     if (typeof media.addEventListener === 'function') {
       media.addEventListener('change', onChange);
@@ -256,7 +223,6 @@ export default async function RootLayout({
         <Script id="theme-bootstrap" strategy="beforeInteractive">
           {themeBootstrapScript}
         </Script>
-        <script dangerouslySetInnerHTML={{ __html: faviconBootstrapScript }} />
         <Script id="webmcp-tools" strategy="afterInteractive">
           {webMcpScript}
         </Script>
