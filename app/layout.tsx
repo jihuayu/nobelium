@@ -9,6 +9,7 @@ import { config } from '@/lib/server/config'
 import { buildPageMetadata } from '@/lib/server/metadata'
 import { prepareDayjs } from '@/lib/dayjs'
 import cn from 'classnames'
+import ThemeHydration from '@/components/ThemeHydration'
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -231,6 +232,7 @@ export default async function RootLayout({
         {children}
         <Analytics />
         <SpeedInsights />
+        <ThemeHydration />
       </body>
     </html>
   )
