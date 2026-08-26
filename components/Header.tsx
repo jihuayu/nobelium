@@ -118,6 +118,7 @@ export default function Header({
               height={26}
               alt=""
               aria-hidden
+              priority
               className="block header-icon dark:hidden"
             />
             <Image
@@ -126,6 +127,7 @@ export default function Header({
               height={26}
               alt=""
               aria-hidden
+              priority
               className="hidden header-icon dark:block"
             />
           </Link>
