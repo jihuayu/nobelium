@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import * as stylex from '@stylexjs/stylex'
+import { colors } from '@/styles/theme.stylex'
 
 export default function ReadingProgress() {
   const barRef = useRef<HTMLDivElement | null>(null)
@@ -38,12 +40,31 @@ export default function ReadingProgress() {
   }, [])
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 h-0.5 pointer-events-none">
+    <div {...stylex.props(styles.track)}>
       <div
         ref={barRef}
-        className="h-full bg-stone-400 dark:bg-stone-500 transition-transform duration-75 ease-out will-change-transform"
+        {...stylex.props(styles.bar)}
         style={{ transform: 'scaleX(0)', transformOrigin: 'left center' }}
       />
     </div>
   )
 }
+
+const styles = stylex.create({
+  track: {
+    height: '0.125rem',
+    insetInline: 0,
+    pointerEvents: 'none',
+    position: 'fixed',
+    top: 0,
+    zIndex: 50
+  },
+  bar: {
+    backgroundColor: colors.textQuiet,
+    height: '100%',
+    transitionDuration: '75ms',
+    transitionProperty: 'transform',
+    transitionTimingFunction: 'ease-out',
+    willChange: 'transform'
+  }
+})

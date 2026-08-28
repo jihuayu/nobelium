@@ -1,6 +1,7 @@
 'use client'
 
 import type { FormEvent, KeyboardEvent } from 'react'
+import * as stylex from '@stylexjs/stylex'
 import {
   useCallback,
   useEffect,
@@ -26,6 +27,7 @@ import {
   type NativeUser,
   type StoredSession
 } from './utils'
+import { styles } from './styles'
 
 export type CommentLoadStatus = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -1289,7 +1291,7 @@ export function CommentBox({
     if (reactionPickerFor !== comment.id) return null
 
     return (
-      <div className="absolute left-0 top-full z-10 mt-2 flex items-center gap-1 rounded-md border border-stone-200 bg-white p-1 shadow-sm dark:border-stone-800 dark:bg-stone-950">
+      <div {...stylex.props(styles.reactionPicker)}>
         {reactionOptions.map(option => {
           const key = reactionKey(comment.id, option.content)
           const active = activeReactions[key] === true
@@ -1303,10 +1305,7 @@ export function CommentBox({
               title={option.label}
               onClick={() => void handleReaction(comment, option.content)}
               className={cx(
-                'flex h-8 w-8 items-center justify-center rounded-md text-base leading-none transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
-                active
-                  ? 'bg-stone-200 text-stone-950 dark:bg-stone-800 dark:text-stone-100'
-                  : 'hover:bg-stone-100 dark:hover:bg-stone-900'
+                stylex.props(styles.reactionOption, active ? styles.activeReactionOption : styles.inactiveReactionOption).className
               )}
             >
               <span aria-hidden="true">{option.icon}</span>
@@ -1328,7 +1327,7 @@ export function CommentBox({
     const canBanAuthor = !!session && !!actionWebsiteKey && comment.can_ban === true
 
     return (
-      <div className="relative mt-3 flex flex-wrap items-center gap-2 text-xs text-stone-400 dark:text-stone-600">
+      <div {...stylex.props(styles.actions)}>
         {reactionOptions.map(option => {
           const key = reactionKey(comment.id, option.content)
           const active = activeReactions[key] === true
@@ -1346,10 +1345,7 @@ export function CommentBox({
               title={option.label}
               onClick={() => void handleReaction(comment, option.content)}
               className={cx(
-                'inline-flex h-7 items-center gap-1 rounded-full border px-2 text-sm leading-none transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
-                active
-                  ? 'border-stone-400 bg-stone-200/70 text-stone-950 dark:border-stone-600 dark:bg-stone-800/80 dark:text-stone-100'
-                  : 'border-stone-200 bg-white/55 text-stone-700 hover:border-stone-300 hover:bg-white dark:border-stone-800 dark:bg-stone-950/30 dark:text-stone-300 dark:hover:border-stone-700 dark:hover:bg-stone-950/70'
+                stylex.props(styles.reactionPill, active ? styles.activeReaction : styles.inactiveReaction).className
               )}
             >
               <span aria-hidden="true">{option.icon}</span>
@@ -1365,13 +1361,12 @@ export function CommentBox({
           title="添加表情"
           onClick={() => setReactionPickerFor(current => current === comment.id ? null : comment.id)}
           className={cx(
-            'inline-flex h-7 w-7 items-center justify-center rounded-full border border-stone-200 bg-white/55 text-sm leading-none text-stone-500 transition-colors duration-150 hover:border-stone-300 hover:bg-white hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-800 dark:bg-stone-950/30 dark:text-stone-500 dark:hover:border-stone-700 dark:hover:bg-stone-950/70 dark:hover:text-stone-200',
-            reactionPickerFor === comment.id && 'border-stone-400 text-stone-900 dark:border-stone-600 dark:text-stone-100'
+            stylex.props(styles.reactionTrigger, reactionPickerFor === comment.id && styles.reactionTriggerActive).className
           )}
         >
-          <span aria-hidden="true" className="relative inline-flex h-4 w-4 items-center justify-center">
-            <span className="text-[15px]">☺</span>
-            <span className="absolute -right-1 -top-1 text-[10px] font-semibold leading-none">+</span>
+          <span aria-hidden="true" {...stylex.props(styles.reactionIcon)}>
+            <span {...stylex.props(styles.smile)}>☺</span>
+            <span {...stylex.props(styles.plus)}>+</span>
           </span>
         </button>
         {renderReactionPicker(comment)}
@@ -1381,10 +1376,7 @@ export function CommentBox({
             disabled={!session}
             onClick={() => focusComposerForReply(comment.id)}
             className={cx(
-              'ml-1 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
-              replyingTo === comment.id
-                ? 'font-medium text-stone-800 dark:text-stone-200'
-                : 'text-stone-500 hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200'
+              stylex.props(styles.textAction, replyingTo === comment.id ? styles.textActionActive : styles.textActionInactive).className
             )}
           >
             {replyingTo === comment.id ? copy.cancelReply : copy.reply}
@@ -1395,7 +1387,7 @@ export function CommentBox({
             type="button"
             disabled={commentActionBusy[deleteKey]}
             onClick={() => void handleDeleteComment(comment)}
-            className="ml-1 text-stone-500 transition-colors duration-150 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-500 dark:hover:text-red-400"
+            {...stylex.props(styles.dangerAction, styles.actionIndent)}
           >
             {copy.deleteComment}
           </button>
@@ -1405,7 +1397,7 @@ export function CommentBox({
             type="button"
             disabled={authorBanned || commentActionBusy[banKey]}
             onClick={() => void handleBanUser(comment)}
-            className="text-stone-500 transition-colors duration-150 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-500 dark:hover:text-red-400"
+            {...stylex.props(styles.dangerAction)}
           >
             {authorBanned ? copy.bannedUser : copy.banUser}
           </button>
@@ -1421,9 +1413,9 @@ export function CommentBox({
     }
 
     return (
-      <div className="mt-3 space-y-0.5">
+      <div {...stylex.props(styles.replies)}>
         {bucket.status === 'loading' && bucket.comments.length === 0 && (
-          <p className="py-2 pl-11 text-xs text-stone-400 dark:text-stone-600">
+          <p {...stylex.props(styles.replyStatus)}>
             {copy.loadingReplies}
           </p>
         )}
@@ -1432,7 +1424,7 @@ export function CommentBox({
           <button
             type="button"
             onClick={() => void loadRepliesForComment(comment.id, bucket.nextCursor)}
-            className="pl-11 text-xs font-medium text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200"
+            {...stylex.props(styles.replyButton)}
           >
             {bucket.error || copy.retry}
           </button>
@@ -1441,7 +1433,7 @@ export function CommentBox({
           <button
             type="button"
             onClick={() => void loadRepliesForComment(comment.id, bucket.nextCursor)}
-            className="pl-11 text-xs font-medium text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200"
+            {...stylex.props(styles.replyButton)}
           >
             {copy.loadMoreReplies}
           </button>
@@ -1457,40 +1449,40 @@ export function CommentBox({
       replyBuckets[comment.id].hasMore
     )
     return (
-      <article key={comment.id} className={allowReply ? 'px-5 py-5' : 'py-3'}>
-        <div className="flex gap-3">
+      <article key={comment.id} {...stylex.props(allowReply ? styles.article : styles.nestedArticle)}>
+        <div {...stylex.props(styles.commentRow)}>
           {/* Avatar column with threading line */}
-          <div className="flex shrink-0 flex-col items-center">
+          <div {...stylex.props(styles.avatarColumn)}>
             {comment.author.avatar_url ? (
               <img
                 src={comment.author.avatar_url}
                 alt=""
-                className="h-8 w-8 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900"
+                {...stylex.props(styles.avatar8)}
               />
             ) : (
-              <div className="h-8 w-8 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
+              <div {...stylex.props(styles.avatar8)} />
             )}
             {hasReplies && (
-              <div className="mt-1 w-px flex-1 bg-stone-200 dark:bg-stone-800" />
+              <div {...stylex.props(styles.threadLine)} />
             )}
           </div>
           {/* Content column */}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline gap-2">
-              <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">
+          <div {...stylex.props(styles.commentContent)}>
+            <div {...stylex.props(styles.authorRow)}>
+              <p {...stylex.props(styles.authorName)}>
                 {displayName(comment.author)}
               </p>
-              <time className="shrink-0 text-xs text-stone-400 dark:text-stone-600">
+              <time {...stylex.props(styles.time)}>
                 {formatDate(comment.created_at, locale)}
               </time>
             </div>
             {comment.deleted ? (
-              <div className="comment-body mt-2 break-words text-[0.95rem] leading-7 text-stone-700 dark:text-stone-300">
+              <div className={`comment-body ${stylex.props(styles.body).className}`}>
                 {copy.deletedComment}
               </div>
             ) : (
               <div
-                className="comment-body mt-2 break-words text-[0.95rem] leading-7 text-stone-700 dark:text-stone-300"
+                className={`comment-body ${stylex.props(styles.body).className}`}
                 dangerouslySetInnerHTML={{ __html: renderedHtml[comment.id] ?? '' }}
               />
             )}
@@ -1508,56 +1500,56 @@ export function CommentBox({
       id={COMMENT_SECTION_ID}
       aria-labelledby="comments-title"
       className={cx(
-        'my-10 border-t border-stone-200/80 pt-6 text-stone-700 dark:border-stone-800/90 dark:text-stone-300',
+        stylex.props(styles.section).className,
         className
       )}
     >
-      <header className="mb-5">
-        <h2 id="comments-title" className="font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+      <header {...stylex.props(styles.header)}>
+        <h2 id="comments-title" {...stylex.props(styles.title)}>
           <span>{copy.title}</span>
           {status === 'ready' && (
-            <span className="ml-2 align-middle text-sm font-normal text-stone-400 dark:text-stone-500">
+            <span {...stylex.props(styles.count)}>
               {commentsCountLabel(totalCount)}
             </span>
           )}
         </h2>
-        <p className="mt-1 text-sm leading-6 text-stone-500 dark:text-stone-500">
+        <p {...stylex.props(styles.captionText)}>
           {copy.caption}
         </p>
       </header>
 
       <div
-        className="rounded-md border border-stone-200/75 bg-stone-50/45 dark:border-stone-800/80 dark:bg-stone-950/20"
+        {...stylex.props(styles.panel)}
         role="status"
         aria-live="polite"
       >
         {isLoading && (
-          <div className="px-5 py-6">
-            <div className="h-3 w-24 rounded-full bg-stone-200/80 dark:bg-stone-800/90" />
-            <div className="mt-5 space-y-3">
-              <div className="h-3 w-full max-w-[32rem] rounded-full bg-stone-200/65 dark:bg-stone-800/70" />
-              <div className="h-3 w-2/3 rounded-full bg-stone-200/55 dark:bg-stone-800/60" />
+          <div {...stylex.props(styles.panelPadding)}>
+            <div {...stylex.props(styles.skeletonTitle)} />
+            <div {...stylex.props(styles.skeletonLines)}>
+              <div {...stylex.props(styles.skeletonLine)} />
+              <div {...stylex.props(styles.skeletonLine, styles.skeletonShort)} />
             </div>
-            <p className="mt-5 text-sm font-medium text-stone-500 dark:text-stone-500">
+            <p {...stylex.props(styles.statusText)}>
               {copy.loading}
             </p>
           </div>
         )}
 
         {status === 'error' && (
-          <div className="px-5 py-6">
-            <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">
+          <div {...stylex.props(styles.panelPadding)}>
+            <p {...stylex.props(styles.errorTitle)}>
               {copy.errorTitle}
             </p>
             {error && (
-              <p className="mt-2 text-sm leading-6 text-stone-500 dark:text-stone-500">
+              <p {...stylex.props(styles.errorBody)}>
                 {error}
               </p>
             )}
             <button
               type="button"
               onClick={loadInitial}
-              className="mt-4 rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-stone-100"
+              {...stylex.props(styles.outlineButton, styles.retryButton)}
             >
               {copy.retry}
             </button>
@@ -1566,21 +1558,21 @@ export function CommentBox({
 
         {status === 'ready' && (
           <>
-            <div className="divide-y divide-stone-200/70 dark:divide-stone-800/80">
+            <div className="comment-list">
               {comments.length === 0 ? (
-                <p className="px-5 py-6 text-sm text-stone-500 dark:text-stone-500">
+                <p {...stylex.props(styles.empty)}>
                   {copy.empty}
                 </p>
               ) : comments.map(comment => renderCommentArticle(comment, true))}
             </div>
 
             {hasMore && (
-              <div className="border-t border-stone-200/70 px-5 py-4 dark:border-stone-800/80">
+              <div {...stylex.props(styles.borderTop, styles.loadMoreRow)}>
                 <button
                   type="button"
                   disabled={busy}
                   onClick={handleLoadMore}
-                  className="text-sm font-medium text-stone-600 transition-colors duration-150 hover:text-stone-950 disabled:cursor-not-allowed disabled:text-stone-400 dark:text-stone-400 dark:hover:text-stone-100 dark:disabled:text-stone-700"
+                  {...stylex.props(styles.loadMore)}
                 >
                   {copy.loadMore}
                 </button>
@@ -1588,19 +1580,19 @@ export function CommentBox({
             )}
 
             {/* Composer: collapsed by default, expands on click or reply */}
-            <div className="border-t border-stone-200/70 dark:border-stone-800/80">
+            <div {...stylex.props(styles.borderTop)}>
               {!composing ? (
-                <div className="flex items-center gap-3 px-5 py-4">
+                <div {...stylex.props(styles.collapsedComposer)}>
                   {session ? (
                     <>
                       {session.user.avatar_url ? (
                         <img
                           src={session.user.avatar_url}
                           alt=""
-                          className="h-7 w-7 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900"
+                          {...stylex.props(styles.avatar7)}
                         />
                       ) : (
-                        <div className="h-7 w-7 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
+                        <div {...stylex.props(styles.avatar7)} />
                       )}
                       <button
                         type="button"
@@ -1610,27 +1602,27 @@ export function CommentBox({
                             window.requestAnimationFrame(() => composerRef.current?.focus())
                           }
                         }}
-                        className="min-w-0 flex-1 truncate rounded-md border border-stone-200 bg-white px-3 py-2 text-left text-sm text-stone-400 transition-colors duration-150 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-600 dark:hover:border-stone-700"
+                        {...stylex.props(styles.composerPrompt)}
                       >
                         {copy.textareaPlaceholder}
                       </button>
                       <button
                         type="button"
                         onClick={handleSignOut}
-                        className="shrink-0 text-xs text-stone-400 transition-colors duration-150 hover:text-stone-700 dark:text-stone-600 dark:hover:text-stone-300"
+                        {...stylex.props(styles.subtleAction)}
                       >
                         {copy.signOut}
                       </button>
                     </>
                   ) : (
                     <>
-                      <div className="h-7 w-7 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
-                      <span className="min-w-0 flex-1 truncate text-sm text-stone-400 dark:text-stone-600">
+                      <div {...stylex.props(styles.avatar7)} />
+                      <span {...stylex.props(styles.disabledPrompt)}>
                         {copy.textareaDisabledPlaceholder}
                       </span>
                       <a
                         href={signInUrl}
-                        className="shrink-0 text-xs font-medium text-stone-500 transition-colors duration-150 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
+                        {...stylex.props(styles.signIn)}
                       >
                         {copy.signIn}
                       </a>
@@ -1638,50 +1630,50 @@ export function CommentBox({
                   )}
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="p-5">
+                <form onSubmit={handleSubmit} {...stylex.props(styles.form)}>
                   {session && (
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="flex min-w-0 items-center gap-2">
+                    <div {...stylex.props(styles.accountRow)}>
+                      <div {...stylex.props(styles.accountInfo)}>
                         {session.user.avatar_url ? (
                           <img
                             src={session.user.avatar_url}
                             alt=""
-                            className="h-6 w-6 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900"
+                            {...stylex.props(styles.avatar6)}
                           />
                         ) : (
-                          <div className="h-6 w-6 shrink-0 rounded-full border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900" />
+                          <div {...stylex.props(styles.avatar6)} />
                         )}
-                        <span className="truncate text-xs text-stone-500 dark:text-stone-500">
+                        <span {...stylex.props(styles.accountName)}>
                           {displayName(session.user)}
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={handleSignOut}
-                        className="shrink-0 text-xs text-stone-400 transition-colors duration-150 hover:text-stone-700 dark:text-stone-600 dark:hover:text-stone-300"
+                        {...stylex.props(styles.subtleAction)}
                       >
                         {copy.signOut}
                       </button>
                     </div>
                   )}
                   {isReplying && (
-                    <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-950/45 dark:text-stone-400">
-                      <span className="min-w-0 truncate">
+                    <div {...stylex.props(styles.replyBanner)}>
+                      <span {...stylex.props(styles.truncate)}>
                         正在回复 {replyTarget ? `@${displayName(replyTarget.author)}` : `#${replyingTo}`}
                       </span>
                       <button
                         type="button"
                         onClick={() => setReplyingTo(null)}
-                        className="shrink-0 text-xs font-medium text-stone-500 transition-colors hover:text-stone-950 dark:text-stone-500 dark:hover:text-stone-100"
+                        {...stylex.props(styles.replyCancel)}
                       >
                         {copy.cancelReply}
                       </button>
                     </div>
                   )}
-                  <label htmlFor="comment-draft" className="sr-only">
+                  <label htmlFor="comment-draft" {...stylex.props(styles.visuallyHidden)}>
                     {isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
                   </label>
-                  <div className="relative">
+                  <div {...stylex.props(styles.relative)}>
                     <textarea
                       ref={composerRef}
                       id="comment-draft"
@@ -1693,10 +1685,10 @@ export function CommentBox({
                         window.setTimeout(() => setMentionQuery(null), 150)
                       }}
                       placeholder={isReplying ? copy.replyPlaceholder : copy.textareaPlaceholder}
-                      className="block min-h-28 w-full resize-y rounded-md border border-stone-200 bg-white px-3 py-2 text-sm leading-6 text-stone-800 outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-200 dark:placeholder:text-stone-600 dark:focus:border-stone-600 dark:disabled:bg-stone-900/60 dark:disabled:text-stone-700"
+                      {...stylex.props(styles.textarea)}
                     />
                     {mentionQuery && mentionSuggestions.length > 0 && (
-                      <div className="absolute bottom-full left-3 z-20 mb-1 min-w-40 overflow-hidden rounded-md border border-stone-200 bg-white py-1 shadow-md dark:border-stone-800 dark:bg-stone-950">
+                      <div {...stylex.props(styles.mentionMenu)}>
                         {mentionSuggestions.map((login, i) => (
                           <button
                             key={login}
@@ -1706,26 +1698,23 @@ export function CommentBox({
                               insertMention(login)
                             }}
                             className={cx(
-                              'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors',
-                              i === mentionIndex
-                                ? 'bg-stone-100 text-stone-900 dark:bg-stone-800 dark:text-stone-100'
-                                : 'text-stone-600 dark:text-stone-400'
+                              stylex.props(styles.mentionOption, i === mentionIndex ? styles.activeMention : styles.inactiveMention).className
                             )}
                           >
-                            <span className="text-stone-400">@</span>
-                            <span className="truncate font-medium">{login}</span>
+                            <span {...stylex.props(styles.mentionAt)}>@</span>
+                            <span {...stylex.props(styles.mentionLogin)}>{login}</span>
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 flex items-center justify-between gap-3">
+                  <div {...stylex.props(styles.composerFooter)}>
                     {error ? (
-                      <p className="text-sm text-stone-500 dark:text-stone-500">
+                      <p {...stylex.props(styles.errorText)}>
                         {error}
                       </p>
                     ) : <span />}
-                    <div className="flex items-center gap-3">
+                    <div {...stylex.props(styles.inlineActions)}>
                       <button
                         type="button"
                         onClick={() => {
@@ -1734,14 +1723,14 @@ export function CommentBox({
                           setReplyingTo(null)
                           setError('')
                         }}
-                        className="text-sm text-stone-500 transition-colors duration-150 hover:text-stone-900 dark:text-stone-500 dark:hover:text-stone-200"
+                        {...stylex.props(styles.cancel)}
                       >
                         {copy.cancelReply}
                       </button>
                       <button
                         type="submit"
                         disabled={!canSubmit}
-                        className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors duration-150 hover:border-stone-400 hover:text-stone-950 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400 dark:border-stone-700 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-stone-100 dark:disabled:border-stone-800 dark:disabled:text-stone-700"
+                        {...stylex.props(styles.outlineButton)}
                       >
                         {busy ? copy.submitting : isReplying ? copy.submitReply : copy.submit}
                       </button>

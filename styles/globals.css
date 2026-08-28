@@ -1,23 +1,80 @@
-@import 'tailwindcss';
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  border: 0 solid currentcolor;
+}
 
-@config '../tailwind.config.js';
+html {
+  line-height: 1.5;
+  tab-size: 4;
+  -webkit-text-size-adjust: 100%;
+}
 
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+blockquote,
+dl,
+dd,
+figure {
+  margin: 0;
+}
 
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
-  }
+ol,
+ul,
+menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+button,
+[type='button'],
+[type='submit'] {
+  appearance: button;
+  background: transparent;
+}
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block;
+  vertical-align: middle;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 html {
@@ -82,7 +139,12 @@ body::-webkit-scrollbar-thumb {
 }
 
 .sticky-nav-full {
-  @apply cursor-pointer border-b border-stone-200/70 dark:border-stone-700/50;
+  border-bottom: 1px solid rgb(231 229 228 / 0.7);
+  cursor: pointer;
+}
+
+.dark .sticky-nav-full {
+  border-bottom-color: rgb(68 64 60 / 0.5);
 }
 
 .sticky-nav:not(.sticky-nav-full) .caret {
@@ -95,7 +157,11 @@ body::-webkit-scrollbar-thumb {
 }
 
 .sticky-nav-full .nav {
-  @apply text-stone-500 dark:text-stone-400;
+  color: #78716c;
+}
+
+.dark .sticky-nav-full .nav {
+  color: #a8a29e;
 }
 
 nav {
@@ -123,45 +189,85 @@ nav {
 
 @media (min-width: 768px) {
   .sticky-nav-full {
-    @apply max-w-full border-b border-stone-200/70 dark:border-stone-700/50;
+    max-width: 100%;
+    border-bottom-color: rgb(231 229 228 / 0.7);
+  }
+  .dark .sticky-nav-full {
+    border-bottom-color: rgb(68 64 60 / 0.5);
   }
   .header-name {
     display: grid;
   }
   .site-title,
   .post-title {
-    @apply transition duration-500;
+    transition-duration: 500ms;
+    transition-property: all;
   }
   .site-description {
     opacity: 0;
     transition: opacity 0.5s cubic-bezier(0.4, 0, 0, 1);
   }
   .sticky-nav-full .site-description {
-    @apply opacity-100 transition duration-500;
+    opacity: 1;
+    transition-duration: 500ms;
+    transition-property: all;
   }
   .post-title {
-    @apply opacity-0;
+    opacity: 0;
   }
   .post-title ~ span .site-description {
-    @apply hidden;
+    display: none;
   }
   .sticky-nav-full .post-title {
-    @apply opacity-100;
+    opacity: 1;
   }
   .sticky-nav-full .post-title ~ span .site-title {
-    @apply opacity-0;
+    opacity: 0;
   }
 }
 
 @supports not (backdrop-filter: none) {
   .sticky-nav {
     backdrop-filter: none;
-    @apply bg-day/90 dark:bg-night/90;
+    background-color: color-mix(in srgb, var(--page-day, #fff) 90%, transparent);
+  }
+  .dark .sticky-nav {
+    background-color: color-mix(in srgb, var(--page-night, #0c0a09) 90%, transparent);
   }
 }
 
 .capture-pointer-events * {
-  @apply pointer-events-none;
+  pointer-events: none;
+}
+
+.blog-post-link:hover .blog-post-title {
+  text-decoration-line: underline;
+}
+
+.direction-link-back:hover .direction-arrow {
+  transform: translateX(-0.125rem);
+}
+
+.direction-link-next:hover .direction-arrow {
+  transform: translateX(0.125rem);
+}
+
+.direction-link-top:hover .direction-arrow {
+  transform: translateY(-0.125rem);
+}
+
+.tag-link:hover .tag-pill {
+  border-color: #d6d3d1;
+  color: #1c1917;
+}
+
+.dark .tag-link:hover .tag-pill {
+  border-color: #78716c;
+  color: #f5f5f4;
+}
+
+.sticky-nav:hover .caret {
+  opacity: 1;
 }
 
 .sticky-nav .header-icon-link {
@@ -242,76 +348,4 @@ nav {
 
 .notion-header-anim-normal {
   animation: header-width-normal 300ms ease-out;
-}
-
-/* somnium-comments: minimal prose styling for rendered comment Markdown.
-   Kept monochrome to match the site's stone-based palette. */
-.comment-body > :first-child { margin-top: 0; }
-.comment-body > :last-child { margin-bottom: 0; }
-.comment-body p { margin: 0.75em 0; }
-.comment-body a {
-  color: rgb(120 113 108);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: color 0.15s ease-out;
-}
-.comment-body a:hover { color: rgb(28 25 23); }
-.dark .comment-body a { color: rgb(168 162 158); }
-.dark .comment-body a:hover { color: rgb(245 245 244); }
-.comment-body code {
-  padding: 0.1em 0.35em;
-  border-radius: 0.25em;
-  background: rgb(231 229 228 / 0.6);
-  font-size: 0.875em;
-}
-.dark .comment-body code { background: rgb(41 37 36 / 0.7); }
-.comment-body pre {
-  margin: 0.75em 0;
-  padding: 0.75em 1em;
-  border-radius: 0.375em;
-  background: rgb(231 229 228 / 0.5);
-  overflow-x: auto;
-  font-size: 0.85em;
-  line-height: 1.6;
-}
-.dark .comment-body pre { background: rgb(28 25 23 / 0.6); }
-.comment-body pre code { padding: 0; background: transparent; font-size: inherit; }
-.comment-body ul, .comment-body ol { margin: 0.75em 0; padding-left: 1.5em; }
-.comment-body li { margin: 0.25em 0; }
-.comment-body blockquote {
-  margin: 0.75em 0;
-  padding-left: 1em;
-  border-left: 2px solid rgb(231 229 228 / 0.8);
-  color: rgb(120 113 108);
-}
-.dark .comment-body blockquote {
-  border-left-color: rgb(68 64 60);
-  color: rgb(168 162 158);
-}
-.comment-body img { max-width: 100%; border-radius: 0.375em; }
-.comment-body hr { margin: 1em 0; border: 0; border-top: 1px solid rgb(231 229 228 / 0.8); }
-.dark .comment-body hr { border-top-color: rgb(68 64 60); }
-
-/* @mention links: monochrome pill, quiet like GitHub but stone-tinted */
-.comment-body a.mention {
-  padding: 0.05em 0.4em;
-  border-radius: 0.3125em;
-  background: rgb(231 229 228 / 0.55);
-  color: rgb(87 83 78);
-  font-weight: 500;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: background 0.15s ease-out, color 0.15s ease-out;
-}
-.comment-body a.mention:hover {
-  background: rgb(214 211 209 / 0.7);
-  color: rgb(28 25 23);
-}
-.dark .comment-body a.mention {
-  background: rgb(68 64 60 / 0.5);
-  color: rgb(168 162 158);
-}
-.dark .comment-body a.mention:hover {
-  background: rgb(87 83 78 / 0.6);
-  color: rgb(245 245 244);
 }

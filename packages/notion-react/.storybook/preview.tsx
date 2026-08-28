@@ -1,5 +1,9 @@
 import type { Preview } from '@storybook/react'
+import * as stylex from '@stylexjs/stylex'
+import { colors, darkTheme } from '../src/theme.stylex'
 import '../src/storybook.css'
+
+const darkThemeClasses = (stylex.props(darkTheme).className || '').split(' ').filter(Boolean)
 
 const preview: Preview = {
   globalTypes: {
@@ -24,11 +28,14 @@ const preview: Preview = {
       const dark = context.globals.colorMode === 'dark'
       if (typeof document !== 'undefined') {
         document.documentElement.classList.toggle('dark', dark)
+        for (const className of darkThemeClasses) {
+          document.documentElement.classList.toggle(className, dark)
+        }
       }
 
       return (
-        <div className={dark ? 'dark min-h-screen bg-stone-950 p-8 text-stone-100' : 'min-h-screen bg-stone-50 p-8 text-stone-900'}>
-          <div className="mx-auto max-w-5xl rounded-lg border border-stone-200/80 bg-white px-6 py-8 shadow-sm dark:border-stone-800 dark:bg-stone-900">
+        <div className={`${dark ? 'dark' : ''} ${stylex.props(styles.canvas, dark ? darkTheme : null).className}`}>
+          <div {...stylex.props(styles.surface)}>
             <Story />
           </div>
         </div>
@@ -38,3 +45,23 @@ const preview: Preview = {
 }
 
 export default preview
+
+const styles = stylex.create({
+  canvas: {
+    backgroundColor: colors.canvas,
+    color: colors.textPrimary,
+    minHeight: '100vh',
+    padding: '2rem'
+  },
+  surface: {
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.dividerStrong,
+    borderRadius: '0.5rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+    marginInline: 'auto',
+    maxWidth: '64rem',
+    padding: '2rem 1.5rem'
+  }
+})

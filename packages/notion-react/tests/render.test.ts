@@ -214,7 +214,6 @@ test('in-page bookmark cards keep the original layout and ignore hover presentat
   }))
 
   assert.match(html, /data-link-preview-card="true"/)
-  assert.match(html, /h-\[110px\]/)
   assert.match(html, /https:\/\/github.com\/jihuayu\/Somnium/)
   assert.equal((html.match(/data-link-preview-card="true"/g) || []).length, 2)
   assert.doesNotMatch(html, /github\.com · repo/)

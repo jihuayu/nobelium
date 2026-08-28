@@ -47,7 +47,7 @@ const URL_MENTION_FALLBACK_ICONS: Record<string, () => VNode> = {
 export function renderUrlMentionIcon(href: string, iconUrl: string, adapterId = 'default') {
   const resolvedIconUrl = toOgProxyPreviewImageUrl(iconUrl, href)
   if (resolvedIconUrl) {
-    return h('img', { src: resolvedIconUrl, alt: '', class: 'h-full w-full object-contain', loading: 'lazy' })
+    return h('img', { src: resolvedIconUrl, alt: '', class: 'nvue-icon-image', loading: 'lazy' })
   }
 
   const renderFallback = URL_MENTION_FALLBACK_ICONS[adapterId] || renderDefaultFallbackIcon

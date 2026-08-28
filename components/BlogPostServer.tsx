@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import * as stylex from '@stylexjs/stylex'
 import { config } from '@/lib/server/config'
 import { formatDate } from '@/lib/formatDate'
+import { blogPostStyles as styles } from '@/components/BlogPost.styles'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 
 interface BlogPostServerProps {
@@ -11,18 +13,18 @@ export default function BlogPostServer({ post }: BlogPostServerProps) {
   const blogPath = config.path || ''
 
   return (
-    <Link href={`${blogPath}/${post.slug}`} prefetch={false} className="group block">
-      <article key={post.id} className="mb-10 md:mb-12">
-        <header className="flex flex-col justify-between md:flex-row md:items-baseline md:gap-6">
-          <h2 className="text-lg md:text-2xl font-serif font-semibold mb-1.5 cursor-pointer text-stone-900 dark:text-stone-100 tracking-tight underline-offset-[5px] decoration-1 decoration-stone-300 dark:decoration-stone-600 group-hover:underline">
+    <Link href={`${blogPath}/${post.slug}`} prefetch={false} className={`blog-post-link ${stylex.props(styles.link).className}`}>
+      <article key={post.id} {...stylex.props(styles.article)}>
+        <header {...stylex.props(styles.header)}>
+          <h2 className={`blog-post-title ${stylex.props(styles.title).className}`}>
             {post.title}
           </h2>
-          <time className="flex-shrink-0 text-sm tabular-nums tracking-wide text-stone-400 dark:text-stone-500">
+          <time {...stylex.props(styles.time)}>
             {formatDate(post.date, config.lang, config.timezone)}
           </time>
         </header>
         <main>
-          <p className="hidden md:block leading-8 text-stone-600 dark:text-stone-400">
+          <p {...stylex.props(styles.summary)}>
             {post.summary}
           </p>
         </main>

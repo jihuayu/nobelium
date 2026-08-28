@@ -1,6 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import * as stylex from '@stylexjs/stylex'
 import { NotionRenderer } from '../src'
 import { demoModel } from './fixtures'
+
+const styles = stylex.create({
+  compact: { maxWidth: '42rem' }
+})
 
 const meta = {
   title: 'Renderer/NotionRenderer',
@@ -22,6 +27,6 @@ export const FullDocument: Story = {}
 
 export const CompactCanvas: Story = {
   args: {
-    className: 'max-w-2xl'
+    className: stylex.props(styles.compact).className
   }
 }

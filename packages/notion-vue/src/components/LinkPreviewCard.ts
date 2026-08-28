@@ -37,48 +37,48 @@ export default defineComponent({
         'data-link-preview-card': 'true',
         'data-has-image': generatedImageUrl ? 'true' : 'false',
         class: cn(
-          'link-preview-card block my-4 h-[110px] rounded-md border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 transition-colors overflow-hidden bg-transparent opacity-100 hover:opacity-100',
+          'link-preview-card nvue-link-preview-card',
           props.class
         ),
         style: 'opacity: 1'
       }, [
-        h('div', { class: 'link-preview-card-inner flex h-full items-stretch' }, [
+        h('div', { class: 'link-preview-card-inner nvue-link-preview-inner' }, [
           h('div', {
             class: cn(
-              'link-preview-card-main min-w-0 flex flex-col px-3 py-2',
-              generatedImageUrl ? 'basis-[65%] shrink-0' : 'flex-1'
+              'link-preview-card-main nvue-link-preview-main',
+              generatedImageUrl ? 'nvue-link-preview-main-with-image' : 'nvue-link-preview-main-without-image'
             )
           }, [
-            h('p', { class: 'text-base text-stone-900 dark:text-stone-100 font-medium truncate' },
+            h('p', { class: 'nvue-link-preview-title' },
               resolvedPreview.title || resolvedPreview.hostname || displayUrl
             ),
             resolvedPreview.description
               ? h('p', {
-                  class: 'mt-0.5 text-stone-600 dark:text-stone-300 text-sm leading-5 overflow-hidden',
+                  class: 'nvue-link-preview-description',
                   style: 'display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;'
                 }, resolvedPreview.description)
               : null,
-            h('div', { class: 'mt-auto pt-1.5 flex items-center gap-2 text-stone-800 dark:text-stone-200 text-xs' }, [
+            h('div', { class: 'nvue-link-preview-footer' }, [
               iconUrl
-                ? h('span', { class: 'relative h-4 w-4 rounded-sm flex-none overflow-hidden bg-transparent' }, [
+                ? h('span', { class: 'nvue-link-preview-icon-frame' }, [
                     h('img', {
                       src: iconUrl,
                       alt: '',
-                      class: 'h-4 w-4 rounded-sm bg-transparent object-contain',
+                      class: 'nvue-link-preview-icon',
                       loading: 'lazy'
                     })
                   ])
-                : h('span', { class: 'h-4 w-4 rounded-sm bg-stone-300 dark:bg-stone-700 flex-none' }),
-              h('span', { class: 'truncate' }, displayUrl)
+                : h('span', { class: 'nvue-link-preview-icon-placeholder' }),
+              h('span', { class: 'nvue-truncate' }, displayUrl)
             ])
           ]),
           generatedImageUrl
-            ? h('div', { class: 'link-preview-card-media basis-[35%] shrink-0 h-full' }, [
-                h('div', { class: 'relative h-full w-full overflow-hidden bg-stone-100 dark:bg-stone-800' }, [
+            ? h('div', { class: 'link-preview-card-media nvue-link-preview-media' }, [
+                h('div', { class: 'nvue-link-preview-media-frame' }, [
                   h('img', {
                     src: generatedImageUrl,
                     alt: '',
-                    class: 'link-preview-cover pointer-events-none h-full w-full object-cover transition-opacity duration-200',
+                    class: 'link-preview-cover nvue-link-preview-cover',
                     style: 'filter: none',
                     loading: 'lazy'
                   })

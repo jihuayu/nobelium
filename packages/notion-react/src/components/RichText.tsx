@@ -1,5 +1,7 @@
 import { Fragment } from 'react'
 import cn from 'classnames'
+import * as stylex from '@stylexjs/stylex'
+import { colors } from '../theme.stylex'
 import type {
   DateMentionProps,
   LinkPreviewMap,
@@ -171,10 +173,12 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
         const content = (
           <span
             className={cn(
-              annotations.bold && 'font-semibold',
-              annotations.italic && 'italic',
-              annotations.strikethrough && 'line-through',
-              annotations.underline && 'underline',
+              stylex.props(
+                annotations.bold && styles.bold,
+                annotations.italic && styles.italic,
+                annotations.strikethrough && styles.strikethrough,
+                annotations.underline && styles.underline
+              ).className,
               textColorClassName,
               backgroundColorClassName,
               annotations.code && 'notion-inline-code'
@@ -241,7 +245,7 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
             href={href}
             target={isInternalHref(href) ? undefined : '_blank'}
             rel={isInternalHref(href) ? undefined : 'noopener noreferrer'}
-            className="text-stone-900 dark:text-stone-100 underline underline-offset-4 decoration-stone-400 dark:decoration-stone-600"
+            {...stylex.props(styles.link)}
           >
             {content}
           </a>
@@ -250,3 +254,16 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
     </>
   )
 }
+
+const styles = stylex.create({
+  bold: { fontWeight: 600 },
+  italic: { fontStyle: 'italic' },
+  strikethrough: { textDecorationLine: 'line-through' },
+  underline: { textDecorationLine: 'underline' },
+  link: {
+    color: colors.textPrimary,
+    textDecorationColor: colors.borderQuiet,
+    textDecorationLine: 'underline',
+    textUnderlineOffset: '4px'
+  }
+})

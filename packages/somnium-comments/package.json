@@ -15,8 +15,17 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    }
+    },
+    "./theme": {
+      "types": "./dist/theme.stylex.d.ts",
+      "import": "./dist/theme.js",
+      "default": "./dist/theme.js"
+    },
+    "./styles.css": "./dist/styles.css"
   },
+  "sideEffects": [
+    "./dist/styles.css"
+  ],
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
@@ -29,6 +38,7 @@
     "tsup": "^8.5.1"
   },
   "dependencies": {
+    "@stylexjs/stylex": "0.19.0",
     "dompurify": "^3.4.13",
     "marked": "^18.0.9"
   }

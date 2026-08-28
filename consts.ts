@@ -49,10 +49,6 @@ export const FONTS_MISANS = [
   'sans-serif'
 ]
 
-// Tailwind max-width class used by article content containers.
-export const ARTICLE_CONTENT_MAX_WIDTH_CLASS = 'max-w-[50.6rem]'
-// Tailwind max-width class used by Notion wide-page article containers.
-export const ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS = 'max-w-[60rem]'
 // Half of the article content width, in rem, used to compute TOC horizontal anchor.
 export const ARTICLE_CONTENT_HALF_WIDTH_REM = 25.3
 // Horizontal gap between article content and TOC, in rem.

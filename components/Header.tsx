@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
+import * as stylex from '@stylexjs/stylex'
 import HeaderBehavior from '@/components/HeaderBehavior'
+import { appStyles } from '@/styles/app.stylex'
+import { colors } from '@/styles/theme.stylex'
 
 interface NavLocale {
   INDEX: string
@@ -25,19 +27,19 @@ const NavBar = ({ path, showAbout, locale }: NavBarProps) => {
   ]
 
   return (
-    <div className="header-nav-wrap flex-shrink-0 md:self-end">
-      <ul className="header-nav-list flex flex-row items-end">
+    <div className={`header-nav-wrap ${stylex.props(styles.navWrap).className}`}>
+      <ul className={`header-nav-list ${stylex.props(styles.navList).className}`}>
         {links.map(
           link =>
             link.show && (
               <li
                 key={link.id}
-                className="block ml-4 nav"
+                className={`nav ${stylex.props(styles.navItem).className}`}
               >
                 <Link
                   href={link.to}
                   target={link.external ? '_blank' : undefined}
-                  className="text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 transition-colors duration-150 ease-out"
+                  {...stylex.props(appStyles.action)}
                 >
                   {link.name}
                 </Link>
@@ -70,12 +72,12 @@ function HeaderName({ siteTitle, siteDescription, postTitle }: HeaderNameProps) 
   return (
     <p
       id="header-title"
-      className={`header-name ${!postTitle ? 'header-name-no-post-title' : ''} font-serif font-semibold text-stone-900 dark:text-stone-100 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none`}
+      className={`header-name ${!postTitle ? 'header-name-no-post-title' : ''} capture-pointer-events ${stylex.props(styles.headerName).className}`}
     >
-      {postTitle && <span className="post-title row-start-1 col-start-1 tracking-tight">{postTitle}</span>}
-      <span className="row-start-1 col-start-1">
-        <span className="site-title tracking-tight">{siteTitle}</span>
-        <span className="site-description ml-2 text-xs font-normal text-stone-400 dark:text-stone-500">{siteDescription}</span>
+      {postTitle && <span className={`post-title ${stylex.props(styles.gridLayer, styles.tracking).className}`}>{postTitle}</span>}
+      <span {...stylex.props(styles.gridLayer)}>
+        <span className={`site-title ${stylex.props(styles.tracking).className}`}>{siteTitle}</span>
+        <span className={`site-description ${stylex.props(styles.description).className}`}>{siteDescription}</span>
       </span>
     </p>
   )
@@ -91,34 +93,32 @@ export default function Header({
   autoCollapsedNavBar,
   navLocale
 }: HeaderProps) {
-  const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
-
   return (
     <>
       <HeaderBehavior useSticky={!autoCollapsedNavBar} fullWidth={fullWidth} />
-      <div className="observer-element h-4 md:h-12" id="header-sentinel" />
+      <div className={`observer-element ${stylex.props(styles.observer).className}`} id="header-sentinel" />
       <div
-        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 px-4 ${contentWidthClass}`}
+        className={`sticky-nav ${stylex.props(styles.stickyNav, fullWidth ? appStyles.wideContentWidth : appStyles.contentWidth).className}`}
         id="sticky-nav"
       >
         <svg
           viewBox="0 0 24 24"
-          className="caret w-6 h-6 absolute inset-x-0 bottom-0 mx-auto pointer-events-none opacity-30 group-hover:opacity-100 transition duration-100"
+          className={`caret ${stylex.props(styles.caret).className}`}
         >
           <path
             d="M12 10.828l-4.95 4.95-1.414-1.414L12 8l6.364 6.364-1.414 1.414z"
-            className="fill-black dark:fill-white"
+            {...stylex.props(styles.caretPath)}
           />
         </svg>
-        <div className="header-main flex items-center md:items-end gap-2">
-          <Link href={path || '/'} aria-label={siteTitle} className="header-icon-link flex items-center md:items-end justify-center shrink-0 leading-none transition-transform duration-500">
+        <div className={`header-main ${stylex.props(styles.headerMain).className}`}>
+          <Link href={path || '/'} aria-label={siteTitle} className={`header-icon-link ${stylex.props(styles.iconLink).className}`}>
             <Image
               src="/favicon-mark-light-512.png"
               width={26}
               height={26}
               alt=""
               aria-hidden
-              className="block header-icon dark:hidden"
+              className={`header-icon ${stylex.props(styles.lightIcon).className}`}
             />
             <Image
               src="/favicon-mark-dark-512.png"
@@ -126,7 +126,7 @@ export default function Header({
               height={26}
               alt=""
               aria-hidden
-              className="hidden header-icon dark:block"
+              className={`header-icon ${stylex.props(styles.darkIcon).className}`}
             />
           </Link>
           <HeaderName
@@ -140,3 +140,113 @@ export default function Header({
     </>
   )
 }
+
+const styles = stylex.create({
+  navWrap: {
+    alignSelf: {
+      '@media (min-width: 768px)': 'flex-end'
+    },
+    flexShrink: 0
+  },
+  navList: {
+    alignItems: 'flex-end',
+    display: 'flex',
+    flexDirection: 'row'
+  },
+  navItem: {
+    display: 'block',
+    marginLeft: '1rem'
+  },
+  headerName: {
+    alignItems: 'flex-end',
+    color: colors.textPrimary,
+    fontFamily: 'var(--font-source-serif-4), var(--font-noto-serif-sc), "Source Serif", ui-serif, Georgia, serif',
+    fontWeight: 600,
+    gridTemplateColumns: 'minmax(0, 1fr)',
+    gridTemplateRows: 'minmax(0, 1fr)',
+    lineHeight: 1
+  },
+  gridLayer: {
+    gridColumnStart: 1,
+    gridRowStart: 1
+  },
+  tracking: {
+    letterSpacing: 0
+  },
+  description: {
+    color: colors.textQuiet,
+    fontSize: '0.75rem',
+    fontWeight: 400,
+    marginLeft: '0.5rem'
+  },
+  observer: {
+    height: {
+      default: '1rem',
+      '@media (min-width: 768px)': '3rem'
+    }
+  },
+  stickyNav: {
+    alignItems: {
+      default: 'center',
+      '@media (min-width: 768px)': 'flex-end'
+    },
+    display: 'flex',
+    flexDirection: 'row',
+    height: '1.5rem',
+    justifyContent: 'space-between',
+    margin: '0 auto',
+    marginBottom: {
+      default: '0.25rem',
+      '@media (min-width: 768px)': '1.5rem'
+    },
+    padding: '2rem 1rem',
+    width: '100%'
+  },
+  caret: {
+    bottom: 0,
+    height: '1.5rem',
+    insetInline: 0,
+    marginInline: 'auto',
+    opacity: 0.3,
+    pointerEvents: 'none',
+    position: 'absolute',
+    transitionDuration: '100ms',
+    transitionProperty: 'all',
+    width: '1.5rem'
+  },
+  caretPath: {
+    fill: colors.iconInverse
+  },
+  headerMain: {
+    alignItems: {
+      default: 'center',
+      '@media (min-width: 768px)': 'flex-end'
+    },
+    display: 'flex',
+    gap: '0.5rem'
+  },
+  iconLink: {
+    alignItems: {
+      default: 'center',
+      '@media (min-width: 768px)': 'flex-end'
+    },
+    display: 'flex',
+    flexShrink: 0,
+    justifyContent: 'center',
+    lineHeight: 1,
+    transitionDuration: '500ms',
+    transitionProperty: 'transform'
+  },
+  lightIcon: {
+    display: {
+      default: 'block',
+      ':is(.dark *)': 'none'
+    }
+  },
+  darkIcon: {
+    display: {
+      default: 'none',
+      ':is(.dark *)': 'block'
+    }
+  }
+})

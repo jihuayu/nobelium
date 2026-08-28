@@ -10,6 +10,7 @@ import LinkPreviewCard from '../src/components/LinkPreviewCard'
 import { renderUrlMentionHoverCard } from '../src/components/UrlMentionHoverCard'
 
 const srcDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/components')
+const stylesSource = readFileSync(path.join(srcDir, '../styles.css'), 'utf8')
 const githubUrl = 'https://github.com/jihuayu/Somnium'
 const githubPreview = {
   url: githubUrl,
@@ -35,7 +36,8 @@ test('Vue LinkPreviewCard keeps the in-page 110px bookmark layout', async () => 
   const html = await renderToString(app)
 
   assert.match(html, /data-link-preview-card="true"/)
-  assert.match(html, /h-\[110px\]/)
+  assert.match(html, /nvue-link-preview-card/)
+  assert.match(stylesSource, /\.nvue-link-preview-card\s*\{[\s\S]*?height:\s*110px/)
   assert.match(html, /https:\/\/github.com\/jihuayu\/Somnium/)
   assert.doesNotMatch(html, /github\.com · repo/)
   assert.doesNotMatch(html, /notion-url-mention-hover-card/)
@@ -69,6 +71,5 @@ test('Vue UrlMentionHoverCard is the only GitHub-style floating preview', async 
   assert.match(html, /notion-url-mention-hover-card/)
   assert.match(html, /data-preview-kind="github-repo"/)
   assert.match(html, /github\.com · repo/)
-  assert.doesNotMatch(html, /h-\[110px\]/)
   assert.doesNotMatch(html, /data-link-preview-card/)
 })

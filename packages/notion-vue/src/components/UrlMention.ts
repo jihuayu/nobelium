@@ -91,7 +91,7 @@ export default defineComponent({
             class: cn(
               'notion-url-mention',
               isInline.value
-                ? 'notion-url-mention-inline text-stone-900 dark:text-stone-100 underline underline-offset-4 decoration-stone-400 dark:decoration-stone-600'
+                ? 'notion-url-mention-inline nvue-inline-link'
                 : 'notion-url-mention-link-preview'
             ),
             onMouseenter: openCard,
