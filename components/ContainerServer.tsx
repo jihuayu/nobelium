@@ -1,8 +1,8 @@
-import cn from 'classnames'
+import * as stylex from '@stylexjs/stylex'
 import type { ReactNode } from 'react'
 import Header from '@/components/Header'
 import FooterServer from '@/components/FooterServer'
-import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
+import { appStyles } from '@/styles/app.stylex'
 import { config } from '@/lib/server/config'
 import loadLocale from '@/assets/i18n'
 
@@ -15,11 +15,10 @@ interface ContainerServerProps {
 
 export default async function ContainerServer({ children, layout, fullWidth, title }: ContainerServerProps) {
   const locale = await loadLocale('basic', config.lang)
-  const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
 
   return (
     <div id="top">
-      <div className={`wrapper ${config.font === 'serif' ? 'font-serif' : 'font-sans'}`}>
+      <div className={`wrapper ${stylex.props(config.font === 'serif' ? appStyles.serifFont : appStyles.sansFont).className}`}>
         <Header
           navBarTitle={layout === 'blog' ? title || config.title : null}
           fullWidth={fullWidth}
@@ -31,9 +30,10 @@ export default async function ContainerServer({ children, layout, fullWidth, tit
           navLocale={locale.NAV}
         />
         <main
-          className={cn(
-            'flex-grow transition-all',
-            layout !== 'blog' && ['self-center w-full px-4', contentWidthClass]
+          {...stylex.props(
+            styles.main,
+            layout !== 'blog' && styles.constrainedMain,
+            layout !== 'blog' && (fullWidth ? appStyles.wideContentWidth : appStyles.contentWidth)
           )}
         >
           {children}
@@ -43,3 +43,15 @@ export default async function ContainerServer({ children, layout, fullWidth, tit
     </div>
   )
 }
+
+const styles = stylex.create({
+  main: {
+    flexGrow: 1,
+    transitionProperty: 'all'
+  },
+  constrainedMain: {
+    alignSelf: 'center',
+    paddingInline: '1rem',
+    width: '100%'
+  }
+})

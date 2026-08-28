@@ -98,7 +98,7 @@ const DefaultUnsupportedBlock = defineComponent({
   setup(props) {
     return () => h('div', { class: props.class }, [
       h('div', {
-        class: 'my-4 rounded border border-dashed border-stone-300 dark:border-stone-700 p-3 text-sm text-stone-500 dark:text-stone-400'
+        class: 'nvue-unsupported'
       }, props.message || `Unsupported block type: ${props.block.type}`)
     ])
   }
@@ -202,14 +202,14 @@ export default defineComponent({
 
       function renderBulletedListItem(block: NotionBulletedListItemBlock): VNodeChild {
         return renderBlockWithOverride(block, () => h('li', { key: block.id, class: getBlockClassName(block.id) }, [
-          h('div', { class: 'notion-text whitespace-pre-wrap' }, [renderRichText(block.bulleted_list_item.rich_text)]),
+          h('div', { class: 'notion-text nvue-pre-wrap' }, [renderRichText(block.bulleted_list_item.rich_text)]),
           renderChildren(block.id)
         ]))
       }
 
       function renderNumberedListItem(block: NotionNumberedListItemBlock): VNodeChild {
         return renderBlockWithOverride(block, () => h('li', { key: block.id, class: getBlockClassName(block.id) }, [
-          h('div', { class: 'notion-text whitespace-pre-wrap' }, [renderRichText(block.numbered_list_item.rich_text)]),
+          h('div', { class: 'notion-text nvue-pre-wrap' }, [renderRichText(block.numbered_list_item.rich_text)]),
           renderChildren(block.id)
         ]))
       }
@@ -218,7 +218,7 @@ export default defineComponent({
         return renderBlockWithOverride(block, () => {
           const checked = !!block.to_do.checked
           return h('div', { key: block.id, class: cn(getBlockClassName(block.id), 'notion-to-do-block') }, [
-            h('div', { class: 'notion-to-do-item flex items-baseline gap-1' }, [
+            h('div', { class: 'notion-to-do-item nvue-todo-item' }, [
               h('span', { class: 'notion-property-checkbox' }, [
                 h('span', {
                   class: cn('notion-to-do-checkbox', checked && 'is-checked'),
@@ -230,9 +230,9 @@ export default defineComponent({
                   ])
                 ] : null)
               ]),
-              h('div', { class: 'notion-to-do-body flex-1 min-w-0 whitespace-pre-wrap' }, [renderRichText(block.to_do.rich_text)])
+              h('div', { class: 'notion-to-do-body nvue-todo-body' }, [renderRichText(block.to_do.rich_text)])
             ]),
-            h('div', { class: 'pl-7' }, [renderChildren(block.id)])
+            h('div', { class: 'nvue-todo-children' }, [renderChildren(block.id)])
           ])
         })
       }
@@ -247,21 +247,21 @@ export default defineComponent({
 
       function renderPageReferenceCard(label: string, href: string, blockClass: string, prefix: string): VNodeChild {
         const isInternal = href.startsWith('/')
-        const cardClassName = 'inline-flex items-center gap-2 rounded-md border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/40 px-3 py-1.5 text-sm text-stone-700 dark:text-stone-300'
-        return h('div', { class: cn(blockClass, 'my-3') }, [
+        const cardClassName = 'nvue-reference-card'
+        return h('div', { class: cn(blockClass, 'nvue-margin-3') }, [
           href
             ? h('a', {
                 href,
                 target: isInternal ? undefined : '_blank',
                 rel: isInternal ? undefined : 'noopener noreferrer',
-                class: cn(cardClassName, 'hover:border-stone-400 dark:hover:border-stone-500')
+                class: cn(cardClassName, 'nvue-reference-link')
               }, [
                 h('span', { 'aria-hidden': 'true' }, prefix),
-                h('span', { class: 'whitespace-pre-wrap' }, label)
+                h('span', { class: 'nvue-pre-wrap' }, label)
               ])
             : h('div', { class: cardClassName }, [
                 h('span', { 'aria-hidden': 'true' }, prefix),
-                h('span', { class: 'whitespace-pre-wrap' }, label)
+                h('span', { class: 'nvue-pre-wrap' }, label)
               ])
         ])
       }
@@ -274,7 +274,7 @@ export default defineComponent({
           case 'paragraph': {
             return renderBlockWithOverride(block, () => h('div', { key: block.id, class: baseClassName }, [
               block.paragraph.rich_text.length
-                ? h('p', { class: 'notion-text whitespace-pre-wrap' }, [renderRichText(block.paragraph.rich_text)])
+                ? h('p', { class: 'notion-text nvue-pre-wrap' }, [renderRichText(block.paragraph.rich_text)])
                 : null,
               renderChildren(block.id)
             ]))
@@ -286,11 +286,11 @@ export default defineComponent({
             return renderBlockWithOverride(block, () => {
               const headingPayload = getHeadingPayload(block)
               const headingClass = cn(
-                'font-serif font-semibold text-inherit scroll-mt-20',
-                block.type === 'heading_1' && 'text-[2rem] leading-[1.24] mt-12 mb-3',
-                block.type === 'heading_2' && 'text-[1.62rem] leading-[1.28] mt-10 mb-2',
-                block.type === 'heading_3' && 'text-[1.34rem] leading-[1.34] mt-8 mb-1.5',
-                block.type === 'heading_4' && 'text-[1.16rem] leading-[1.4] mt-6 mb-1'
+                'nvue-heading',
+                block.type === 'heading_1' && 'nvue-heading-1',
+                block.type === 'heading_2' && 'nvue-heading-2',
+                block.type === 'heading_3' && 'nvue-heading-3',
+                block.type === 'heading_4' && 'nvue-heading-4'
               )
               const content = renderRichText(headingPayload.rich_text)
               const headingTag = getHeadingTag(block)
@@ -299,7 +299,7 @@ export default defineComponent({
                 return h('details', {
                   key: block.id,
                   id: getHeadingAnchorId(block.id),
-                  class: cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading my-3', !hasChildren && 'nobelium-toggle-empty')
+                  class: cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading nvue-margin-3', !hasChildren && 'nobelium-toggle-empty')
                 }, [
                   h('summary', { class: 'nobelium-toggle-summary' }, [
                     ...(hasChildren ? [
@@ -309,7 +309,7 @@ export default defineComponent({
                         ])
                       ])
                     ] : []),
-                    h(headingTag, { class: cn(headingClass, 'nobelium-toggle-title whitespace-pre-wrap') }, [content])
+                    h(headingTag, { class: cn(headingClass, 'nobelium-toggle-title nvue-pre-wrap') }, [content])
                   ]),
                   hasChildren
                     ? h('div', { class: 'nobelium-toggle-content' }, [
@@ -328,7 +328,7 @@ export default defineComponent({
           case 'quote': {
             return renderBlockWithOverride(block, () => h('div', { key: block.id, class: baseClassName }, [
               h('blockquote', {
-                class: 'notion-quote border-l-4 border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 rounded-r-md whitespace-pre-wrap'
+                class: 'notion-quote nvue-quote'
               }, [renderRichText(block.quote.rich_text)]),
               renderChildren(block.id)
             ]))
@@ -338,15 +338,15 @@ export default defineComponent({
               const emoji = block.callout.icon?.type === 'emoji' ? block.callout.icon.emoji : ''
               const iconUrl = getCalloutIconUrl(block.callout.icon || null)
               return h('div', { key: block.id, class: baseClassName }, [
-                h('div', { class: 'notion-callout my-4 rounded-md border border-stone-200 dark:border-stone-700 px-3 py-2 flex items-start' }, [
-                  h('span', { class: 'notion-page-icon-inline flex-none' }, [
+                h('div', { class: 'notion-callout nvue-callout' }, [
+                  h('span', { class: 'notion-page-icon-inline nvue-no-shrink' }, [
                     emoji
                       ? h('span', { 'aria-hidden': 'true' }, emoji)
                       : iconUrl
-                        ? h('img', { src: iconUrl, alt: '', class: 'h-[1.05em] w-[1.05em] object-contain' })
+                        ? h('img', { src: iconUrl, alt: '', class: 'nvue-callout-icon' })
                         : h('span', { 'aria-hidden': 'true' }, 'i')
                   ]),
-                  h('div', { class: 'notion-callout-text whitespace-pre-wrap' }, [renderRichText(block.callout.rich_text)])
+                  h('div', { class: 'notion-callout-text nvue-pre-wrap' }, [renderRichText(block.callout.rich_text)])
                 ]),
                 renderChildren(block.id)
               ])
@@ -358,7 +358,7 @@ export default defineComponent({
               return h('div', { key: block.id, class: baseClassName }, [
                 expression
                   ? h('div', {
-                      class: 'notion-equation-block my-4 overflow-x-auto text-center',
+                      class: 'notion-equation-block nvue-equation',
                       innerHTML: renderEquationHtml(expression, true)
                     })
                   : null,
@@ -372,14 +372,14 @@ export default defineComponent({
               const language = normalizeCodeLanguage(block.code.language || '')
               if (language === 'mermaid') {
                 return h('div', { key: block.id, class: baseClassName }, [
-                  h(MermaidBlock, { code: source, class: 'my-4' }),
+                  h(MermaidBlock, { code: source, class: 'nvue-margin-4' }),
                   renderChildren(block.id)
                 ])
               }
               const highlighted = model.highlightedCodeByBlockId[block.id]
               const codeContentId = `notion-code-content-${block.id.replaceAll('-', '')}`
               return h('div', { key: block.id, class: baseClassName }, [
-                h('div', { class: 'notion-code-block my-5 overflow-hidden' }, [
+                h('div', { class: 'notion-code-block nvue-code-block' }, [
                   h('span', { class: 'notion-code-language notion-code-language-floating' },
                     highlighted?.displayLanguage || `${block.code.language || ''}`.trim() || 'plain text'
                   ),
@@ -402,10 +402,10 @@ export default defineComponent({
               if (!source) {
                 return h(Unsupported, { key: block.id, block, class: baseClassName, message: 'Unsupported image source' })
               }
-              return h('figure', { key: block.id, class: cn(baseClassName, 'my-6') }, [
-                h('img', { src: toOgProxyImageUrl(source), alt: captionText || 'Notion image', loading: 'lazy', class: 'w-full rounded-md border border-stone-200 dark:border-stone-800' }),
+              return h('figure', { key: block.id, class: cn(baseClassName, 'nvue-figure') }, [
+                h('img', { src: toOgProxyImageUrl(source), alt: captionText || 'Notion image', loading: 'lazy', class: 'nvue-image' }),
                 caption.length > 0
-                  ? h('figcaption', { class: 'mt-2 notion-asset-caption whitespace-pre-wrap' }, [renderRichText(caption)])
+                  ? h('figcaption', { class: 'notion-asset-caption nvue-caption' }, [renderRichText(caption)])
                   : null,
                 renderChildren(block.id)
               ])
@@ -418,7 +418,7 @@ export default defineComponent({
                 .filter((col: NotionBlock): col is NotionColumnBlock => col?.type === 'column')
               return h('div', { key: block.id, class: baseClassName }, [
                 columns.length > 0
-                  ? h('div', { class: 'my-4 flex flex-col gap-4 md:flex-row' }, columns.map(renderColumnBlock))
+                  ? h('div', { class: 'nvue-columns' }, columns.map(renderColumnBlock))
                   : renderChildren(block.id)
               ])
             })
@@ -430,7 +430,7 @@ export default defineComponent({
               const hasChildren = (childrenById[block.id] || []).length > 0
               return h('details', {
                 key: block.id,
-                class: cn(baseClassName, 'nobelium-toggle my-2', !hasChildren && 'nobelium-toggle-empty')
+                class: cn(baseClassName, 'nobelium-toggle nvue-margin-2', !hasChildren && 'nobelium-toggle-empty')
               }, [
                 h('summary', { class: 'nobelium-toggle-summary' }, [
                   ...(hasChildren ? [
@@ -440,7 +440,7 @@ export default defineComponent({
                       ])
                     ])
                   ] : []),
-                  h('span', { class: 'nobelium-toggle-title whitespace-pre-wrap' }, [renderRichText(block.toggle.rich_text)])
+                  h('span', { class: 'nobelium-toggle-title nvue-pre-wrap' }, [renderRichText(block.toggle.rich_text)])
                 ]),
                 hasChildren
                   ? h('div', { class: 'nobelium-toggle-content' }, [
@@ -453,7 +453,7 @@ export default defineComponent({
           case 'template': {
             return renderBlockWithOverride(block, () => h('div', { key: block.id, class: baseClassName }, [
               block.template.rich_text.length
-                ? h('p', { class: 'notion-text whitespace-pre-wrap' }, [renderRichText(block.template.rich_text)])
+                ? h('p', { class: 'notion-text nvue-pre-wrap' }, [renderRichText(block.template.rich_text)])
                 : null,
               renderChildren(block.id)
             ]))
@@ -504,13 +504,13 @@ export default defineComponent({
           case 'table_of_contents': {
             return renderBlockWithOverride(block, () =>
               model.toc.length
-                ? h('nav', { key: block.id, class: cn(baseClassName, 'my-4 rounded-md border border-stone-200 dark:border-stone-700 px-3 py-2') }, [
-                    h('p', { class: 'text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400 mb-2' }, 'Table of contents'),
-                    h('ul', { class: 'space-y-1' }, model.toc.map(item =>
+                ? h('nav', { key: block.id, class: cn(baseClassName, 'nvue-toc-box') }, [
+                    h('p', { class: 'nvue-toc-title' }, 'Table of contents'),
+                    h('ul', { class: 'nvue-toc-list' }, model.toc.map(item =>
                       h('li', { key: `${block.id}-${item.id}`, style: { marginLeft: `${item.indentLevel * 14}px` } }, [
                         h('a', {
                           href: `#${getHeadingAnchorId(item.id)}`,
-                          class: 'text-sm text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                          class: 'nvue-toc-link'
                         }, item.text)
                       ])
                     ))
@@ -554,7 +554,7 @@ export default defineComponent({
                 hasChildren
                   ? renderChildren(block.id)
                   : h('div', {
-                      class: 'my-3 rounded border border-dashed border-stone-300 dark:border-stone-700 p-3 text-sm text-stone-500 dark:text-stone-400'
+                      class: 'nvue-unsupported nvue-margin-3'
                     }, syncedFrom ? `Synced block (${syncedFrom.slice(0, 8)}...)` : 'Synced block')
               ])
             })
@@ -570,25 +570,25 @@ export default defineComponent({
               let embedHostname = ''
               try { if (embedUrl) embedHostname = new URL(embedUrl).hostname.replace(/^www\./i, '') } catch { embedHostname = '' }
               return h('div', { key: block.id, class: baseClassName }, [
-                h('div', { class: 'my-4' }, [
+                h('div', { class: 'nvue-margin-4' }, [
                   iframeUrl || normalizedEmbedUrl
                     ? h('div', {
-                        class: 'notion-embed-frame overflow-hidden rounded-md border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800'
+                        class: 'notion-embed-frame nvue-embed-frame'
                       }, [
                         embedHostname
-                          ? h('div', { class: 'flex items-center gap-1.5 px-3 py-1.5 text-xs text-stone-400 dark:text-stone-500 border-b border-stone-200 dark:border-stone-800' }, [
-                              h('span', { class: 'inline-block h-2.5 w-2.5 rounded-full bg-stone-300 dark:bg-stone-600' }),
-                              h('span', { class: 'truncate' }, embedHostname)
+                          ? h('div', { class: 'nvue-embed-header' }, [
+                              h('span', { class: 'nvue-embed-dot' }),
+                              h('span', { class: 'nvue-truncate' }, embedHostname)
                             ])
                           : null,
                         h('div', {
-                          class: 'relative w-full',
+                          class: 'nvue-ratio-frame',
                           style: { paddingTop: '56.25%' }
                         }, [
                           h('iframe', {
                             src: iframeUrl || normalizedEmbedUrl,
                             title: embedUrl || block.id,
-                            class: 'absolute top-0 left-0 h-full w-full',
+                            class: 'nvue-absolute-fill',
                             allowfullscreen: true,
                             loading: 'lazy'
                           })
@@ -598,7 +598,7 @@ export default defineComponent({
                       ? renderLinkPreviewCard(embedUrl, normalizeRichTextUrl(embedUrl))
                       : h(Unsupported, { block, class: '', message: 'Unsupported embed block' }),
                   caption.length > 0
-                    ? h('div', { class: 'notion-asset-caption mt-2 whitespace-pre-wrap' }, [renderRichText(caption)])
+                    ? h('div', { class: 'notion-asset-caption nvue-caption' }, [renderRichText(caption)])
                     : null
                 ]),
                 renderChildren(block.id)
@@ -612,9 +612,9 @@ export default defineComponent({
               return h('div', { key: block.id, class: baseClassName }, [
                 bookmarkUrl
                   ? renderLinkPreviewCard(bookmarkUrl, normalizeRichTextUrl(bookmarkUrl))
-                  : h(Unsupported, { block, class: 'my-4', message: 'Unsupported bookmark block' }),
+                  : h(Unsupported, { block, class: 'nvue-margin-4', message: 'Unsupported bookmark block' }),
                 caption.length > 0
-                  ? h('div', { class: 'notion-asset-caption mt-2 whitespace-pre-wrap' }, [renderRichText(caption)])
+                  ? h('div', { class: 'notion-asset-caption nvue-caption' }, [renderRichText(caption)])
                   : null,
                 renderChildren(block.id)
               ])
@@ -626,19 +626,19 @@ export default defineComponent({
               const iframeUrl = resolveEmbedIframeUrl(source)
               const caption = block.video.caption || []
               return h('div', { key: block.id, class: baseClassName }, [
-                h('div', { class: 'my-4' }, [
+                h('div', { class: 'nvue-margin-4' }, [
                   !source
                     ? h(Unsupported, { block, class: '', message: 'Unsupported video block' })
                     : iframeUrl
                       ? h('div', {
-                          class: 'relative w-full overflow-hidden rounded-md border border-stone-200 dark:border-stone-700',
+                          class: 'nvue-media-frame',
                           style: { paddingTop: '56.25%' }
                         }, [
-                          h('iframe', { src: iframeUrl, title: source || block.id, class: 'absolute top-0 left-0 h-full w-full', allowfullscreen: true, loading: 'lazy' })
+                          h('iframe', { src: iframeUrl, title: source || block.id, class: 'nvue-absolute-fill', allowfullscreen: true, loading: 'lazy' })
                         ])
-                      : h('video', { src: source, controls: true, preload: 'metadata', class: 'w-full rounded-md border border-stone-200 dark:border-stone-700 bg-black' }),
+                      : h('video', { src: source, controls: true, preload: 'metadata', class: 'nvue-video' }),
                   caption.length > 0
-                    ? h('div', { class: 'notion-asset-caption mt-2 whitespace-pre-wrap' }, [renderRichText(caption)])
+                    ? h('div', { class: 'notion-asset-caption nvue-caption' }, [renderRichText(caption)])
                     : null
                 ]),
                 renderChildren(block.id)
@@ -650,12 +650,12 @@ export default defineComponent({
               const source = getFileBlockUrl(block.audio)
               const caption = block.audio.caption || []
               return h('div', { key: block.id, class: baseClassName }, [
-                h('div', { class: 'my-4' }, [
+                h('div', { class: 'nvue-margin-4' }, [
                   !source
                     ? h(Unsupported, { block, class: '', message: 'Unsupported audio block' })
                     : h('audio', { src: source, controls: true, preload: 'metadata', class: 'notion-audio-block' }),
                   caption.length > 0
-                    ? h('div', { class: 'notion-asset-caption mt-2 whitespace-pre-wrap' }, [renderRichText(caption)])
+                    ? h('div', { class: 'notion-asset-caption nvue-caption' }, [renderRichText(caption)])
                     : null
                 ]),
                 renderChildren(block.id)
@@ -667,21 +667,21 @@ export default defineComponent({
               const source = getFileBlockUrl(block.pdf)
               const caption = block.pdf.caption || []
               return h('div', { key: block.id, class: baseClassName }, [
-                h('div', { class: 'my-4 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden' }, [
+                h('div', { class: 'nvue-pdf-frame' }, [
                   !source
-                    ? h('div', { class: 'p-3 text-sm text-stone-500 dark:text-stone-400' }, 'Unsupported pdf block')
+                    ? h('div', { class: 'nvue-pdf-unsupported' }, 'Unsupported pdf block')
                     : [
-                        h('iframe', { src: source, title: source || block.id, class: 'w-full', style: { height: '620px' }, loading: 'lazy' }),
+                        h('iframe', { src: source, title: source || block.id, class: 'nvue-full-width', style: { height: '620px' }, loading: 'lazy' }),
                         h('a', {
                           href: source,
                           target: '_blank',
                           rel: 'noopener noreferrer',
-                          class: 'block border-t border-stone-200 dark:border-stone-700 px-3 py-2 text-sm text-stone-600 dark:text-stone-400 hover:underline'
+                          class: 'nvue-pdf-link'
                         }, 'Open PDF')
                       ]
                 ]),
                 caption.length > 0
-                  ? h('div', { class: 'notion-asset-caption mt-2 whitespace-pre-wrap' }, [renderRichText(caption)])
+                  ? h('div', { class: 'notion-asset-caption nvue-caption' }, [renderRichText(caption)])
                   : null,
                 renderChildren(block.id)
               ])
@@ -693,7 +693,7 @@ export default defineComponent({
               const caption = block.file.caption || []
               return h('div', { key: block.id, class: baseClassName }, [
                 !fileUrl
-                  ? h(Unsupported, { block, class: 'my-4', message: 'Unsupported file block' })
+                  ? h(Unsupported, { block, class: 'nvue-margin-4', message: 'Unsupported file block' })
                   : h('a', { href: fileUrl, target: '_blank', rel: 'noopener noreferrer', class: 'notion-file-block' }, [
                       h('span', { class: 'notion-file-icon', 'aria-hidden': 'true' }, [
                         h('svg', { viewBox: '0 0 20 20', fill: 'none', stroke: 'currentColor', strokeWidth: '1.5', role: 'presentation' }, [
@@ -705,7 +705,7 @@ export default defineComponent({
                       h('span', { class: 'notion-file-name' }, getFileBlockName(block.file, fileUrl))
                     ]),
                 caption.length > 0
-                  ? h('div', { class: 'notion-asset-caption mt-2 whitespace-pre-wrap' }, [renderRichText(caption)])
+                  ? h('div', { class: 'notion-asset-caption nvue-caption' }, [renderRichText(caption)])
                   : null,
                 renderChildren(block.id)
               ])
@@ -721,7 +721,7 @@ export default defineComponent({
                 return h(Unsupported, { key: block.id, block, class: baseClassName, message: 'Unsupported table block' })
               }
               return h('div', { key: block.id, class: baseClassName }, [
-                h('div', { class: 'notion-table-wrapper my-4' }, [
+                h('div', { class: 'notion-table-wrapper nvue-margin-4' }, [
                   h('table', { class: 'notion-table-block' }, [
                     h('tbody', null, rows.map((row: NotionTableRowBlock, rowIndex: number) =>
                       h('tr', { key: row.id || `${block.id}-${rowIndex}` },
@@ -735,11 +735,11 @@ export default defineComponent({
                                 key: `${row.id || rowIndex}-${colIndex}`,
                                 class: 'notion-table-cell notion-table-cell-header',
                                 scope: isColumnHeader ? 'col' : 'row'
-                              }, [h('div', { class: 'whitespace-pre-wrap' }, [renderRichText(cellRichText)])])
+                              }, [h('div', { class: 'nvue-pre-wrap' }, [renderRichText(cellRichText)])])
                             : h('td', {
                                 key: `${row.id || rowIndex}-${colIndex}`,
                                 class: 'notion-table-cell'
-                              }, [h('div', { class: 'whitespace-pre-wrap' }, [renderRichText(cellRichText)])])
+                              }, [h('div', { class: 'nvue-pre-wrap' }, [renderRichText(cellRichText)])])
                         })
                       )
                     ))
@@ -755,13 +755,13 @@ export default defineComponent({
             return renderBlockWithOverride(block, () => h('div', { key: block.id, class: baseClassName }, [
               block.link_preview.url
                 ? renderLinkPreviewCard(block.link_preview.url, normalizeRichTextUrl(block.link_preview.url))
-                : h(Unsupported, { block, class: 'my-4', message: 'Unsupported link preview block' }),
+                : h(Unsupported, { block, class: 'nvue-margin-4', message: 'Unsupported link preview block' }),
               renderChildren(block.id)
             ]))
           }
           case 'divider': {
             return renderBlockWithOverride(block, () => h('div', { key: block.id, class: baseClassName }, [
-              h('hr', { class: 'notion-hr my-4 border-stone-200 dark:border-stone-700' }),
+              h('hr', { class: 'notion-hr nvue-rule' }),
               renderChildren(block.id)
             ]))
           }
@@ -791,7 +791,7 @@ export default defineComponent({
               listItems.push(renderBulletedListItem(nextBlock))
               index += 1
             }
-            nodes.push(h('ul', { key: `bulleted-${block.id}`, class: 'notion-list list-disc my-3' }, listItems))
+            nodes.push(h('ul', { key: `bulleted-${block.id}`, class: 'notion-list nvue-bulleted-list' }, listItems))
             continue
           }
 
@@ -803,7 +803,7 @@ export default defineComponent({
               listItems.push(renderNumberedListItem(nextBlock))
               index += 1
             }
-            nodes.push(h('ol', { key: `numbered-${block.id}`, class: 'notion-list list-decimal my-3' }, listItems))
+            nodes.push(h('ol', { key: `numbered-${block.id}`, class: 'notion-list nvue-numbered-list' }, listItems))
             continue
           }
 

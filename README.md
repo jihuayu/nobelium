@@ -8,7 +8,7 @@
 - 语言：中文（`zh-CN`）
 - 评论系统：Utterances
 - 数据来源：Notion Data Source（官方 API）
-- 技术栈：Next.js 16 + React 18 + Tailwind CSS
+- 技术栈：Next.js 16 + React 19 + StyleX
 
 ## 功能特性
 

@@ -1,5 +1,7 @@
 import { type ReactNode } from 'react'
 import cn from 'classnames'
+import * as stylex from '@stylexjs/stylex'
+import { colors } from '../theme.stylex'
 import katex from 'katex'
 import type {
   BlockRenderer,
@@ -91,7 +93,7 @@ function resolveRenderOptions(input?: NotionRenderOptions): ResolvedNotionRender
 function UnsupportedBlock({ block, className, message }: UnsupportedBlockProps) {
   return (
     <div className={className}>
-      <div className="my-4 rounded border border-dashed border-stone-300 dark:border-stone-700 p-3 text-sm text-stone-500 dark:text-stone-400">
+      <div {...stylex.props(styles.unsupported)}>
         {message || `Unsupported block type: ${block.type}`}
       </div>
     </div>
@@ -185,14 +187,14 @@ export default function NotionRenderer({ model, components, renderOptions, class
 
   const renderBulletedListItem = (block: NotionBulletedListItemBlock) => renderBlockWithOverride(block, () => (
     <li key={block.id} className={getBlockClassName(block.id)}>
-      <div className="notion-text whitespace-pre-wrap">{renderRichText(block.bulleted_list_item.rich_text)}</div>
+      <div className={`notion-text ${stylex.props(styles.preWrap).className}`}>{renderRichText(block.bulleted_list_item.rich_text)}</div>
       {renderChildren(block.id)}
     </li>
   ))
 
   const renderNumberedListItem = (block: NotionNumberedListItemBlock) => renderBlockWithOverride(block, () => (
     <li key={block.id} className={getBlockClassName(block.id)}>
-      <div className="notion-text whitespace-pre-wrap">{renderRichText(block.numbered_list_item.rich_text)}</div>
+      <div className={`notion-text ${stylex.props(styles.preWrap).className}`}>{renderRichText(block.numbered_list_item.rich_text)}</div>
       {renderChildren(block.id)}
     </li>
   ))
@@ -201,7 +203,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
     const checked = !!block.to_do.checked
     return (
       <div key={block.id} className={cn(getBlockClassName(block.id), 'notion-to-do-block')}>
-        <div className="notion-to-do-item flex items-baseline gap-1">
+        <div className={`notion-to-do-item ${stylex.props(styles.todoItem).className}`}>
           <span className="notion-property-checkbox">
             <span className={cn('notion-to-do-checkbox', checked && 'is-checked')} role="img" aria-label={checked ? 'Checked' : 'Unchecked'}>
               {checked && (
@@ -211,9 +213,9 @@ export default function NotionRenderer({ model, components, renderOptions, class
               )}
             </span>
           </span>
-          <div className="notion-to-do-body flex-1 min-w-0 whitespace-pre-wrap">{renderRichText(block.to_do.rich_text)}</div>
+          <div className={`notion-to-do-body ${stylex.props(styles.todoBody).className}`}>{renderRichText(block.to_do.rich_text)}</div>
         </div>
-        <div className="pl-7">{renderChildren(block.id)}</div>
+        <div {...stylex.props(styles.todoChildren)}>{renderChildren(block.id)}</div>
       </div>
     )
   })
@@ -226,25 +228,25 @@ export default function NotionRenderer({ model, components, renderOptions, class
 
   const renderPageReferenceCard = (label: string, href: string, className: string, prefix: string) => {
     const isInternal = href.startsWith('/')
-    const cardClassName = 'inline-flex items-center gap-2 rounded-md border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/40 px-3 py-1.5 text-sm text-stone-700 dark:text-stone-300'
+    const cardClassName = stylex.props(styles.referenceCard).className
     return (
-      <div className={cn(className, 'my-3')}>
+      <div className={cn(className, stylex.props(styles.margin3).className)}>
         {href
           ? (
             <a
               href={href}
               target={isInternal ? undefined : '_blank'}
               rel={isInternal ? undefined : 'noopener noreferrer'}
-              className={cn(cardClassName, 'hover:border-stone-400 dark:hover:border-stone-500')}
+              className={cn(cardClassName, stylex.props(styles.referenceLink).className)}
             >
               <span aria-hidden="true">{prefix}</span>
-              <span className="whitespace-pre-wrap">{label}</span>
+              <span {...stylex.props(styles.preWrap)}>{label}</span>
             </a>
           )
           : (
             <div className={cardClassName}>
               <span aria-hidden="true">{prefix}</span>
-              <span className="whitespace-pre-wrap">{label}</span>
+              <span {...stylex.props(styles.preWrap)}>{label}</span>
             </div>
           )}
       </div>
@@ -259,7 +261,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'paragraph': {
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
-            {block.paragraph.rich_text.length ? <p className="notion-text whitespace-pre-wrap">{renderRichText(block.paragraph.rich_text)}</p> : null}
+            {block.paragraph.rich_text.length ? <p className={`notion-text ${stylex.props(styles.preWrap).className}`}>{renderRichText(block.paragraph.rich_text)}</p> : null}
             {renderChildren(block.id)}
           </div>
         ))
@@ -271,18 +273,18 @@ export default function NotionRenderer({ model, components, renderOptions, class
         return renderBlockWithOverride(block, () => {
           const headingPayload = getHeadingPayload(block)
           const HeadingTag = getHeadingTag(block)
-          const headingClass = cn(
-            'font-serif font-semibold text-inherit scroll-mt-20',
-            block.type === 'heading_1' && 'text-[2rem] leading-[1.24] mt-12 mb-3',
-            block.type === 'heading_2' && 'text-[1.62rem] leading-[1.28] mt-10 mb-2',
-            block.type === 'heading_3' && 'text-[1.34rem] leading-[1.34] mt-8 mb-1.5',
-            block.type === 'heading_4' && 'text-[1.16rem] leading-[1.4] mt-6 mb-1'
-          )
+          const headingClass = stylex.props(
+            styles.heading,
+            block.type === 'heading_1' && styles.heading1,
+            block.type === 'heading_2' && styles.heading2,
+            block.type === 'heading_3' && styles.heading3,
+            block.type === 'heading_4' && styles.heading4
+          ).className
           const hasChildren = (childrenById[block.id] || []).length > 0
           const content = renderRichText(headingPayload.rich_text)
           if (headingPayload.is_toggleable) {
             return (
-              <details key={block.id} id={getHeadingAnchorId(block.id)} className={cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading my-3', !hasChildren && 'nobelium-toggle-empty')}>
+              <details key={block.id} id={getHeadingAnchorId(block.id)} className={cn(baseClassName, 'nobelium-toggle nobelium-toggle-heading', stylex.props(styles.margin3).className, !hasChildren && 'nobelium-toggle-empty')}>
                 <summary className="nobelium-toggle-summary">
                   {hasChildren && (
                     <span className="nobelium-toggle-chevron" aria-hidden="true">
@@ -291,7 +293,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
                       </svg>
                     </span>
                   )}
-                  <HeadingTag className={cn(headingClass, 'nobelium-toggle-title whitespace-pre-wrap')}>{content}</HeadingTag>
+                  <HeadingTag className={cn(headingClass, 'nobelium-toggle-title', stylex.props(styles.preWrap).className)}>{content}</HeadingTag>
                 </summary>
                 {hasChildren && <div className="nobelium-toggle-content"><div className="content">{renderChildren(block.id)}</div></div>}
               </details>
@@ -308,7 +310,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'quote': {
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
-            <blockquote className="notion-quote border-l-4 border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 rounded-r-md whitespace-pre-wrap">
+            <blockquote className={`notion-quote ${stylex.props(styles.quote).className}`}>
               {renderRichText(block.quote.rich_text)}
             </blockquote>
             {renderChildren(block.id)}
@@ -321,11 +323,11 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const iconUrl = getCalloutIconUrl(block.callout.icon || null)
           return (
             <div key={block.id} className={baseClassName}>
-              <div className="notion-callout my-4 rounded-md border border-stone-200 dark:border-stone-700 px-3 py-2 flex items-start">
-                <span className="notion-page-icon-inline flex-none">
-                  {emoji ? <span aria-hidden="true">{emoji}</span> : iconUrl ? <img src={iconUrl} alt="" className="h-[1.05em] w-[1.05em] object-contain" /> : <span aria-hidden="true">i</span>}
+              <div className={`notion-callout ${stylex.props(styles.callout).className}`}>
+                <span className={`notion-page-icon-inline ${stylex.props(styles.noShrink).className}`}>
+                  {emoji ? <span aria-hidden="true">{emoji}</span> : iconUrl ? <img src={iconUrl} alt="" {...stylex.props(styles.calloutIcon)} /> : <span aria-hidden="true">i</span>}
                 </span>
-                <div className="notion-callout-text whitespace-pre-wrap">{renderRichText(block.callout.rich_text)}</div>
+                <div className={`notion-callout-text ${stylex.props(styles.preWrap).className}`}>{renderRichText(block.callout.rich_text)}</div>
               </div>
               {renderChildren(block.id)}
             </div>
@@ -338,7 +340,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           return (
             <div key={block.id} className={baseClassName}>
               {expression
-                ? <div className="notion-equation-block my-4 overflow-x-auto text-center" dangerouslySetInnerHTML={{ __html: renderEquationHtml(expression, true) }} />
+                ? <div className={`notion-equation-block ${stylex.props(styles.equation).className}`} dangerouslySetInnerHTML={{ __html: renderEquationHtml(expression, true) }} />
                 : null}
               {renderChildren(block.id)}
             </div>
@@ -352,7 +354,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           if (language === 'mermaid') {
             return (
               <div key={block.id} className={baseClassName}>
-                <MermaidBlock code={source} className="my-4" />
+                <MermaidBlock code={source} className={stylex.props(styles.margin4).className} />
                 {renderChildren(block.id)}
               </div>
             )
@@ -362,7 +364,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const codeContentId = `notion-code-content-${block.id.replaceAll('-', '')}`
           return (
             <div key={block.id} className={baseClassName}>
-              <div className="notion-code-block my-5 overflow-hidden">
+              <div className={`notion-code-block ${stylex.props(styles.codeBlock).className}`}>
                 <span className="notion-code-language notion-code-language-floating">
                   {highlighted?.displayLanguage || `${block.code.language || ''}`.trim() || 'plain text'}
                 </span>
@@ -387,9 +389,9 @@ export default function NotionRenderer({ model, components, renderOptions, class
             return <Unsupported key={block.id} block={block} className={baseClassName} message="Unsupported image source" />
           }
           return (
-            <figure key={block.id} className={cn(baseClassName, 'my-6')}>
-              <img src={toOgProxyImageUrl(source)} alt={captionText || 'Notion image'} loading="lazy" className="w-full rounded-md border border-stone-200 dark:border-stone-800" />
-              {caption.length > 0 && <figcaption className="mt-2 notion-asset-caption whitespace-pre-wrap">{renderRichText(caption)}</figcaption>}
+            <figure key={block.id} className={cn(baseClassName, stylex.props(styles.figure).className)}>
+              <img src={toOgProxyImageUrl(source)} alt={captionText || 'Notion image'} loading="lazy" {...stylex.props(styles.image)} />
+              {caption.length > 0 && <figcaption className={`notion-asset-caption ${stylex.props(styles.caption).className}`}>{renderRichText(caption)}</figcaption>}
               {renderChildren(block.id)}
             </figure>
           )
@@ -402,7 +404,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
             .filter((column): column is NotionColumnBlock => column?.type === 'column')
           return (
             <div key={block.id} className={baseClassName}>
-              {columns.length > 0 ? <div className="my-4 flex flex-col gap-4 md:flex-row">{columns.map(renderColumnBlock)}</div> : renderChildren(block.id)}
+              {columns.length > 0 ? <div {...stylex.props(styles.columns)}>{columns.map(renderColumnBlock)}</div> : renderChildren(block.id)}
             </div>
           )
         })
@@ -412,7 +414,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
         return renderBlockWithOverride(block, () => {
           const hasChildren = (childrenById[block.id] || []).length > 0
           return (
-            <details key={block.id} className={cn(baseClassName, 'nobelium-toggle my-2', !hasChildren && 'nobelium-toggle-empty')}>
+            <details key={block.id} className={cn(baseClassName, 'nobelium-toggle', stylex.props(styles.margin2).className, !hasChildren && 'nobelium-toggle-empty')}>
               <summary className="nobelium-toggle-summary">
                 {hasChildren && (
                   <span className="nobelium-toggle-chevron" aria-hidden="true">
@@ -421,7 +423,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
                     </svg>
                   </span>
                 )}
-                <span className="nobelium-toggle-title whitespace-pre-wrap">{renderRichText(block.toggle.rich_text)}</span>
+                <span className={`nobelium-toggle-title ${stylex.props(styles.preWrap).className}`}>{renderRichText(block.toggle.rich_text)}</span>
               </summary>
               {hasChildren && <div className="nobelium-toggle-content"><div className="content">{renderChildren(block.id)}</div></div>}
             </details>
@@ -431,7 +433,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'template': {
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
-            {block.template.rich_text.length ? <p className="notion-text whitespace-pre-wrap">{renderRichText(block.template.rich_text)}</p> : null}
+            {block.template.rich_text.length ? <p className={`notion-text ${stylex.props(styles.preWrap).className}`}>{renderRichText(block.template.rich_text)}</p> : null}
             {renderChildren(block.id)}
           </div>
         ))
@@ -493,12 +495,12 @@ export default function NotionRenderer({ model, components, renderOptions, class
         return renderBlockWithOverride(block, () => (
           model.toc.length
             ? (
-              <nav key={block.id} className={cn(baseClassName, 'my-4 rounded-md border border-stone-200 dark:border-stone-700 px-3 py-2')}>
-                <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400 mb-2">Table of contents</p>
-                <ul className="space-y-1">
+              <nav key={block.id} className={cn(baseClassName, stylex.props(styles.tocBox).className)}>
+                <p {...stylex.props(styles.tocTitle)}>Table of contents</p>
+                <ul {...stylex.props(styles.tocList)}>
                   {model.toc.map(item => (
                     <li key={`${block.id}-${item.id}`} style={{ marginLeft: `${item.indentLevel * 14}px` }}>
-                      <a href={`#${getHeadingAnchorId(item.id)}`} className="text-sm text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100">
+                      <a href={`#${getHeadingAnchorId(item.id)}`} {...stylex.props(styles.tocLink)}>
                         {item.text}
                       </a>
                     </li>
@@ -550,7 +552,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
             <div key={block.id} className={baseClassName}>
               {hasChildren
                 ? renderChildren(block.id)
-                : <div className="my-3 rounded border border-dashed border-stone-300 dark:border-stone-700 p-3 text-sm text-stone-500 dark:text-stone-400">{syncedFrom ? `Synced block (${syncedFrom.slice(0, 8)}...)` : 'Synced block'}</div>}
+                : <div {...stylex.props(styles.unsupported, styles.margin3)}>{syncedFrom ? `Synced block (${syncedFrom.slice(0, 8)}...)` : 'Synced block'}</div>}
             </div>
           )
         })
@@ -567,21 +569,21 @@ export default function NotionRenderer({ model, components, renderOptions, class
           try { if (embedUrl) embedHostname = new URL(embedUrl).hostname.replace(/^www\./i, '') } catch { embedHostname = '' }
           return (
             <div key={block.id} className={baseClassName}>
-              <div className="my-4">
+              <div {...stylex.props(styles.margin4)}>
                 {iframeUrl || normalizedEmbedUrl
                   ? (
-                    <div className="notion-embed-frame overflow-hidden rounded-md border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800">
+                    <div className={`notion-embed-frame ${stylex.props(styles.embedFrame).className}`}>
                       {embedHostname && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-stone-400 dark:text-stone-500 border-b border-stone-200 dark:border-stone-800">
-                          <span className="inline-block h-2.5 w-2.5 rounded-full bg-stone-300 dark:bg-stone-600" />
-                          <span className="truncate">{embedHostname}</span>
+                        <div {...stylex.props(styles.embedHeader)}>
+                          <span {...stylex.props(styles.embedDot)} />
+                          <span {...stylex.props(styles.truncate)}>{embedHostname}</span>
                         </div>
                       )}
-                      <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                      <div {...stylex.props(styles.ratioFrame)} style={{ paddingTop: '56.25%' }}>
                         <iframe
                           src={iframeUrl || normalizedEmbedUrl}
                           title={embedUrl || block.id}
-                          className="absolute top-0 left-0 h-full w-full"
+                          {...stylex.props(styles.absoluteFill)}
                           allowFullScreen
                           loading="lazy"
                         />
@@ -591,7 +593,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
                   : embedUrl
                     ? renderLinkPreviewCard(embedUrl, normalizeRichTextUrl(embedUrl))
                     : <Unsupported block={block} className="" message="Unsupported embed block" />}
-                {caption.length > 0 && <div className="notion-asset-caption mt-2 whitespace-pre-wrap">{renderRichText(caption)}</div>}
+                {caption.length > 0 && <div className={`notion-asset-caption ${stylex.props(styles.caption).className}`}>{renderRichText(caption)}</div>}
               </div>
               {renderChildren(block.id)}
             </div>
@@ -604,8 +606,8 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const caption = block.bookmark.caption || []
           return (
             <div key={block.id} className={baseClassName}>
-              {bookmarkUrl ? renderLinkPreviewCard(bookmarkUrl, normalizeRichTextUrl(bookmarkUrl)) : <Unsupported block={block} className="my-4" message="Unsupported bookmark block" />}
-              {caption.length > 0 && <div className="notion-asset-caption mt-2 whitespace-pre-wrap">{renderRichText(caption)}</div>}
+              {bookmarkUrl ? renderLinkPreviewCard(bookmarkUrl, normalizeRichTextUrl(bookmarkUrl)) : <Unsupported block={block} className={stylex.props(styles.margin4).className} message="Unsupported bookmark block" />}
+              {caption.length > 0 && <div className={`notion-asset-caption ${stylex.props(styles.caption).className}`}>{renderRichText(caption)}</div>}
               {renderChildren(block.id)}
             </div>
           )
@@ -618,17 +620,17 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const caption = block.video.caption || []
           return (
             <div key={block.id} className={baseClassName}>
-              <div className="my-4">
+              <div {...stylex.props(styles.margin4)}>
                 {!source
                   ? <Unsupported block={block} className="" message="Unsupported video block" />
                   : iframeUrl
                     ? (
-                      <div className="relative w-full overflow-hidden rounded-md border border-stone-200 dark:border-stone-700" style={{ paddingTop: '56.25%' }}>
-                        <iframe src={iframeUrl} title={source || block.id} className="absolute top-0 left-0 h-full w-full" allowFullScreen loading="lazy" />
+                      <div {...stylex.props(styles.mediaFrame)} style={{ paddingTop: '56.25%' }}>
+                        <iframe src={iframeUrl} title={source || block.id} {...stylex.props(styles.absoluteFill)} allowFullScreen loading="lazy" />
                       </div>
                     )
-                    : <video src={source} controls preload="metadata" className="w-full rounded-md border border-stone-200 dark:border-stone-700 bg-black" />}
-                {caption.length > 0 && <div className="notion-asset-caption mt-2 whitespace-pre-wrap">{renderRichText(caption)}</div>}
+                    : <video src={source} controls preload="metadata" {...stylex.props(styles.video)} />}
+                {caption.length > 0 && <div className={`notion-asset-caption ${stylex.props(styles.caption).className}`}>{renderRichText(caption)}</div>}
               </div>
               {renderChildren(block.id)}
             </div>
@@ -641,9 +643,9 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const caption = block.audio.caption || []
           return (
             <div key={block.id} className={baseClassName}>
-              <div className="my-4">
+              <div {...stylex.props(styles.margin4)}>
                 {!source ? <Unsupported block={block} className="" message="Unsupported audio block" /> : <audio src={source} controls preload="metadata" className="notion-audio-block" />}
-                {caption.length > 0 && <div className="notion-asset-caption mt-2 whitespace-pre-wrap">{renderRichText(caption)}</div>}
+                {caption.length > 0 && <div className={`notion-asset-caption ${stylex.props(styles.caption).className}`}>{renderRichText(caption)}</div>}
               </div>
               {renderChildren(block.id)}
             </div>
@@ -656,19 +658,19 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const caption = block.pdf.caption || []
           return (
             <div key={block.id} className={baseClassName}>
-              <div className="my-4 rounded-md border border-stone-200 dark:border-stone-700 overflow-hidden">
+              <div {...stylex.props(styles.pdfFrame)}>
                 {!source
-                  ? <div className="p-3 text-sm text-stone-500 dark:text-stone-400">Unsupported pdf block</div>
+                  ? <div {...stylex.props(styles.pdfUnsupported)}>Unsupported pdf block</div>
                   : (
                     <>
-                      <iframe src={source} title={source || block.id} className="w-full" style={{ height: '620px' }} loading="lazy" />
-                      <a href={source} target="_blank" rel="noopener noreferrer" className="block border-t border-stone-200 dark:border-stone-700 px-3 py-2 text-sm text-stone-600 dark:text-stone-400 hover:underline">
+                      <iframe src={source} title={source || block.id} {...stylex.props(styles.fullWidth)} style={{ height: '620px' }} loading="lazy" />
+                      <a href={source} target="_blank" rel="noopener noreferrer" {...stylex.props(styles.pdfLink)}>
                         Open PDF
                       </a>
                     </>
                   )}
               </div>
-              {caption.length > 0 && <div className="notion-asset-caption mt-2 whitespace-pre-wrap">{renderRichText(caption)}</div>}
+              {caption.length > 0 && <div className={`notion-asset-caption ${stylex.props(styles.caption).className}`}>{renderRichText(caption)}</div>}
               {renderChildren(block.id)}
             </div>
           )
@@ -681,7 +683,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           return (
             <div key={block.id} className={baseClassName}>
               {!fileUrl
-                ? <Unsupported block={block} className="my-4" message="Unsupported file block" />
+                ? <Unsupported block={block} className={stylex.props(styles.margin4).className} message="Unsupported file block" />
                 : (
                   <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="notion-file-block">
                     <span className="notion-file-icon" aria-hidden="true">
@@ -694,7 +696,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
                     <span className="notion-file-name">{getFileBlockName(block.file, fileUrl)}</span>
                   </a>
                 )}
-              {caption.length > 0 && <div className="notion-asset-caption mt-2 whitespace-pre-wrap">{renderRichText(caption)}</div>}
+              {caption.length > 0 && <div className={`notion-asset-caption ${stylex.props(styles.caption).className}`}>{renderRichText(caption)}</div>}
               {renderChildren(block.id)}
             </div>
           )
@@ -710,7 +712,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
 
           return (
             <div key={block.id} className={baseClassName}>
-              <div className="notion-table-wrapper my-4">
+              <div className={`notion-table-wrapper ${stylex.props(styles.margin4).className}`}>
                 <table className="notion-table-block">
                   <tbody>
                     {rows.map((row, rowIndex) => (
@@ -723,12 +725,12 @@ export default function NotionRenderer({ model, components, renderOptions, class
                           return isHeader
                             ? (
                               <th key={`${row.id || rowIndex}-${colIndex}`} className="notion-table-cell notion-table-cell-header" scope={isColumnHeader ? 'col' : 'row'}>
-                                <div className="whitespace-pre-wrap">{renderRichText(cellRichText)}</div>
+                                <div {...stylex.props(styles.preWrap)}>{renderRichText(cellRichText)}</div>
                               </th>
                             )
                             : (
                               <td key={`${row.id || rowIndex}-${colIndex}`} className="notion-table-cell">
-                                <div className="whitespace-pre-wrap">{renderRichText(cellRichText)}</div>
+                                <div {...stylex.props(styles.preWrap)}>{renderRichText(cellRichText)}</div>
                               </td>
                             )
                         })}
@@ -749,7 +751,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           <div key={block.id} className={baseClassName}>
             {block.link_preview.url
               ? renderLinkPreviewCard(block.link_preview.url, normalizeRichTextUrl(block.link_preview.url))
-              : <Unsupported block={block} className="my-4" message="Unsupported link preview block" />}
+              : <Unsupported block={block} className={stylex.props(styles.margin4).className} message="Unsupported link preview block" />}
             {renderChildren(block.id)}
           </div>
         ))
@@ -757,7 +759,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'divider':
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
-            <hr className="notion-hr my-4 border-stone-200 dark:border-stone-700" />
+            <hr className={`notion-hr ${stylex.props(styles.rule).className}`} />
             {renderChildren(block.id)}
           </div>
         ))
@@ -787,7 +789,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           listItems.push(renderBulletedListItem(nextBlock))
           index += 1
         }
-        nodes.push(<ul key={`bulleted-${block.id}`} className="notion-list list-disc my-3">{listItems}</ul>)
+        nodes.push(<ul key={`bulleted-${block.id}`} className={`notion-list ${stylex.props(styles.bulletedList).className}`}>{listItems}</ul>)
         continue
       }
 
@@ -799,7 +801,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           listItems.push(renderNumberedListItem(nextBlock))
           index += 1
         }
-        nodes.push(<ol key={`numbered-${block.id}`} className="notion-list list-decimal my-3">{listItems}</ol>)
+        nodes.push(<ol key={`numbered-${block.id}`} className={`notion-list ${stylex.props(styles.numberedList).className}`}>{listItems}</ol>)
         continue
       }
 
@@ -815,3 +817,185 @@ export default function NotionRenderer({ model, components, renderOptions, class
     </div>
   )
 }
+
+const styles = stylex.create({
+  unsupported: {
+    borderColor: colors.borderInput,
+    borderRadius: '0.25rem',
+    borderStyle: 'dashed',
+    borderWidth: '1px',
+    color: colors.textSubtle,
+    fontSize: '0.875rem',
+    marginBlock: '1rem',
+    padding: '0.75rem'
+  },
+  preWrap: { whiteSpace: 'pre-wrap' },
+  todoItem: { alignItems: 'baseline', display: 'flex', gap: '0.25rem' },
+  todoBody: { flex: 1, minWidth: 0, whiteSpace: 'pre-wrap' },
+  todoChildren: { paddingLeft: '1.75rem' },
+  margin2: { marginBlock: '0.5rem' },
+  margin3: { marginBlock: '0.75rem' },
+  margin4: { marginBlock: '1rem' },
+  referenceCard: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceReference,
+    borderColor: colors.borderDefault,
+    borderRadius: '0.375rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textSecondary,
+    display: 'inline-flex',
+    fontSize: '0.875rem',
+    gap: '0.5rem',
+    padding: '0.375rem 0.75rem'
+  },
+  referenceLink: {
+    borderColor: { ':hover': colors.borderFocus }
+  },
+  heading: {
+    color: 'inherit',
+    fontFamily: 'ui-serif, Georgia, "Times New Roman", serif',
+    fontWeight: 600,
+    scrollMarginTop: '5rem'
+  },
+  heading1: { fontSize: '2rem', lineHeight: 1.24, marginBottom: '0.75rem', marginTop: '3rem' },
+  heading2: { fontSize: '1.62rem', lineHeight: 1.28, marginBottom: '0.5rem', marginTop: '2.5rem' },
+  heading3: { fontSize: '1.34rem', lineHeight: 1.34, marginBottom: '0.375rem', marginTop: '2rem' },
+  heading4: { fontSize: '1.16rem', lineHeight: 1.4, marginBottom: '0.25rem', marginTop: '1.5rem' },
+  quote: {
+    borderLeftColor: colors.borderStrong,
+    borderLeftStyle: 'solid',
+    borderLeftWidth: '4px',
+    borderRadius: '0 0.375rem 0.375rem 0',
+    color: colors.textSecondary,
+    whiteSpace: 'pre-wrap'
+  },
+  callout: {
+    alignItems: 'flex-start',
+    borderColor: colors.borderDefault,
+    borderRadius: '0.375rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    display: 'flex',
+    marginBlock: '1rem',
+    padding: '0.5rem 0.75rem'
+  },
+  noShrink: { flex: 'none' },
+  calloutIcon: { height: '1.05em', objectFit: 'contain', width: '1.05em' },
+  equation: { marginBlock: '1rem', overflowX: 'auto', textAlign: 'center' },
+  codeBlock: { marginBlock: '1.25rem', overflow: 'hidden' },
+  figure: { marginBlock: '1.5rem' },
+  image: {
+    borderColor: colors.borderSubtle,
+    borderRadius: '0.375rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    width: '100%'
+  },
+  caption: { marginTop: '0.5rem', whiteSpace: 'pre-wrap' },
+  columns: {
+    display: 'flex',
+    flexDirection: { default: 'column', '@media (min-width: 768px)': 'row' },
+    gap: '1rem',
+    marginBlock: '1rem'
+  },
+  tocBox: {
+    borderColor: colors.borderDefault,
+    borderRadius: '0.375rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    marginBlock: '1rem',
+    padding: '0.5rem 0.75rem'
+  },
+  tocTitle: {
+    color: colors.textSubtle,
+    fontSize: '0.75rem',
+    letterSpacing: 0,
+    marginBottom: '0.5rem',
+    textTransform: 'uppercase'
+  },
+  tocList: { display: 'grid', gap: '0.25rem' },
+  tocLink: {
+    color: {
+      default: colors.textSecondary,
+      ':hover': colors.textPrimary
+    },
+    fontSize: '0.875rem'
+  },
+  embedFrame: {
+    backgroundColor: colors.surfaceSubtle,
+    borderColor: colors.borderSubtle,
+    borderRadius: '0.375rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    overflow: 'hidden'
+  },
+  embedHeader: {
+    alignItems: 'center',
+    borderBottomColor: colors.borderSubtle,
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+    color: colors.textQuiet,
+    display: 'flex',
+    fontSize: '0.75rem',
+    gap: '0.375rem',
+    padding: '0.375rem 0.75rem'
+  },
+  embedDot: {
+    backgroundColor: colors.borderStrong,
+    borderRadius: '9999px',
+    display: 'inline-block',
+    height: '0.625rem',
+    width: '0.625rem'
+  },
+  truncate: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  ratioFrame: { position: 'relative', width: '100%' },
+  absoluteFill: { height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' },
+  mediaFrame: {
+    borderColor: colors.borderDefault,
+    borderRadius: '0.375rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    overflow: 'hidden',
+    position: 'relative',
+    width: '100%'
+  },
+  video: {
+    backgroundColor: colors.overlayScrim,
+    borderColor: colors.borderDefault,
+    borderRadius: '0.375rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    width: '100%'
+  },
+  pdfFrame: {
+    borderColor: colors.borderDefault,
+    borderRadius: '0.375rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    marginBlock: '1rem',
+    overflow: 'hidden'
+  },
+  pdfUnsupported: {
+    color: colors.textSubtle,
+    fontSize: '0.875rem',
+    padding: '0.75rem'
+  },
+  fullWidth: { width: '100%' },
+  pdfLink: {
+    borderTopColor: colors.borderDefault,
+    borderTopStyle: 'solid',
+    borderTopWidth: '1px',
+    color: colors.textMuted,
+    display: 'block',
+    fontSize: '0.875rem',
+    padding: '0.5rem 0.75rem',
+    textDecorationLine: { ':hover': 'underline' }
+  },
+  rule: {
+    borderColor: colors.borderDefault,
+    marginBlock: '1rem'
+  },
+  bulletedList: { listStyleType: 'disc', marginBlock: '0.75rem' },
+  numberedList: { listStyleType: 'decimal', marginBlock: '0.75rem' }
+})

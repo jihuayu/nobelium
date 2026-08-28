@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import * as stylex from '@stylexjs/stylex'
 import loadLocale from '@/assets/i18n'
 import { config } from '@/lib/server/config'
+import { appStyles } from '@/styles/app.stylex'
 
 interface PaginationProps {
   page: number
@@ -10,12 +12,11 @@ interface PaginationProps {
 export default async function Pagination({ page, showNext }: PaginationProps) {
   const locale = await loadLocale('basic', config.lang)
   const currentPage = +page
-  let additionalClassName = 'justify-between'
-  if (currentPage === 1 && showNext) additionalClassName = 'justify-end'
-  if (currentPage !== 1 && !showNext) additionalClassName = 'justify-start'
+  const alignEnd = currentPage === 1 && showNext
+  const alignStart = currentPage !== 1 && !showNext
 
   return (
-    <div className={`flex font-medium text-stone-500 dark:text-stone-400 ${additionalClassName}`}>
+    <div {...stylex.props(styles.pagination, alignEnd ? styles.end : alignStart ? styles.start : styles.between)}>
       {currentPage !== 1 && (
         <Link
           href={
@@ -25,9 +26,9 @@ export default async function Pagination({ page, showNext }: PaginationProps) {
           }
           prefetch={false}
           rel="prev"
-          className="group flex items-center gap-1.5 cursor-pointer hover:text-stone-900 dark:hover:text-stone-100 transition-colors duration-150 ease-out"
+          className={`direction-link direction-link-back ${stylex.props(appStyles.action, styles.link).className}`}
         >
-          <span className="transition-transform duration-150 ease-out group-hover:-translate-x-0.5">←</span>
+          <span className={`direction-arrow ${stylex.props(styles.arrow).className}`}>←</span>
           {locale.PAGINATION.PREV}
         </Link>
       )}
@@ -36,12 +37,32 @@ export default async function Pagination({ page, showNext }: PaginationProps) {
           href={`/page/${currentPage + 1}`}
           prefetch={false}
           rel="next"
-          className="group flex items-center gap-1.5 cursor-pointer hover:text-stone-900 dark:hover:text-stone-100 transition-colors duration-150 ease-out"
+          className={`direction-link direction-link-next ${stylex.props(appStyles.action, styles.link).className}`}
         >
           {locale.PAGINATION.NEXT}
-          <span className="transition-transform duration-150 ease-out group-hover:translate-x-0.5">→</span>
+          <span className={`direction-arrow ${stylex.props(styles.arrow).className}`}>→</span>
         </Link>
       )}
     </div>
   )
 }
+
+const styles = stylex.create({
+  pagination: {
+    display: 'flex',
+    fontWeight: 500
+  },
+  between: { justifyContent: 'space-between' },
+  end: { justifyContent: 'flex-end' },
+  start: { justifyContent: 'flex-start' },
+  link: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '0.375rem'
+  },
+  arrow: {
+    transitionDuration: '150ms',
+    transitionProperty: 'transform',
+    transitionTimingFunction: 'ease-out'
+  }
+})

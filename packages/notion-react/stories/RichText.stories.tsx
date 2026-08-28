@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import * as stylex from '@stylexjs/stylex'
 import { RichText } from '../src'
+import { colors } from '../src/theme.stylex'
 import { demoRichText, demoModel } from './fixtures'
 
 const meta = {
@@ -22,13 +24,22 @@ const meta = {
     }
   },
   render: (args) => (
-    <div className="max-w-xl text-[17px] leading-8 text-stone-900 dark:text-stone-100">
+    <div {...stylex.props(styles.content)}>
       <RichText {...args} />
     </div>
   )
 } satisfies Meta<typeof RichText>
 
 export default meta
+
+const styles = stylex.create({
+  content: {
+    color: colors.textPrimary,
+    fontSize: '17px',
+    lineHeight: '2rem',
+    maxWidth: '36rem'
+  }
+})
 
 type Story = StoryObj<typeof meta>
 

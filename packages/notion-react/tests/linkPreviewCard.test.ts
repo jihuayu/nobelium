@@ -10,6 +10,7 @@ import LinkPreviewCard from '../src/components/LinkPreviewCard'
 import UrlMentionHoverCard from '../src/components/UrlMentionHoverCard'
 
 const srcDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../src/components')
+const linkPreviewStylesSource = readFileSync(path.join(srcDir, 'LinkPreviewCard.stylex.ts'), 'utf8')
 const githubUrl = 'https://github.com/jihuayu/Somnium'
 const githubPreview = {
   url: githubUrl,
@@ -35,7 +36,7 @@ test('LinkPreviewCard keeps the in-page 110px bookmark layout', () => {
   }))
 
   assert.match(html, /data-link-preview-card="true"/)
-  assert.match(html, /h-\[110px\]/)
+  assert.match(linkPreviewStylesSource, /height:\s*'110px'/)
   assert.match(html, /https:\/\/github.com\/jihuayu\/Somnium/)
   assert.doesNotMatch(html, /github\.com · repo/)
   assert.doesNotMatch(html, /notion-url-mention-hover-card/)
@@ -64,6 +65,5 @@ test('UrlMentionHoverCard is the only GitHub-style floating preview', () => {
   assert.match(html, /notion-url-mention-hover-card/)
   assert.match(html, /data-preview-kind="github-repo"/)
   assert.match(html, /github\.com · repo/)
-  assert.doesNotMatch(html, /h-\[110px\]/)
   assert.doesNotMatch(html, /data-link-preview-card/)
 })

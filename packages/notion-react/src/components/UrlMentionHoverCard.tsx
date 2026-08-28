@@ -1,6 +1,7 @@
 'use client'
 
 import type { CSSProperties, FocusEvent, ReactNode, Ref } from 'react'
+import * as stylex from '@stylexjs/stylex'
 import type { LinkPreviewPresentation } from '@jihuayu/notion-type'
 import type { UrlMentionPreviewData } from '../types'
 import { isInternalHref, toOgProxyPreviewImageUrl } from '../utils/notion'
@@ -55,12 +56,20 @@ const URL_MENTION_FALLBACK_ICONS: Record<string, () => ReactNode> = {
 export function renderUrlMentionIcon(href: string, iconUrl: string, adapterId = 'default') {
   const resolvedIconUrl = toOgProxyPreviewImageUrl(iconUrl, href)
   if (resolvedIconUrl) {
-    return <img src={resolvedIconUrl} alt="" className="h-full w-full object-contain" loading="lazy" />
+    return <img src={resolvedIconUrl} alt="" {...stylex.props(styles.iconImage)} loading="lazy" />
   }
 
   const FallbackIcon = URL_MENTION_FALLBACK_ICONS[adapterId] || DefaultFallbackIcon
   return <FallbackIcon />
 }
+
+const styles = stylex.create({
+  iconImage: {
+    height: '100%',
+    objectFit: 'contain',
+    width: '100%'
+  }
+})
 
 export default function UrlMentionHoverCard({
   preview,

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { getPostFormatClassNames } from '../components/Post'
+import { getPostFormatClassNames } from '../lib/postFormat'
 
 test('post format classes include code-heavy article marker', () => {
   const html = renderToStaticMarkup(

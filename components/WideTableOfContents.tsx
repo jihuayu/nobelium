@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import cn from 'classnames'
+import * as stylex from '@stylexjs/stylex'
 import type { TocItem } from '@/lib/notion/getPostBlocks'
+import { colors } from '@/styles/theme.stylex'
 
 interface WideTableOfContentsProps {
   toc: TocItem[]
@@ -60,30 +61,25 @@ export default function WideTableOfContents({ toc }: WideTableOfContentsProps) {
   return (
     <div
       ref={panelRef}
-      className="fixed bottom-6 right-6 z-30 hidden md:block"
+      {...stylex.props(styles.root)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {open && (
         <nav
           aria-label="Table of contents"
-          className="mb-2 max-h-[60vh] w-72 overflow-y-auto rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 p-3 shadow-lg"
+          {...stylex.props(styles.panel)}
         >
           {toc.map(node => (
             <a
               key={node.id}
               href={`#${buildTargetId(node.id)}`}
               onClick={() => setOpen(false)}
-              className={cn(
-                'block w-full py-1.5 px-2 text-left text-sm rounded transition-colors duration-150 cursor-pointer',
-                activeId === buildTargetId(node.id)
-                  ? 'text-stone-900 dark:text-stone-100 bg-stone-200/60 dark:bg-stone-700/40 font-medium'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/40 dark:hover:bg-stone-700/30'
-              )}
+              {...stylex.props(styles.item, activeId === buildTargetId(node.id) ? styles.activeItem : styles.inactiveItem)}
               style={{ paddingLeft: (node.indentLevel * 16 + 8) + 'px' }}
               title={node.text}
             >
-              <span className="block whitespace-nowrap overflow-hidden text-ellipsis">{node.text}</span>
+              <span {...stylex.props(styles.itemLabel)}>{node.text}</span>
             </a>
           ))}
         </nav>
@@ -93,12 +89,7 @@ export default function WideTableOfContents({ toc }: WideTableOfContentsProps) {
         onClick={() => setOpen(v => !v)}
         aria-label="Toggle table of contents"
         aria-expanded={open}
-        className={cn(
-          'flex h-11 w-11 items-center justify-center rounded-full border shadow-md transition-all duration-150 cursor-pointer',
-          open
-            ? 'border-stone-300 dark:border-stone-600 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200'
-            : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:border-stone-300 dark:hover:border-stone-600'
-        )}
+        {...stylex.props(styles.button, open ? styles.openButton : styles.closedButton)}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           {open ? (
@@ -113,10 +104,113 @@ export default function WideTableOfContents({ toc }: WideTableOfContentsProps) {
         </svg>
       </button>
       {!open && hovered && activeItem && (
-        <span className="absolute bottom-full right-0 mb-2 max-w-[200px] truncate rounded bg-stone-800 dark:bg-stone-700 px-2 py-1 text-xs text-stone-100 dark:text-stone-200 pointer-events-none">
+        <span {...stylex.props(styles.tooltip)}>
           {activeItem.text}
         </span>
       )}
     </div>
   )
 }
+
+const styles = stylex.create({
+  root: {
+    bottom: '1.5rem',
+    display: {
+      default: 'none',
+      '@media (min-width: 768px)': 'block'
+    },
+    position: 'fixed',
+    right: '1.5rem',
+    zIndex: 30
+  },
+  panel: {
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.borderDefault,
+    borderRadius: '0.5rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+    marginBottom: '0.5rem',
+    maxHeight: '60vh',
+    overflowY: 'auto',
+    padding: '0.75rem',
+    width: '18rem'
+  },
+  item: {
+    borderRadius: '0.25rem',
+    cursor: 'pointer',
+    display: 'block',
+    fontSize: '0.875rem',
+    padding: '0.375rem 0.5rem',
+    textAlign: 'left',
+    transitionDuration: '150ms',
+    transitionProperty: 'color, background-color',
+    width: '100%'
+  },
+  activeItem: {
+    backgroundColor: colors.surfaceActiveAlpha,
+    color: colors.textPrimary,
+    fontWeight: 500
+  },
+  inactiveItem: {
+    backgroundColor: {
+      ':hover': colors.surfaceHoverAlpha
+    },
+    color: {
+      default: colors.textSubtle,
+      ':hover': colors.textPrimary
+    }
+  },
+  itemLabel: {
+    display: 'block',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
+  button: {
+    alignItems: 'center',
+    borderRadius: '9999px',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+    cursor: 'pointer',
+    display: 'flex',
+    height: '2.75rem',
+    justifyContent: 'center',
+    transitionDuration: '150ms',
+    transitionProperty: 'all',
+    width: '2.75rem'
+  },
+  openButton: {
+    backgroundColor: colors.surfaceSubtle,
+    borderColor: colors.borderStrong,
+    color: colors.textStrong
+  },
+  closedButton: {
+    backgroundColor: colors.surfaceElevated,
+    borderColor: {
+      default: colors.borderDefault,
+      ':hover': colors.borderStrong
+    },
+    color: {
+      default: colors.textSubtle,
+      ':hover': colors.textPrimary
+    }
+  },
+  tooltip: {
+    backgroundColor: colors.surfaceOverlay,
+    borderRadius: '0.25rem',
+    bottom: '100%',
+    color: colors.textTooltip,
+    fontSize: '0.75rem',
+    marginBottom: '0.5rem',
+    maxWidth: '200px',
+    overflow: 'hidden',
+    padding: '0.25rem 0.5rem',
+    pointerEvents: 'none',
+    position: 'absolute',
+    right: 0,
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  }
+})

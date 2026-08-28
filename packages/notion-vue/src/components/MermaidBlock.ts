@@ -192,17 +192,17 @@ export default defineComponent({
 
       if (renderError.value) {
         return h('div', { ref: hostRef, class: blockClass }, [
-          h('pre', { class: 'overflow-x-auto p-3 text-sm text-stone-900 dark:text-stone-100' }, [
+          h('pre', { class: 'nvue-mermaid-source nvue-mermaid-source-error' }, [
             h('code', props.code)
           ]),
-          h('p', { class: 'px-3 pb-3 text-xs text-red-600 dark:text-red-400' }, `Mermaid render error: ${renderError.value}`)
+          h('p', { class: 'nvue-mermaid-error' }, `Mermaid render error: ${renderError.value}`)
         ])
       }
 
       return h('div', { ref: hostRef, class: blockClass }, [
         shouldRender.value
           ? h('div', { ref: containerRef, class: 'notion-mermaid-svg' })
-          : h('pre', { class: 'overflow-x-auto p-3 text-sm text-stone-500 dark:text-stone-400' }, [
+          : h('pre', { class: 'nvue-mermaid-source nvue-mermaid-source-deferred' }, [
               h('code', 'Mermaid diagram deferred')
             ])
       ])

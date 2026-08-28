@@ -1,5 +1,6 @@
 import path from 'path'
 import type { NextConfig } from 'next'
+import withStylexTurbopack from '@stylexswc/nextjs-plugin/turbopack'
 import { AGENT_DISCOVERY_LINK_HEADER } from './lib/agent-discovery'
 
 // Matches requests that explicitly accept Markdown (agent-facing content negotiation).
@@ -102,4 +103,22 @@ const nextConfig: NextConfig = {
   }
 }
 
-export default nextConfig
+export default withStylexTurbopack({
+  rsOptions: {
+    dev: process.env.NODE_ENV !== 'production',
+    include: [
+      'app/**/*.{ts,tsx}',
+      'components/**/*.{ts,tsx}',
+      'packages/notion-react/src/**/*.{ts,tsx}',
+      'packages/somnium-comments/src/**/*.{ts,tsx}',
+      'styles/**/*.{ts,tsx}'
+    ],
+    aliases: {
+      '@/*': [path.join(__dirname, '*')]
+    },
+    unstable_moduleResolution: {
+      type: 'commonJS'
+    }
+  },
+  stylexImports: ['@stylexjs/stylex']
+})(nextConfig)

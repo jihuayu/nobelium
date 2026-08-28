@@ -14,6 +14,6 @@ test('LazyLinkPreviewCard stays decoupled from floating hover cards', () => {
   assert.doesNotMatch(source, /getLinkPreviewPresentation/)
   assert.doesNotMatch(source, /notion-url-mention-hover/)
   assert.doesNotMatch(source, /UrlMentionHoverCard/)
-  assert.match(source, /h-\[110px\]/)
+  assert.match(source, /height:\s*'110px'/)
   assert.match(source, /displayUrl/)
 })

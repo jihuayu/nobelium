@@ -1,8 +1,11 @@
 'use client'
 
 import { useDeferredValue, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
+import * as stylex from '@stylexjs/stylex'
+import { colors } from '@/styles/theme.stylex'
 import BlogPost from '@/components/BlogPost'
 import Tags from '@/components/Tags'
+import { appStyles } from '@/styles/app.stylex'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import { MIN_SEARCH_QUERY_LENGTH } from '@/lib/search/constants'
 
@@ -180,8 +183,8 @@ export default function SearchClient({
 
   return (
     <>
-      <div className="relative">
-        <label htmlFor={searchInputId} className="sr-only">
+      <div {...stylex.props(styles.searchField)}>
+        <label htmlFor={searchInputId} {...stylex.props(appStyles.visuallyHidden)}>
           {searchLabel}
         </label>
         <input
@@ -192,11 +195,11 @@ export default function SearchClient({
           placeholder={
             currentTag ? `Search in #${currentTag}` : 'Search Articles'
           }
-          className="block w-full rounded-md border px-4 py-2 border-stone-300 bg-transparent text-stone-900 placeholder:text-stone-400 transition-colors duration-150 ease-out focus:border-stone-400 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-stone-500"
+          {...stylex.props(styles.input)}
           onChange={e => setSearchValue(e.target.value)}
         />
         <svg
-          className="absolute right-3 top-3 h-5 w-5 text-stone-400 dark:text-stone-500"
+          {...stylex.props(styles.searchIcon)}
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -218,23 +221,23 @@ export default function SearchClient({
           currentTag={currentTag}
         />
       )}
-      <div className="article-container my-8">
+      <div className={`article-container ${stylex.props(styles.results).className}`}>
         {statusMessage && (
-          <p id={searchStatusId} className="sr-only" aria-live="polite" aria-atomic="true">
+          <p id={searchStatusId} {...stylex.props(appStyles.visuallyHidden)} aria-live="polite" aria-atomic="true">
             {statusMessage}
           </p>
         )}
         {showNotionSearchHint && (
-          <p id={searchHintId} className="text-stone-500 dark:text-stone-400">{notionSearchHint}</p>
+          <p id={searchHintId} {...stylex.props(appStyles.mutedText)}>{notionSearchHint}</p>
         )}
         {isSearching && (
-          <p className="text-stone-500 dark:text-stone-400" role="status">Searching...</p>
+          <p {...stylex.props(appStyles.mutedText)} role="status">Searching...</p>
         )}
         {!isSearching && !!searchError && (
-          <p className="text-stone-600 dark:text-stone-300 font-medium" role="alert">{searchError}</p>
+          <p {...stylex.props(styles.error)} role="alert">{searchError}</p>
         )}
         {showEmptyState && (
-          <p className="text-stone-500 dark:text-stone-400" role="status">No posts found.</p>
+          <p {...stylex.props(appStyles.mutedText)} role="status">No posts found.</p>
         )}
         {showInitialResults && children}
         {filteredBlogPosts.slice(0, 20).map(post => (
@@ -244,3 +247,44 @@ export default function SearchClient({
     </>
   )
 }
+
+const styles = stylex.create({
+  searchField: {
+    position: 'relative'
+  },
+  input: {
+    backgroundColor: 'transparent',
+    borderColor: {
+      default: colors.borderInput,
+      ':focus': colors.borderFocus
+    },
+    borderRadius: '0.375rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    color: colors.textPrimary,
+    display: 'block',
+    padding: '0.5rem 1rem',
+    transitionDuration: '150ms',
+    transitionProperty: 'color, border-color, background-color',
+    transitionTimingFunction: 'ease-out',
+    width: '100%',
+    '::placeholder': {
+      color: colors.textQuiet
+    }
+  },
+  searchIcon: {
+    color: colors.textQuiet,
+    height: '1.25rem',
+    position: 'absolute',
+    right: '0.75rem',
+    top: '0.75rem',
+    width: '1.25rem'
+  },
+  results: {
+    marginBlock: '2rem'
+  },
+  error: {
+    color: colors.textMutedStrong,
+    fontWeight: 500
+  }
+})

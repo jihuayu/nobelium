@@ -1,5 +1,8 @@
 import '@jihuayu/notion-react/styles.css'
+import '@jihuayu/somnium-comments/styles.css'
 import '@/styles/globals.css'
+import { darkTheme as notionDarkTheme } from '@jihuayu/notion-react/theme'
+import { darkTheme as commentsDarkTheme } from '@jihuayu/somnium-comments/theme'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Metadata } from 'next'
@@ -9,6 +12,8 @@ import { config } from '@/lib/server/config'
 import { buildPageMetadata } from '@/lib/server/metadata'
 import { prepareDayjs } from '@/lib/dayjs'
 import cn from 'classnames'
+import * as stylex from '@stylexjs/stylex'
+import { darkTheme as appDarkTheme } from '@/styles/theme.stylex'
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -154,17 +159,24 @@ export default async function RootLayout({
     dark: 'dark'
   }
   const colorSchemeClass = initialColorScheme[config.appearance] || ''
+  const darkThemeClassName = stylex.props(appDarkTheme, notionDarkTheme, commentsDarkTheme).className || ''
+  const initialThemeClass = config.appearance === 'dark' ? darkThemeClassName : ''
+  const darkThemeClasses = darkThemeClassName.split(' ').filter(Boolean)
 
   const dayBg = sanitizeThemeColor(config.lightBackground, '#ffffff')
   const nightBg = sanitizeThemeColor(config.darkBackground, '#0c0a09')
   const nightText = 'rgb(214, 211, 209)'
   const themeBootstrapScript = `(() => {
     const appearance = ${JSON.stringify(config.appearance)};
+    const darkThemeClasses = ${JSON.stringify(darkThemeClasses)};
     const root = document.documentElement;
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
       const dark = appearance === 'dark' || (appearance === 'auto' && media.matches);
       root.classList.toggle('dark', dark);
+      for (const className of darkThemeClasses) {
+        root.classList.toggle(className, dark);
+      }
       root.classList.remove('color-scheme-unset');
     };
     apply();
@@ -178,7 +190,7 @@ export default async function RootLayout({
   })();`
 
   return (
-    <html lang={config.lang} className={cn(colorSchemeClass, ibmPlexSans.variable, notoSerifSC.variable, sourceSerif4.variable)} suppressHydrationWarning>
+    <html lang={config.lang} className={cn(colorSchemeClass, initialThemeClass, ibmPlexSans.variable, notoSerifSC.variable, sourceSerif4.variable)} suppressHydrationWarning>
       <head>
         {config.appearance === 'auto' ? (
           <>
@@ -204,19 +216,6 @@ export default async function RootLayout({
               .color-scheme-unset .notion {
                 color: ${nightText} !important;
               }
-              .color-scheme-unset .text-black,
-              .color-scheme-unset .text-gray-700,
-              .color-scheme-unset .text-gray-600,
-              .color-scheme-unset .text-gray-500,
-              .color-scheme-unset .text-stone-900,
-              .color-scheme-unset .text-stone-800,
-              .color-scheme-unset .text-stone-700,
-              .color-scheme-unset .text-stone-600 {
-                color: ${nightText} !important;
-              }
-              .color-scheme-unset .fill-black {
-                fill: rgb(255, 255, 255) !important;
-              }
             }
           `
         }} />
@@ -227,7 +226,7 @@ export default async function RootLayout({
           {webMcpScript}
         </Script>
       </head>
-      <body className="bg-day dark:bg-night">
+      <body {...stylex.props(styles.body)} style={{ '--page-day': dayBg, '--page-night': nightBg } as React.CSSProperties}>
         {children}
         <Analytics />
         <SpeedInsights />
@@ -235,3 +234,12 @@ export default async function RootLayout({
     </html>
   )
 }
+
+const styles = stylex.create({
+  body: {
+    backgroundColor: {
+      default: 'var(--page-day)',
+      ':is(.dark *)': 'var(--page-night)'
+    }
+  }
+})

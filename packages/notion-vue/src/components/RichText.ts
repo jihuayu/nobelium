@@ -181,10 +181,10 @@ export const RichText = defineComponent({
         const content = h('span', {
           key: `content-${index}`,
           class: cn(
-            annotations.bold && 'font-semibold',
-            annotations.italic && 'italic',
-            annotations.strikethrough && 'line-through',
-            annotations.underline && 'underline',
+            annotations.bold && 'nvue-bold',
+            annotations.italic && 'nvue-italic',
+            annotations.strikethrough && 'nvue-strikethrough',
+            annotations.underline && 'nvue-underline',
             textColorClassName,
             backgroundColorClassName,
             annotations.code && 'notion-inline-code'
@@ -241,7 +241,7 @@ export const RichText = defineComponent({
           href,
           target: isInternalHref(href) ? undefined : '_blank',
           rel: isInternalHref(href) ? undefined : 'noopener noreferrer',
-          class: 'text-stone-900 dark:text-stone-100 underline underline-offset-4 decoration-stone-400 dark:decoration-stone-600'
+          class: 'nvue-inline-link'
         }, [content])
       })
 

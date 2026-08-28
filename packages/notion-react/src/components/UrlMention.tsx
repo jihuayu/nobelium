@@ -1,6 +1,8 @@
 'use client'
 
 import cn from 'classnames'
+import * as stylex from '@stylexjs/stylex'
+import { colors } from '../theme.stylex'
 import { useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { getLinkPreviewPresentation } from '@jihuayu/notion-type'
@@ -92,7 +94,7 @@ export default function UrlMention({
           className={cn(
             'notion-url-mention',
             isInline
-              ? 'notion-url-mention-inline text-stone-900 dark:text-stone-100 underline underline-offset-4 decoration-stone-400 dark:decoration-stone-600'
+              ? cn('notion-url-mention-inline', stylex.props(styles.inlineLink).className)
               : 'notion-url-mention-link-preview'
           )}
           onMouseEnter={openCard}
@@ -116,3 +118,12 @@ export default function UrlMention({
     </>
   )
 }
+
+const styles = stylex.create({
+  inlineLink: {
+    color: colors.textPrimary,
+    textDecorationColor: colors.borderQuiet,
+    textDecorationLine: 'underline',
+    textUnderlineOffset: '4px'
+  }
+})

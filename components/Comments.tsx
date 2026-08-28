@@ -1,6 +1,7 @@
 import cn from 'classnames'
+import * as stylex from '@stylexjs/stylex'
 import { CommentBox } from '@jihuayu/somnium-comments'
-import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
+import { appStyles } from '@/styles/app.stylex'
 import { config } from '@/lib/server/config'
 import type { BlogConfig } from '@/lib/config'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
@@ -24,7 +25,6 @@ function buildCommentPageUrl(slug: string): string | undefined {
 
 const Comments = ({ frontMatter, comment }: CommentsProps) => {
   const fullWidth = frontMatter.fullWidth ?? false
-  const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
   const atriumConfig = comment?.atriumConfig
   const commentPageUrl = buildCommentPageUrl(frontMatter.slug)
 
@@ -40,11 +40,17 @@ const Comments = ({ frontMatter, comment }: CommentsProps) => {
       pageUrl={commentPageUrl}
       locale={config.lang}
       className={cn(
-        'px-4',
-        `mx-auto ${contentWidthClass}`
+        stylex.props(styles.root, fullWidth ? appStyles.wideContentWidth : appStyles.contentWidth).className
       )}
     />
   )
 }
 
 export default Comments
+
+const styles = stylex.create({
+  root: {
+    marginInline: 'auto',
+    paddingInline: '1rem'
+  }
+})

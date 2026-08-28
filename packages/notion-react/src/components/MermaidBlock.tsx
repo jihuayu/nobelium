@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import cn from 'classnames'
+import * as stylex from '@stylexjs/stylex'
+import { colors } from '../theme.stylex'
 import type { MermaidBlockProps } from '../types'
 
 type MermaidModule = typeof import('mermaid')
@@ -182,8 +184,8 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
   if (renderError) {
     return (
       <div ref={hostRef} className={cn('notion-mermaid-block', className)}>
-        <pre className="overflow-x-auto p-3 text-sm text-stone-900 dark:text-stone-100"><code>{code}</code></pre>
-        <p className="px-3 pb-3 text-xs text-red-600 dark:text-red-400">Mermaid render error: {renderError}</p>
+        <pre {...stylex.props(styles.source, styles.sourceError)}><code>{code}</code></pre>
+        <p {...stylex.props(styles.error)}>Mermaid render error: {renderError}</p>
       </div>
     )
   }
@@ -192,7 +194,26 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
     <div ref={hostRef} className={cn('notion-mermaid-block', className)}>
       {shouldRender
         ? <div ref={containerRef} className="notion-mermaid-svg" />
-        : <pre className="overflow-x-auto p-3 text-sm text-stone-500 dark:text-stone-400"><code>Mermaid diagram deferred</code></pre>}
+        : <pre {...stylex.props(styles.source, styles.sourceDeferred)}><code>Mermaid diagram deferred</code></pre>}
     </div>
   )
 }
+
+const styles = stylex.create({
+  source: {
+    fontSize: '0.875rem',
+    overflowX: 'auto',
+    padding: '0.75rem'
+  },
+  sourceError: {
+    color: colors.textPrimary
+  },
+  sourceDeferred: {
+    color: colors.textSubtle
+  },
+  error: {
+    color: colors.danger,
+    fontSize: '0.75rem',
+    padding: '0 0.75rem 0.75rem'
+  }
+})

@@ -69,7 +69,7 @@ export const demoModel: NotionRenderModel = {
         type: 'callout',
         callout: {
           icon: { type: 'emoji', emoji: '!' },
-          rich_text: [{ type: 'text', plain_text: 'Tailwind classes are applied inside the renderer.', text: { content: 'Tailwind classes are applied inside the renderer.' } }]
+          rich_text: [{ type: 'text', plain_text: 'StyleX styles are compiled inside the renderer.', text: { content: 'StyleX styles are compiled inside the renderer.' } }]
         }
       },
       'bookmark-1': {

@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import * as stylex from '@stylexjs/stylex'
+import { colors } from '@/styles/theme.stylex'
 
 interface TagsProps {
   tags: Record<string, number>
@@ -9,17 +11,13 @@ const Tags = ({ tags, currentTag }: TagsProps) => {
   if (!tags) return null
   return (
     <div className="tag-container">
-      <ul className="flex max-w-full mt-4 overflow-x-auto">
+      <ul {...stylex.props(styles.list)}>
         {Object.keys(tags).map(key => {
           const selected = key === currentTag
           return (
             <li
               key={key}
-              className={`mr-3 font-medium border whitespace-nowrap rounded-md transition-colors duration-150 ease-out ${
-                selected
-                  ? 'text-white bg-stone-900 border-stone-900 dark:bg-stone-100 dark:text-stone-900 dark:border-stone-100'
-                  : 'bg-transparent border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-900 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-500 dark:hover:text-stone-100'
-              }`}
+              {...stylex.props(styles.item, selected ? styles.selected : styles.unselected)}
             >
               <Link
                 key={key}
@@ -29,7 +27,7 @@ const Tags = ({ tags, currentTag }: TagsProps) => {
                     : `/tag/${encodeURIComponent(key)}`
                 }
                 prefetch={false}
-                className="px-4 py-2 block"
+                {...stylex.props(styles.link)}
               >
                 {`${key} (${tags[key]})`}
               </Link>
@@ -42,3 +40,43 @@ const Tags = ({ tags, currentTag }: TagsProps) => {
 }
 
 export default Tags
+
+const styles = stylex.create({
+  list: {
+    display: 'flex',
+    marginTop: '1rem',
+    maxWidth: '100%',
+    overflowX: 'auto'
+  },
+  item: {
+    borderRadius: '0.375rem',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    fontWeight: 500,
+    marginRight: '0.75rem',
+    transitionDuration: '150ms',
+    transitionProperty: 'color, background-color, border-color',
+    transitionTimingFunction: 'ease-out',
+    whiteSpace: 'nowrap'
+  },
+  selected: {
+    backgroundColor: colors.textPrimary,
+    borderColor: colors.textPrimary,
+    color: colors.textOnEmphasis
+  },
+  unselected: {
+    backgroundColor: 'transparent',
+    borderColor: {
+      default: colors.borderDefault,
+      ':hover': colors.borderFocus
+    },
+    color: {
+      default: colors.textSubtle,
+      ':hover': colors.textPrimary
+    }
+  },
+  link: {
+    display: 'block',
+    padding: '0.5rem 1rem'
+  }
+})
