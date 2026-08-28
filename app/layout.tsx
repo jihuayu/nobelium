@@ -1,6 +1,7 @@
 import '@jihuayu/notion-react/styles.css'
 import '@jihuayu/somnium-comments/styles.css'
 import '@/styles/globals.css'
+import '@/styles/stylex.css'
 import { darkTheme as notionDarkTheme } from '@jihuayu/notion-react/theme'
 import { darkTheme as commentsDarkTheme } from '@jihuayu/somnium-comments/theme'
 import { Analytics } from '@vercel/analytics/next'
